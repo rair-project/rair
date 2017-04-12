@@ -1,0 +1,18 @@
+[package]
+name = "rair"
+version = "0.1.0"
+authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
+build = "build.rs"
+
+[[bin]]
+name = "rahash"
+path = "src/rahash.rs"
+
+[dependencies]
+libc = "*"
+getopts = "*"
+r_crypto = {path = "r_crypto"}
+r_hash = {path = "r_hash"}
+r_io = {path = "r_io"}
+r_util = {path = "r_util"}
+rustc-serialize= "*"

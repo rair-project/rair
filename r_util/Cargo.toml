@@ -1,0 +1,7 @@
+[package]
+name = "r_util"
+version = "0.1.0"
+authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
+
+[dependencies]
+libc = "*"
