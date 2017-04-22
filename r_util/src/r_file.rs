@@ -1,5 +1,4 @@
 /*
- *  {one line to give the program's name and a brief idea of what it does.}
  *  Copyright (C) 2017  Ahmed Abd El Mawgood
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -17,11 +16,13 @@
  */
 //TODO delete the whole file ^_^
 extern crate libc;
-use libc::c_char;
+use libc::*;
+use std::ffi::CString;
 #[link(name = "r_util")]
-extern {
-    pub fn r_num_math (RNUM: *const c_char, STR: *const c_char) -> u64;
-    pub fn r_file_is_directory (file: *const c_char) -> bool;
-    pub fn r_print_progressbar (RPrint: *const c_char, pc: i32, cols:i32);
-    pub fn r_print_randomart (dgst_raw: *const u8, dgst_raw_len:usize, addr:usize) -> *const c_char;
+extern "C" {
+    fn r_file_is_directory(file: *const c_char) -> bool;
+}
+pub fn is_directory(file: &str) -> bool {
+    let cstring = CString::new(file).unwrap();
+    unsafe { r_file_is_directory(cstring.as_ptr()) }
 }

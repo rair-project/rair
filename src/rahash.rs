@@ -18,8 +18,8 @@
 
 //XXX bug in xor encryption scheme ...
 // rahash -e xor -s BAAA  -S 4
-// this crashes because encryption key is shorter than text
-// it should be reused aka otp
+// this crashes because encryption key is not valid
+// it should be handled by math
 extern crate getopts;
 extern crate libc;
 extern crate r_crypto;
@@ -33,11 +33,12 @@ mod version;
 
 use getopts::Options;
 use libc::*;
+use r_hash::RHash;
+use r_util::*;
 use rustc_serialize::hex::FromHex;
 use std::env;
 use std::process;
 use std::io::{self, Read, Write};
-use std::ffi::{CStr, CString}; //TODO get rid of me
 use std::fs::File;
 use std::ptr;
 #[derive(PartialEq,Clone)]
@@ -64,12 +65,7 @@ fn algolist() {
     println!("Available Hashes:");
     for i in 0..r_hash::R_HASH_NBITS {
         let bits: u64 = 1 << i;
-        //TODO make me safe
-        let name: String = unsafe {
-            CStr::from_ptr(r_hash::r_hash_name(bits))
-                .to_string_lossy()
-                .into_owned()
-        };
+        let name = r_hash::name(bits);
         if !name.is_empty() {
             println!("  {}", name);
         }
@@ -78,11 +74,7 @@ fn algolist() {
     println!("  base64\n  base91\n  punycode\nAvailable Crypto Algos:");
     for i in 0..64 {
         let bits: u64 = 1 << i;
-        let name: String = unsafe {
-            CStr::from_ptr(r_crypto::r_crypto_name(bits))
-                .to_string_lossy()
-                .into_owned()
-        };
+        let name = r_crypto::name(bits);
         if !name.is_empty() {
             println!("  {}", name);
         }
@@ -120,11 +112,7 @@ fn do_hash_print(ctx: &r_hash::RHash,
                  little_endian: bool,
                  len: usize,
                  status: &Status) {
-    let hname: String = unsafe {
-        CStr::from_ptr(r_hash::r_hash_name(algo))
-            .to_string_lossy()
-            .into_owned()
-    };
+    let hname = r_hash::name(algo);
     let mut c: Vec<u8> = (*ctx).digest.to_vec();
     c.drain(len..);
     match status.format {
@@ -146,11 +134,7 @@ fn do_hash_print(ctx: &r_hash::RHash,
             println!("");
         }
         OutputFormat::Ssh => {
-            let art: String = unsafe {
-                CStr::from_ptr(r_util::r_print_randomart(c.as_ptr(), c.len(), status.from))
-                    .to_string_lossy()
-                    .into_owned()
-            };
+            let art = r_print::randomart(&c, status.from);
             println!("{}\n{}", hname, art);
         }
     };
@@ -163,7 +147,7 @@ fn do_hash_internal(ctx: &r_hash::RHash,
                     little_endian: bool,
                     status: &Status,
                     s: &r_hash::RHashSeed) {
-    let dlen: usize = unsafe { r_hash::r_hash_calculate(ctx, algo, buf.as_ptr(), buf.len()) };
+    let dlen = ctx.calculate(algo, buf);
     if dlen == 0 {
         return;
     }
@@ -171,10 +155,10 @@ fn do_hash_internal(ctx: &r_hash::RHash,
         return;
     }
     if algo == r_hash::R_HASH_ENTROPY {
-        let e: f64 = unsafe { r_hash::r_hash_entropy(buf.as_ptr(), buf.len()) };
+        let e = r_hash::entropy(buf);
         if status.format == OutputFormat::None {
             print!("0x{:08x}-0x{:08x} {:.10}", status.from, status.to - 1, e);
-            unsafe { r_util::r_print_progressbar(ptr::null(), (12.5 * e) as i32, 60) };
+            r_print::progressbar(ptr::null(), (12.5 * e) as i32, 60);
             println!("");
         } else {
             //TODO that doesn't look either radare2 commands or json tbh
@@ -182,12 +166,7 @@ fn do_hash_internal(ctx: &r_hash::RHash,
         }
     } else {
         if status.iterations > 0 {
-            let cseed = r_hash::CRHashSeed {
-                prefix: s.prefix,
-                len: s.buf.len(),
-                buf: s.buf.clone().as_ptr(),
-            };
-            unsafe { r_hash::r_hash_do_spice(ctx, algo, status.iterations, &cseed) };
+            ctx.do_spice(algo, status.iterations, s);
         }
         do_hash_print(ctx, algo, little_endian, dlen, status);
 
@@ -206,18 +185,17 @@ fn compare_hashes(ctx: &r_hash::RHash, compare: &[u8], len: usize) {
 
 fn do_hash(file: &str,
            algo: &str,
-           io: *mut c_void,
+           io: &c_void,
            mut bsize: usize,
            little_endian: bool,
            compare: &[u8],
            mut status: &mut Status,
            s: &r_hash::RHashSeed) {
-    let algobit =
-        unsafe { r_hash::r_hash_name_to_bits(CString::new(&*algo.clone()).unwrap().as_ptr()) };
+    let algobit = r_hash::name_to_bits(algo);
     if algobit == r_hash::R_HASH_NONE {
         report("Invalid hashing algorithm ");
     }
-    let fsize = unsafe { r_io::r_io_size(io) };
+    let fsize = r_io::size(io);
     if bsize == 0 || bsize > fsize {
         bsize = fsize;
     }
@@ -227,18 +205,18 @@ fn do_hash(file: &str,
     if status.from > status.to {
         report("Invalid -f -t range");
     }
-    let ctx = unsafe { &*r_hash::r_hash_new(true, algobit) };
+    let ctx = RHash::new(true, algobit);
     if status.format == OutputFormat::Json {
         print!("[");
     }
     if status.incremental {
         let mut i = 1;
-        let mut first: bool = true;
+        let mut first = true;
         while i < r_hash::R_HASH_ALL {
             let hashbit = algobit & i;
             if hashbit != 0 {
-                let dlen = unsafe { r_hash::r_hash_size(algobit) };
-                unsafe { r_hash::r_hash_do_begin(ctx, i) };
+                let dlen = r_hash::size(algobit);
+                ctx.do_begin(i);
                 if status.format == OutputFormat::Json {
                     if first {
                         first = false;
@@ -251,27 +229,22 @@ fn do_hash(file: &str,
                 }
                 let mut j = status.from;
                 while j < status.to {
-                    let nsize: usize = if j + bsize > status.to {
+                    let nsize = if j + bsize > status.to {
                         status.to - j
                     } else {
                         bsize
                     };
                     let buf: Vec<u8> = vec![0; nsize];
-                    unsafe { r_io::r_io_pread(io, j as u64, buf.as_ptr(), nsize) };
+                    r_io::pread(io, j as u64, &buf);
                     do_hash_internal(ctx, hashbit, &buf, false, little_endian, status, s);
                     j += bsize;
                 }
                 if s.prefix & !s.buf.is_empty() {
                     do_hash_internal(ctx, hashbit, &s.buf, false, little_endian, status, s);
                 }
-                unsafe { r_hash::r_hash_do_end(ctx, i) };
+                ctx.do_end(i);
                 if status.iterations > 0 {
-                    let cseed = r_hash::CRHashSeed {
-                        prefix: s.prefix,
-                        len: s.buf.len(),
-                        buf: s.buf.clone().as_ptr(),
-                    };
-                    unsafe { r_hash::r_hash_do_spice(ctx, i, status.iterations, &cseed) };
+                    ctx.do_spice(i, status.iterations, s);
                 }
                 if !status.quiet && status.format != OutputFormat::Json {
                     print!("{} ", file);
@@ -292,9 +265,9 @@ fn do_hash(file: &str,
                 let mut j = status.from;
                 let mut status_c = status.clone();
                 while j < status.to {
-                    let nsize: usize = if j + bsize < fsize { bsize } else { fsize - j };
+                    let nsize = if j + bsize < fsize { bsize } else { fsize - j };
                     let buf: Vec<u8> = vec![0; nsize];
-                    unsafe { r_io::r_io_pread(io, j as u64, buf.as_ptr(), nsize) };
+                    r_io::pread(io, j as u64, &buf);
                     status_c.from = j;
                     status_c.to = j + bsize;
                     if status_c.to > fsize {
@@ -311,7 +284,7 @@ fn do_hash(file: &str,
         println!("]");
     }
     if !compare.is_empty() {
-        let hash_size = unsafe { r_hash::r_hash_size(algobit) };
+        let hash_size = r_hash::size(algobit);
         compare_hashes(ctx, compare, hash_size);
     }
 
@@ -351,8 +324,8 @@ fn encrypt_or_decrypt(algo: &str,
             report("Encryption key is not defined. Use -S [key]");
         }
     }
-    let cry = unsafe { r_crypto::r_crypto_new() };
-    if !unsafe { r_crypto::r_crypto_use(cry, CString::new(algo.clone()).unwrap().as_ptr()) } {
+    let cry = r_crypto::new();
+    if !r_crypto::use_algo(cry, algo) {
         if is_decryption {
             let err = format!("Unknown decryption algorithm '{}'", algo);
             report(&*err);
@@ -361,14 +334,14 @@ fn encrypt_or_decrypt(algo: &str,
             report(&*err);
         }
     }
-    if !unsafe { r_crypto::r_crypto_set_key(cry, s.buf.as_ptr(), s.buf.len(), 0, is_decryption) } {
+    if !r_crypto::set_key(cry, &s.buf, 0, is_decryption) {
         report("Invalid key");
     }
-    if !iv.is_empty() && !unsafe { r_crypto::r_crypto_set_iv(cry, iv.as_ptr(), iv.len()) } {
+    if !iv.is_empty() && !r_crypto::set_iv(cry, iv) {
         report("Invalid initialization vector");
     }
-    unsafe { r_crypto::r_crypto_update(cry, buf.as_ptr(), buf.len()) };
-    unsafe { r_crypto::r_crypto_final(cry, ptr::null(), 0) };
+    r_crypto::update(cry, buf);
+    r_crypto::finish(cry, &Vec::new());
     let result = r_crypto::get_output(cry);
     std::io::stdout().write(&result).unwrap();
 }
@@ -558,22 +531,16 @@ fn main() {
     }
     if matches.opt_present("b") {
         let tmp = matches.opt_str("b").unwrap();
-        //TODO make me safe
-        let cstring = CString::new(tmp).unwrap();
-        bsize = unsafe { r_util::r_num_math(ptr::null(), cstring.as_ptr()) } as usize;
+        bsize = r_num::math(ptr::null(), &tmp) as usize;
 
     }
     if matches.opt_present("f") {
         let tmp = matches.opt_str("f").unwrap();
-        //TODO make me safe
-        let cstring = CString::new(tmp).unwrap();
-        status.from = unsafe { r_util::r_num_math(ptr::null(), cstring.as_ptr()) } as usize;
+        status.from = r_num::math(ptr::null(), &tmp) as usize;
     }
     if matches.opt_present("t") {
         let tmp = matches.opt_str("t").unwrap();
-        //TODO make me safe
-        let cstring = CString::new(tmp).unwrap();
-        status.to = unsafe { r_util::r_num_math(ptr::null(), cstring.as_ptr()) } as usize + 1;
+        status.to = r_num::math(ptr::null(), &tmp) as usize + 1;
     }
     if matches.opt_present("s") && matches.opt_present("x") {
         report(" -s and -x are not compatiable, you can not \
@@ -603,11 +570,7 @@ fn main() {
             report("Option -c incompatible with -E base64, -E base91, -D base64 or \
                    -D base91 options.");
         }
-        //TODO make me safe
-        let cstring = CString::new(&*algo).unwrap();
-        algobit = unsafe { r_hash::r_hash_name_to_bits(cstring.as_ptr()) };
-        //TODO heavily document how r_hash_name_to_bits works
-        // the myth says it returns a number that is power of 2 if only 1 algo is used
+        algobit = r_hash::name_to_bits(&algo);
         if !is_power_of_two(algobit) {
             report("Option -c incompatible with multiple algorithms in -a.");
         }
@@ -615,12 +578,11 @@ fn main() {
             Err(why) => report(&why.to_string()),
             Ok(x) => x,
         };
-        //TODO make me safe
-        if compare_bin.len() != unsafe { r_hash::r_hash_size(algobit) } {
+        if compare_bin.len() != r_hash::size(algobit) {
             let err_msg = format!("rahash2: Given -c hash has {} bytes but the \
                 selected algorithm returns {} bytes.",
                                   compare_bin.len(),
-                                  unsafe { r_hash::r_hash_size(algobit) }); // TODO make me safe
+                                  r_hash::size(algobit));
             report(&err_msg);
         }
     }
@@ -678,9 +640,7 @@ fn main() {
             } else {
                 full_str = hash;
             }
-            //TODO make me safe
-            let cstring = CString::new(&*algo).unwrap();
-            let algobit: u64 = unsafe { r_hash::r_hash_name_to_bits(cstring.as_ptr()) };
+            let algobit = r_hash::name_to_bits(&algo);
             if algobit == 0 {
                 report("Invalid algorithm. See -E and -D");
             }
@@ -689,8 +649,7 @@ fn main() {
             while i < r_hash::R_HASH_ALL {
                 let hashbit = algobit & i;
                 if hashbit != 0 {
-                    //TODO make me safe
-                    let ctx = unsafe { &*r_hash::r_hash_new(true, hashbit) };
+                    let ctx = RHash::new(true, hashbit);
                     status.from = 0;
                     status.to = full_str.len();
                     do_hash_internal(ctx,
@@ -701,8 +660,7 @@ fn main() {
                                      &status,
                                      &hash_seed);
                     if !compare_bin.is_empty() {
-                        //TODO make me safe
-                        let hash_size = unsafe { r_hash::r_hash_size(algobit) };
+                        let hash_size = r_hash::size(algobit);
                         compare_hashes(ctx, &compare_bin, hash_size);
                     }
                 }
@@ -712,7 +670,7 @@ fn main() {
         }
     }
     for file in &matches.free {
-        let io: *mut c_void = unsafe { r_io::r_io_new() };
+        let io = r_io::new();
         if !encrypt.is_empty() {
             encrypt_or_decrypt_file(&encrypt, false, file, &iv, &hash_seed);
         } else if !decrypt.is_empty() {
@@ -722,23 +680,17 @@ fn main() {
                 let mut buf: Vec<u8> = Vec::new();
                 io::stdin().read(&mut buf).unwrap();
                 let virtual_file = format!("malloc://{}", buf.len());
-                let filecstring = CString::new(virtual_file.clone()).unwrap();
-                //TODO make me safe
-                if unsafe { r_io::r_io_open_nomap(io, filecstring.as_ptr(), 0, 0) }.is_null() {
+                if r_io::open_nomap(io, &virtual_file, 0, 0).is_null() {
                     let error = format!("Cannot open {}", virtual_file);
                     report(&error);
                 }
-                //TODO make me safe
-                unsafe { r_io::r_io_pwrite(io, 0, buf.as_ptr(), buf.len()) };
+                r_io::pwrite(io, 0, &buf);
 
             } else {
-                //TODO make me safe
-                let cstring = CString::new(file.to_owned()).unwrap();
-                if unsafe { r_util::r_file_is_directory(cstring.as_ptr()) } {
+                if r_file::is_directory(file) {
                     report("Cannot hash directories");
                 }
-                //TODO make me safe
-                if unsafe { r_io::r_io_open_nomap(io, cstring.as_ptr(), 0, 0) }.is_null() {
+                if r_io::open_nomap(io, file, 0, 0).is_null() {
                     let error = format!("Cannot open {}", file);
                     report(&error);
                 }

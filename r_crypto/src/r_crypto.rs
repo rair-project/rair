@@ -17,19 +17,52 @@
  */
 
 use libc::*;
+use std::ffi::{CStr, CString};
 #[link(name = "r_crypto")]
-extern {
-    pub fn r_crypto_name(bit:u64) -> *const c_char;
-    pub fn r_crypto_new() -> *const c_void;
-    pub fn r_crypto_use (crypto: *const c_void, algo:  *const c_char) -> bool;
-    pub fn r_crypto_set_key(crypto: *const c_void, key: *const u8, len:usize, mode: i32, is_decryption:bool) -> bool;
-    pub fn r_crypto_set_iv (crypto: *const c_void, iv: *const u8, ivlen: usize) ->bool;
-    pub fn r_crypto_update(crypto: *const c_void, buf: *const u8, buflen: usize);
-    pub fn r_crypto_final(crypto: *const c_void, buf: *const u8, buflen: usize);
+extern "C" {
+    fn r_crypto_name(bit: u64) -> *const c_char;
+    fn r_crypto_new() -> *const c_void;
+    fn r_crypto_use(crypto: *const c_void, algo: *const c_char) -> bool;
+    fn r_crypto_set_key(crypto: *const c_void,
+                        key: *const u8,
+                        len: usize,
+                        mode: i32,
+                        is_decryption: bool)
+                        -> bool;
+    fn r_crypto_set_iv(crypto: *const c_void, iv: *const u8, ivlen: usize) -> bool;
+    fn r_crypto_update(crypto: *const c_void, buf: *const u8, buflen: usize);
+    fn r_crypto_final(crypto: *const c_void, buf: *const u8, buflen: usize);
     fn r_crypto_get_output(crypto: *const c_void, size: *const usize) -> *mut u8;
 }
-pub fn get_output (crypto: *const c_void) ->Vec<u8> {
-    let x:usize = 0;
-    let y:*mut u8 = unsafe{r_crypto_get_output(crypto as *const c_void, &x)};
-    unsafe { Vec::from_raw_parts(y, x, x)}
+
+pub fn get_output(crypto: *const c_void) -> Vec<u8> {
+    let x: usize = 0;
+    let y: *mut u8 = unsafe { r_crypto_get_output(crypto, &x) };
+    unsafe { Vec::from_raw_parts(y, x, x) }
+}
+pub fn name(bits: u64) -> String {
+    let name = unsafe { r_crypto_name(bits) };
+    unsafe { CStr::from_ptr(name) }
+        .to_string_lossy()
+        .into_owned()
+}
+pub fn use_algo(crypto: *const c_void, algo: &str) -> bool {
+    let cstr = CString::new(algo).unwrap();
+    unsafe { r_crypto_use(crypto, cstr.as_ptr()) }
+}
+pub fn new() -> *const c_void {
+    unsafe { r_crypto_new() }
+}
+pub fn set_key(crypto: *const c_void, key: &[u8], mode: i32, is_decryption: bool) -> bool {
+    unsafe { r_crypto_set_key(crypto, key.as_ptr(), key.len(), mode, is_decryption) }
+}
+pub fn set_iv(crypto: *const c_void, iv: &[u8]) -> bool {
+    unsafe { r_crypto_set_iv(crypto, iv.as_ptr(), iv.len()) }
+}
+
+pub fn update(crypto: *const c_void, buf: &[u8]) {
+    unsafe { r_crypto_update(crypto, buf.as_ptr(), buf.len()) }
+}
+pub fn finish(crypto: *const c_void, buf: &[u8]) {
+    unsafe { r_crypto_final(crypto, buf.as_ptr(), buf.len()) }
 }

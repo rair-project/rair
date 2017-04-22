@@ -1,5 +1,4 @@
 /*
- *  {one line to give the program's name and a brief idea of what it does.}
  *  Copyright (C) 2017  Ahmed Abd El Mawgood
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -15,7 +14,15 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+//TODO delete the whole file ^_^
 extern crate libc;
-pub mod r_print;
-pub mod r_num;
-pub mod r_file;
+use libc::*;
+use std::ffi::CString;
+#[link(name = "r_util")]
+extern "C" {
+    fn r_num_math(rnum: *const c_void, STR: *const c_char) -> u64;
+}
+pub fn math(rnum: *const c_void, string: &str) -> u64 {
+    let cstring = CString::new(string).unwrap();
+    unsafe { r_num_math(rnum, cstring.as_ptr()) }
+}

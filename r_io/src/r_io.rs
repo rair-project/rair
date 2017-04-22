@@ -15,13 +15,34 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-//TODO delete the whole file ^_^
 use libc::*;
+use std::ffi::CString;
+
 #[link(name = "r_io")]
-extern {
-    pub fn r_io_new() -> *mut c_void;
-    pub fn r_io_size(io: *mut c_void) -> usize;
-    pub fn r_io_open_nomap(io: *mut c_void, file: *const c_char, flags :c_int, mode: c_int) -> *const c_void;
-    pub fn r_io_pwrite(io: *mut c_void, paddr:u64, buf: *const u8, len:usize);
-    pub fn r_io_pread(io: *mut c_void, paddr:u64, buff: *const u8, len:usize);
+extern "C" {
+    fn r_io_new() -> *const c_void;
+    fn r_io_size(io: *const c_void) -> usize;
+    fn r_io_open_nomap(io: *const c_void,
+                       file: *const c_char,
+                       flags: c_int,
+                       mode: c_int)
+                       -> *const c_void;
+    fn r_io_pwrite(io: *const c_void, paddr: u64, buf: *const u8, len: usize);
+    fn r_io_pread(io: *const c_void, paddr: u64, buff: *const u8, len: usize);
+}
+pub fn new<'a>() -> &'a c_void {
+    unsafe { &*r_io_new() }
+}
+pub fn size(io: &c_void) -> usize {
+    unsafe { r_io_size(io) }
+}
+pub fn open_nomap(io: &c_void, file: &str, flags: i32, mode: i32) -> *const c_void {
+    let cstr = CString::new(file).unwrap();
+    unsafe { r_io_open_nomap(io, cstr.as_ptr(), flags, mode) }
+}
+pub fn pwrite(io: &c_void, paddr: u64, buf: &[u8]) {
+    unsafe { r_io_pwrite(io, paddr, buf.as_ptr(), buf.len()) }
+}
+pub fn pread(io: &c_void, paddr: u64, buf: &[u8]) {
+    unsafe { r_io_pread(io, paddr, buf.as_ptr(), buf.len()) };
 }

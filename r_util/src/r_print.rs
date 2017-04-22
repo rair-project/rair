@@ -1,5 +1,4 @@
 /*
- *  {one line to give the program's name and a brief idea of what it does.}
  *  Copyright (C) 2017  Ahmed Abd El Mawgood
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -15,7 +14,19 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+//TODO delete the whole file ^_^
 extern crate libc;
-pub mod r_print;
-pub mod r_num;
-pub mod r_file;
+use libc::*;
+use std::ffi::CStr;
+#[link(name = "r_util")]
+extern "C" {
+    fn r_print_progressbar(rprint: *const c_void, pc: i32, cols: i32);
+    pub fn r_print_randomart(digest: *const u8, digest_len: usize, addr: usize) -> *const c_char;
+}
+pub fn progressbar(rprint: *const c_void, pc: i32, cols: i32) {
+    unsafe { r_print_progressbar(rprint, pc, cols) }
+}
+pub fn randomart(digest: &[u8], addr: usize) -> String {
+    let x = unsafe { r_print_randomart(digest.as_ptr(), digest.len(), addr) };
+    unsafe { CStr::from_ptr(x).to_string_lossy().into_owned() }
+}
