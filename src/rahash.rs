@@ -16,10 +16,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-//XXX bug in xor encryption scheme ...
-// rahash -e xor -s BAAA  -S 4
-// this crashes because encryption key is not valid
-// it should be handled by math
 extern crate getopts;
 extern crate libc;
 extern crate r_crypto;
@@ -35,6 +31,7 @@ use getopts::Options;
 use libc::*;
 use r_hash::RHash;
 use r_util::*;
+use r_util::r_num::RNum;
 use rustc_serialize::hex::FromHex;
 use std::env;
 use std::process;
@@ -351,17 +348,17 @@ fn do_hash_seed(mut seed: String) -> r_hash::RHashSeed {
     if seed.is_empty() {
         return r_hash_seed;
     }
-    if &seed == "-" {
+    if seed.starts_with("-") {
         io::stdin().read(&mut r_hash_seed.buf).unwrap();
         return r_hash_seed;
     }
-    if &seed[0..1] == "^" {
+    if seed.starts_with("^") {
         r_hash_seed.prefix = true;
         seed.remove(0);
     } else {
         r_hash_seed.prefix = false;
     }
-    if &seed[0..2] == "S:" {
+    if seed.starts_with("S:") {
         seed.drain(0..2);
         r_hash_seed.buf.extend(seed.as_bytes());
     } else {
@@ -403,6 +400,7 @@ fn main() {
     let mut iv: Vec<u8> = Vec::new();
     let mut hash: Vec<u8> = Vec::new();
     let mut compare_bin: Vec<u8> = Vec::new();
+    let mut math = RNum::new(None, None, None);
     let matches;
 
     opts.optopt("a",
@@ -531,16 +529,19 @@ fn main() {
     }
     if matches.opt_present("b") {
         let tmp = matches.opt_str("b").unwrap();
-        bsize = r_num::math(ptr::null(), &tmp) as usize;
+        bsize = match math.math( &tmp) {
+            Ok(x) => x as usize,
+            Err(y) => report(&y.to_string()),
+        };
 
     }
     if matches.opt_present("f") {
         let tmp = matches.opt_str("f").unwrap();
-        status.from = r_num::math(ptr::null(), &tmp) as usize;
+        status.from = math.math(&tmp).unwrap() as usize;
     }
     if matches.opt_present("t") {
         let tmp = matches.opt_str("t").unwrap();
-        status.to = r_num::math(ptr::null(), &tmp) as usize + 1;
+        status.to = math.math(&tmp).unwrap() as usize + 1;
     }
     if matches.opt_present("s") && matches.opt_present("x") {
         report(" -s and -x are not compatiable, you can not \
@@ -590,7 +591,7 @@ fn main() {
         report("Invalid -f or -t offsets\n");
     }
     if !ivseed.is_empty() {
-        if &ivseed[0..2] == "s:" {
+        if ivseed.starts_with("s:") {
             iv.extend(ivseed[2..].as_bytes());
         } else {
             iv = match (*ivseed).from_hex() {
