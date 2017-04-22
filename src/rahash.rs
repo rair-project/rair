@@ -1,5 +1,5 @@
 /*
- *  rahash.rs -- block based hashing utility
+ *  rahash.rs -- Block based hashing utility
  *  Copyright (C) 2017  Ahmed Abd El Mawgood
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -537,11 +537,17 @@ fn main() {
     }
     if matches.opt_present("f") {
         let tmp = matches.opt_str("f").unwrap();
-        status.from = math.math(&tmp).unwrap() as usize;
+        status.from = match math.math(&tmp) {
+            Ok(x) => x as usize,
+            Err(y) => report(&y.to_string()),
+        };
     }
     if matches.opt_present("t") {
         let tmp = matches.opt_str("t").unwrap();
-        status.to = math.math(&tmp).unwrap() as usize + 1;
+        status.to = match math.math(&tmp) {
+            Ok(x) => x as usize + 1,
+            Err(y) => report(&y.to_string()),
+        };
     }
     if matches.opt_present("s") && matches.opt_present("x") {
         report(" -s and -x are not compatiable, you can not \
