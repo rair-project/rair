@@ -28,7 +28,8 @@ Currently rair is incomplete project and under heavy development it depends on l
 
 ## Get involved
 
-Regardless to how skilled you are, there will always be something for you to do! This is list of what you can do from easy to more challenging
+Regardless to how skilled you are, there will always be something for you to do! I always try to keep the code base clean.
+This is list of what you can do from easy to the more challenging:
 
 - Improve this readme.
 - Add support for code coverage / travis / and other CI systems
