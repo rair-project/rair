@@ -50,6 +50,7 @@ struct Status {
     iterations: u64,
     format: OutputFormat,
     incremental: bool,
+    little_endian: bool,
     from: usize,
     to: usize,
 }
@@ -99,11 +100,7 @@ fn do_hash_hexprint(c: &[u8], little_endian: bool) {
         }
     }
 }
-fn do_hash_print(ctx: &r_hash::RHash,
-                 algo: u64,
-                 little_endian: bool,
-                 len: usize,
-                 status: &Status) {
+fn do_hash_print(ctx: &r_hash::RHash, algo: u64, len: usize, status: &Status) {
     let hname = r_hash::name(algo);
     let mut c: Vec<u8> = (*ctx).digest.to_vec();
     c.drain(len..);
@@ -112,17 +109,17 @@ fn do_hash_print(ctx: &r_hash::RHash,
             if !status.quiet {
                 print!("0x{:08x}-0x{:08x} {}: ", status.from, status.to - 1, hname);
             }
-            do_hash_hexprint(&c, little_endian);
+            do_hash_hexprint(&c, status.little_endian);
             println!("");
         }
         OutputFormat::Json => {
             print!("{{\"name\":\"{}\",\"hash\":\"", hname);
-            do_hash_hexprint(&c, little_endian);
+            do_hash_hexprint(&c, status.little_endian);
             println!("\"}}");
         }
         OutputFormat::Command => {
             print!("e file.{}=", hname);
-            do_hash_hexprint(&c, little_endian);
+            do_hash_hexprint(&c, status.little_endian);
             println!("");
         }
         OutputFormat::Ssh => {
@@ -132,13 +129,7 @@ fn do_hash_print(ctx: &r_hash::RHash,
     };
 }
 
-fn do_hash_internal(ctx: &r_hash::RHash,
-                    algo: u64,
-                    buf: &[u8],
-                    print: bool,
-                    little_endian: bool,
-                    status: &Status,
-                    s: &r_hash::RHashSeed) {
+fn do_hash_internal(ctx: &r_hash::RHash, algo: u64, buf: &[u8], print: bool,status: &Status, s: &r_hash::RHashSeed) {
     let dlen = ctx.calculate(algo, buf);
     if dlen == 0 {
         return;
@@ -160,7 +151,7 @@ fn do_hash_internal(ctx: &r_hash::RHash,
         if status.iterations > 0 {
             ctx.do_spice(algo, status.iterations, s);
         }
-        do_hash_print(ctx, algo, little_endian, dlen, status);
+        do_hash_print(ctx, algo, dlen, status);
 
     }
 }
@@ -179,7 +170,6 @@ fn do_hash(file: &str,
            algo: &str,
            io: &c_void,
            mut bsize: usize,
-           little_endian: bool,
            compare: &[u8],
            mut status: &mut Status,
            s: &r_hash::RHashSeed) {
@@ -217,7 +207,7 @@ fn do_hash(file: &str,
                     }
                 }
                 if s.prefix & !s.buf.is_empty() {
-                    do_hash_internal(ctx, hashbit, &s.buf, false, little_endian, status, s);
+                    do_hash_internal(ctx, hashbit, &s.buf, false, status, s);
                 }
                 let mut j = status.from;
                 while j < status.to {
@@ -228,11 +218,11 @@ fn do_hash(file: &str,
                     };
                     let buf: Vec<u8> = vec![0; nsize];
                     r_io::pread(io, j as u64, &buf);
-                    do_hash_internal(ctx, hashbit, &buf, false, little_endian, status, s);
+                    do_hash_internal(ctx, hashbit, &buf, false, status, s);
                     j += bsize;
                 }
                 if s.prefix & !s.buf.is_empty() {
-                    do_hash_internal(ctx, hashbit, &s.buf, false, little_endian, status, s);
+                    do_hash_internal(ctx, hashbit, &s.buf, false, status, s);
                 }
                 ctx.do_end(i);
                 if status.iterations > 0 {
@@ -241,7 +231,7 @@ fn do_hash(file: &str,
                 if !status.quiet && status.format != OutputFormat::Json {
                     print!("{} ", file);
                 }
-                do_hash_print(ctx, i, little_endian, dlen, status);
+                do_hash_print(ctx, i, dlen, status);
             }
             i <<= 1;
         }
@@ -265,7 +255,7 @@ fn do_hash(file: &str,
                     if status_c.to > fsize {
                         status_c.to = fsize;
                     }
-                    do_hash_internal(ctx, hashbit, &buf, true, little_endian, &status_c, s);
+                    do_hash_internal(ctx, hashbit, &buf, true, &status_c, s);
                     j += bsize;
                 }
             }
@@ -436,6 +426,7 @@ fn parse_status(matches: &Matches) -> Status {
         iterations: 0,
         format: OutputFormat::None,
         incremental: true,
+        little_endian: false,
         from: 0,
         to: 0,
     };
@@ -496,6 +487,9 @@ fn parse_status(matches: &Matches) -> Status {
     if status.to != 0 && status.from >= status.to {
         r_print::report("Invalid -f or -t offsets\n");
     }
+    if matches.opt_present("E") {
+        status.little_endian = true;
+    }
     status
 }
 fn main() {
@@ -509,7 +503,6 @@ fn main() {
     let mut ishex = false;
     let mut bsize: usize = 0;
     let mut algo = "sha256".to_owned();
-    let mut little_endian = false;
     let mut seed: String = String::new();
     let mut iv: Vec<u8> = Vec::new();
     let mut hash: Vec<u8> = Vec::new();
@@ -537,9 +530,6 @@ fn main() {
     if matches.opt_present("e") {
         encrypt = matches.opt_str("e").unwrap();
     }
-    if matches.opt_present("E") {
-        little_endian = true;
-    }
     if matches.opt_present("a") {
         algo = matches.opt_str("a").unwrap();
     }
@@ -550,7 +540,6 @@ fn main() {
             Ok(x) => x as usize,
             Err(y) => r_print::report(&y.to_string()),
         };
-
     }
     if matches.opt_present("s") && matches.opt_present("x") {
         r_print::report(" -s and -x are not compatiable, you can not \
@@ -663,7 +652,6 @@ fn main() {
                                      hashbit,
                                      &full_str,
                                      true,
-                                     little_endian,
                                      &status,
                                      &hash_seed);
                     if !compare_bin.is_empty() {
@@ -706,7 +694,6 @@ fn main() {
                     &algo,
                     io,
                     bsize,
-                    little_endian,
                     &compare_bin,
                     &mut status,
                     &hash_seed);
