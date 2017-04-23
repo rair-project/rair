@@ -24,21 +24,24 @@ extern "C" {
     fn r_num_new(cb: *const c_void, cb2: *const c_void, ptr: *const c_void) -> *mut RNum;
     fn r_num_calc(rnum: *const RNum, STR: *const c_char, err: *const *const c_char) -> u64;
 }
+#[repr(C)]
 struct RNumCalcValue {
     d: f64,
     n: u64,
 }
+#[repr(C)]
 struct RNumCalc {
     curr_tok: u32, //TODO turn this later into RNumCalcToken
     number_value: RNumCalcValue,
-    string_value: [char; 1024], //TODO turn this into string
+    string_value: [c_char; 1024], //TODO turn this into string
     errors: i32, //TODO make use of rust error handling
-    oc: char,
+    oc: c_char,
     calr_err: *const c_char,
     calc_i: i32, //TODO check this later
     calc_buf: *const c_char,
     calc_len: usize,
 }
+#[repr(C)]
 pub struct RNum {
     callback: *const c_void, //ut64 (*callback)(struct r_num_t *userptr, const char *str, int *ok);
     cb_from_value: *const c_void,
