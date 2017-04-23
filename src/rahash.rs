@@ -38,7 +38,7 @@ use std::fs::File;
 use std::ptr;
 
 #[derive(Clone)]
-struct Status {
+struct State {
     quiet: bool,
     iterations: u64,
     format: OutputFormat,
@@ -93,36 +93,36 @@ fn do_hash_hexprint(c: &[u8], little_endian: bool) {
         }
     }
 }
-fn do_hash_print(ctx: &r_hash::RHash, algo: u64, len: usize, status: &Status) {
+fn do_hash_print(ctx: &r_hash::RHash, algo: u64, len: usize, state: &State) {
     let hname = r_hash::name(algo);
     let mut c: Vec<u8> = (*ctx).digest.to_vec();
     c.drain(len..);
-    match status.format {
+    match state.format {
         OutputFormat::None => {
-            if !status.quiet {
-                print!("0x{:08x}-0x{:08x} {}: ", status.from, status.to - 1, hname);
+            if !state.quiet {
+                print!("0x{:08x}-0x{:08x} {}: ", state.from, state.to - 1, hname);
             }
-            do_hash_hexprint(&c, status.little_endian);
+            do_hash_hexprint(&c, state.little_endian);
             println!("");
         }
         OutputFormat::Json => {
             print!("{{\"name\":\"{}\",\"hash\":\"", hname);
-            do_hash_hexprint(&c, status.little_endian);
+            do_hash_hexprint(&c, state.little_endian);
             println!("\"}}");
         }
         OutputFormat::Command => {
             print!("e file.{}=", hname);
-            do_hash_hexprint(&c, status.little_endian);
+            do_hash_hexprint(&c, state.little_endian);
             println!("");
         }
         OutputFormat::Ssh => {
-            let art = r_print::randomart(&c, status.from);
+            let art = r_print::randomart(&c, state.from);
             println!("{}\n{}", hname, art);
         }
     };
 }
 
-fn do_hash_internal(ctx: &r_hash::RHash, algo: u64, buf: &[u8], print: bool,status: &Status, s: &r_hash::RHashSeed) {
+fn do_hash_internal(ctx: &r_hash::RHash, algo: u64, buf: &[u8], print: bool,state: &State, s: &r_hash::RHashSeed) {
     let dlen = ctx.calculate(algo, buf);
     if dlen == 0 {
         return;
@@ -132,8 +132,8 @@ fn do_hash_internal(ctx: &r_hash::RHash, algo: u64, buf: &[u8], print: bool,stat
     }
     if algo == r_hash::R_HASH_ENTROPY {
         let e = r_hash::entropy(buf);
-        if status.format == OutputFormat::None {
-            print!("0x{:08x}-0x{:08x} {:.10}", status.from, status.to - 1, e);
+        if state.format == OutputFormat::None {
+            print!("0x{:08x}-0x{:08x} {:.10}", state.from, state.to - 1, e);
             r_print::progressbar(ptr::null(), (12.5 * e) as i32, 60);
             println!("");
         } else {
@@ -141,10 +141,10 @@ fn do_hash_internal(ctx: &r_hash::RHash, algo: u64, buf: &[u8], print: bool,stat
             println!("entropy: {:.10}", e);
         }
     } else {
-        if status.iterations > 0 {
-            ctx.do_spice(algo, status.iterations, s);
+        if state.iterations > 0 {
+            ctx.do_spice(algo, state.iterations, s);
         }
-        do_hash_print(ctx, algo, dlen, status);
+        do_hash_print(ctx, algo, dlen, state);
 
     }
 }
@@ -164,7 +164,7 @@ fn do_hash(file: &str,
            io: &c_void,
            mut bsize: usize,
            compare: &[u8],
-           mut status: &mut Status,
+           mut state: &mut State,
            s: &r_hash::RHashSeed) {
     let algobit = r_hash::name_to_bits(algo);
     if algobit == r_hash::R_HASH_NONE {
@@ -174,17 +174,17 @@ fn do_hash(file: &str,
     if bsize == 0 || bsize > fsize {
         bsize = fsize;
     }
-    if status.to == 0 {
-        status.to = fsize;
+    if state.to == 0 {
+        state.to = fsize;
     }
-    if status.from > status.to {
+    if state.from > state.to {
         r_print::report("Invalid -f -t range");
     }
     let ctx = RHash::new(true, algobit);
-    if status.format == OutputFormat::Json {
+    if state.format == OutputFormat::Json {
         print!("[");
     }
-    if status.incremental {
+    if state.incremental {
         let mut i = 1;
         let mut first = true;
         while i < r_hash::R_HASH_ALL {
@@ -192,7 +192,7 @@ fn do_hash(file: &str,
             if hashbit != 0 {
                 let dlen = r_hash::size(algobit);
                 ctx.do_begin(i);
-                if status.format == OutputFormat::Json {
+                if state.format == OutputFormat::Json {
                     if first {
                         first = false;
                     } else {
@@ -200,31 +200,31 @@ fn do_hash(file: &str,
                     }
                 }
                 if s.prefix & !s.buf.is_empty() {
-                    do_hash_internal(ctx, hashbit, &s.buf, false, status, s);
+                    do_hash_internal(ctx, hashbit, &s.buf, false, state, s);
                 }
-                let mut j = status.from;
-                while j < status.to {
-                    let nsize = if j + bsize > status.to {
-                        status.to - j
+                let mut j = state.from;
+                while j < state.to {
+                    let nsize = if j + bsize > state.to {
+                        state.to - j
                     } else {
                         bsize
                     };
                     let buf: Vec<u8> = vec![0; nsize];
                     r_io::pread(io, j as u64, &buf);
-                    do_hash_internal(ctx, hashbit, &buf, false, status, s);
+                    do_hash_internal(ctx, hashbit, &buf, false, state, s);
                     j += bsize;
                 }
                 if s.prefix & !s.buf.is_empty() {
-                    do_hash_internal(ctx, hashbit, &s.buf, false, status, s);
+                    do_hash_internal(ctx, hashbit, &s.buf, false, state, s);
                 }
                 ctx.do_end(i);
-                if status.iterations > 0 {
-                    ctx.do_spice(i, status.iterations, s);
+                if state.iterations > 0 {
+                    ctx.do_spice(i, state.iterations, s);
                 }
-                if !status.quiet && status.format != OutputFormat::Json {
+                if !state.quiet && state.format != OutputFormat::Json {
                     print!("{} ", file);
                 }
-                do_hash_print(ctx, i, dlen, status);
+                do_hash_print(ctx, i, dlen, state);
             }
             i <<= 1;
         }
@@ -237,25 +237,25 @@ fn do_hash(file: &str,
         while i < r_hash::R_HASH_ALL {
             let hashbit = algobit & i;
             if hashbit != 0 {
-                let mut j = status.from;
-                let mut status_c = status.clone();
-                while j < status.to {
+                let mut j = state.from;
+                let mut state_c = state.clone();
+                while j < state.to {
                     let nsize = if j + bsize < fsize { bsize } else { fsize - j };
                     let buf: Vec<u8> = vec![0; nsize];
                     r_io::pread(io, j as u64, &buf);
-                    status_c.from = j;
-                    status_c.to = j + bsize;
-                    if status_c.to > fsize {
-                        status_c.to = fsize;
+                    state_c.from = j;
+                    state_c.to = j + bsize;
+                    if state_c.to > fsize {
+                        state_c.to = fsize;
                     }
-                    do_hash_internal(ctx, hashbit, &buf, true, &status_c, s);
+                    do_hash_internal(ctx, hashbit, &buf, true, &state_c, s);
                     j += bsize;
                 }
             }
             i <<= 1;
         }
     }
-    if status.format == OutputFormat::Json {
+    if state.format == OutputFormat::Json {
         println!("]");
     }
     if !compare.is_empty() {
@@ -419,9 +419,9 @@ fn argument_parser() -> Matches {
     }
     matches
 }
-fn parse_status(matches: &Matches) -> Status {
+fn parse_state(matches: &Matches) -> State {
     let mut math = RNum::new(None, None, None);
-    let mut status: Status = Status {
+    let mut state = State {
         quiet: false,
         iterations: 0,
         format: OutputFormat::None,
@@ -431,18 +431,18 @@ fn parse_status(matches: &Matches) -> Status {
         to: 0,
     };
     if matches.opt_present("q") {
-        status.quiet = true;
+        state.quiet = true;
     }
     if matches.opt_present("i") {
         let tmp = matches.opt_str("i").unwrap();
         match (&tmp).parse() {
-            Ok(m) => status.iterations = m,
+            Ok(m) => state.iterations = m,
             Err(f) => r_print::report(&f.to_string()),
         }
     }
     if matches.opt_present("j") {
-        match status.format {
-            OutputFormat::None => status.format = OutputFormat::Json,
+        match state.format {
+            OutputFormat::None => state.format = OutputFormat::Json,
             _ => {
                 r_print::report("`-j`, `-r` and `-k` are not compatiable, you can not \
                         use any two of them at the same time")
@@ -450,8 +450,8 @@ fn parse_status(matches: &Matches) -> Status {
         }
     }
     if matches.opt_present("r") {
-        match status.format {
-            OutputFormat::None => status.format = OutputFormat::Command,
+        match state.format {
+            OutputFormat::None => state.format = OutputFormat::Command,
             _ => {
                 r_print::report("`-j`, `-r` and `-k` are not compatiable, you can not \
                         use any two of them at the same time")
@@ -459,8 +459,8 @@ fn parse_status(matches: &Matches) -> Status {
         }
     }
     if matches.opt_present("k") {
-        match status.format {
-            OutputFormat::None => status.format = OutputFormat::Ssh,
+        match state.format {
+            OutputFormat::None => state.format = OutputFormat::Ssh,
             _ => {
                 r_print::report("`-j`, `-r` and `-k` are not compatiable, you can not \
                         use any two of them at the same time")
@@ -468,29 +468,29 @@ fn parse_status(matches: &Matches) -> Status {
         }
     }
     if matches.opt_present("B") {
-        status.incremental = false;
+        state.incremental = false;
     }
     if matches.opt_present("t") {
         let tmp = matches.opt_str("t").unwrap();
-        status.to = match math.math(&tmp) {
+        state.to = match math.math(&tmp) {
             Ok(x) => x as usize + 1,
             Err(y) => r_print::report(&y.to_string()),
         };
     }
     if matches.opt_present("f") {
         let tmp = matches.opt_str("f").unwrap();
-        status.from = match math.math(&tmp) {
+        state.from = match math.math(&tmp) {
             Ok(x) => x as usize,
             Err(y) => r_print::report(&y.to_string()),
         };
     }
-    if status.to != 0 && status.from >= status.to {
+    if state.to != 0 && state.from >= state.to {
         r_print::report("Invalid -f or -t offsets\n");
     }
     if matches.opt_present("E") {
-        status.little_endian = true;
+        state.little_endian = true;
     }
-    status
+    state
 }
 fn main() {
     //TODO option n that that I dont really know what is the high level description of its
@@ -508,7 +508,7 @@ fn main() {
     let mut hash: Vec<u8> = Vec::new();
     let mut compare_bin: Vec<u8> = Vec::new();
     let matches = argument_parser();
-    let mut status = parse_status(&matches);
+    let mut state = parse_state(&matches);
     if matches.opt_present("l") {
         algolist();
         return;
@@ -608,17 +608,17 @@ fn main() {
         } else {
             hash.extend(hashstr.as_bytes());
         }
-        if status.from >= hash.len() {
+        if state.from >= hash.len() {
             r_print::report("-f value is greater than hash length");
         }
-        if status.to > hash.len() {
+        if state.to > hash.len() {
             r_print::report("-t value is greater than hash length");
         }
-        if status.to == 0 {
-            status.to = hash.len();
+        if state.to == 0 {
+            state.to = hash.len();
         }
-        hash.drain(0..status.from);
-        hash.drain(status.to..);
+        hash.drain(0..state.from);
+        hash.drain(state.to..);
         if !encrypt.is_empty() {
             encrypt_or_decrypt(&encrypt, false, &hash, &iv, &hash_seed);
             return;
@@ -646,13 +646,13 @@ fn main() {
                 let hashbit = algobit & i;
                 if hashbit != 0 {
                     let ctx = RHash::new(true, hashbit);
-                    status.from = 0;
-                    status.to = full_str.len();
+                    state.from = 0;
+                    state.to = full_str.len();
                     do_hash_internal(ctx,
                                      hashbit,
                                      &full_str,
                                      true,
-                                     &status,
+                                     &state,
                                      &hash_seed);
                     if !compare_bin.is_empty() {
                         let hash_size = r_hash::size(algobit);
@@ -695,7 +695,7 @@ fn main() {
                     io,
                     bsize,
                     &compare_bin,
-                    &mut status,
+                    &mut state,
                     &hash_seed);
         }
     }
