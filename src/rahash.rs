@@ -27,7 +27,7 @@ extern crate rustc_serialize;
 
 mod version;
 
-use getopts::Options;
+use getopts::{Options, Matches};
 use libc::*;
 use r_hash::RHash;
 use r_util::*;
@@ -343,11 +343,11 @@ fn do_hash_seed(mut seed: String) -> r_hash::RHashSeed {
     if seed.is_empty() {
         return r_hash_seed;
     }
-    if seed.starts_with("-") {
+    if seed.starts_with('-') {
         io::stdin().read(&mut r_hash_seed.buf).unwrap();
         return r_hash_seed;
     }
-    if seed.starts_with("^") {
+    if seed.starts_with('^') {
         r_hash_seed.prefix = true;
         seed.remove(0);
     } else {
@@ -368,36 +368,10 @@ fn do_hash_seed(mut seed: String) -> r_hash::RHashSeed {
 fn is_power_of_two(x: u64) -> bool {
     (x != 0) && (x & (x - 1)) == 0
 }
-
-fn main() {
-    //TODO option n that that I dont really know what is the high level description of its
-    //behaviour
-    let mut status: Status = Status {
-        quiet: false,
-        iterations: 0,
-        format: OutputFormat::None,
-        incremental: true,
-        from: 0,
-        to: 0,
-    };
-    let mut hashstr = String::new();
-    let mut compare_str = String::new();
-    let mut decrypt: String = String::new();
-    let mut encrypt: String = String::new();
-    let mut ivseed: String = String::new();
-    let mut ishex = false;
-    let mut bsize: usize = 0;
-    let mut algo = "sha256".to_owned();
+fn argument_parser() -> Matches {
     let args: Vec<String> = env::args().collect();
-    let mut little_endian = false;
     let mut opts = Options::new();
-    let mut seed: String = String::new();
-    let mut iv: Vec<u8> = Vec::new();
-    let mut hash: Vec<u8> = Vec::new();
-    let mut compare_bin: Vec<u8> = Vec::new();
-    let mut math = RNum::new(None, None, None);
     let matches;
-
     opts.optopt("a",
                 "",
                 "comma separated list of algorithms (default is 'sha256')",
@@ -442,7 +416,6 @@ fn main() {
                 "",
                 "hash this hexpair string instead of files",
                 "hexpair");
-
     match opts.parse(&args[1..]) {
         Ok(m) => matches = m,
         Err(f) => r_print::report(&f.to_string()),
@@ -452,18 +425,20 @@ fn main() {
         let help = format!("Usage: {} [-rBhlkvje] [-b S] [-a A] [-c H] [-e A] \
                            [-s S] [-f O] [-t O] [file] ...",
                            program);
-        print!("{}", opts.usage(&help));
-        return;
+        r_print::report(&opts.usage(&help));
     }
-    if matches.opt_present("l") {
-        algolist();
-        return;
-    }
-    if matches.opt_present("v") {
-        let program = &args[0];
-        version::blob_version(program);
-        return;
-    }
+    matches
+}
+fn parse_status(matches: &Matches) -> Status {
+    let mut math = RNum::new(None, None, None);
+    let mut status: Status = Status {
+        quiet: false,
+        iterations: 0,
+        format: OutputFormat::None,
+        incremental: true,
+        from: 0,
+        to: 0,
+    };
     if matches.opt_present("q") {
         status.quiet = true;
     }
@@ -501,6 +476,55 @@ fn main() {
             }
         }
     }
+    if matches.opt_present("B") {
+        status.incremental = false;
+    }
+    if matches.opt_present("t") {
+        let tmp = matches.opt_str("t").unwrap();
+        status.to = match math.math(&tmp) {
+            Ok(x) => x as usize + 1,
+            Err(y) => r_print::report(&y.to_string()),
+        };
+    }
+    if matches.opt_present("f") {
+        let tmp = matches.opt_str("f").unwrap();
+        status.from = match math.math(&tmp) {
+            Ok(x) => x as usize,
+            Err(y) => r_print::report(&y.to_string()),
+        };
+    }
+    if status.to != 0 && status.from >= status.to {
+        r_print::report("Invalid -f or -t offsets\n");
+    }
+    status
+}
+fn main() {
+    //TODO option n that that I dont really know what is the high level description of its
+    //behaviour
+    let mut hashstr = String::new();
+    let mut compare_str = String::new();
+    let mut decrypt: String = String::new();
+    let mut encrypt: String = String::new();
+    let mut ivseed: String = String::new();
+    let mut ishex = false;
+    let mut bsize: usize = 0;
+    let mut algo = "sha256".to_owned();
+    let mut little_endian = false;
+    let mut seed: String = String::new();
+    let mut iv: Vec<u8> = Vec::new();
+    let mut hash: Vec<u8> = Vec::new();
+    let mut compare_bin: Vec<u8> = Vec::new();
+    let matches = argument_parser();
+    let mut status = parse_status(&matches);
+    if matches.opt_present("l") {
+        algolist();
+        return;
+    }
+    if matches.opt_present("v") {
+        let program = &env::args().nth(0).unwrap();
+        version::blob_version(program);
+        return;
+    }
     if matches.opt_present("S") {
         seed = matches.opt_str("S").unwrap();
     }
@@ -519,30 +543,14 @@ fn main() {
     if matches.opt_present("a") {
         algo = matches.opt_str("a").unwrap();
     }
-    if matches.opt_present("B") {
-        status.incremental = false;
-    }
     if matches.opt_present("b") {
+        let mut math = RNum::new(None, None, None);
         let tmp = matches.opt_str("b").unwrap();
         bsize = match math.math(&tmp) {
             Ok(x) => x as usize,
             Err(y) => r_print::report(&y.to_string()),
         };
 
-    }
-    if matches.opt_present("f") {
-        let tmp = matches.opt_str("f").unwrap();
-        status.from = match math.math(&tmp) {
-            Ok(x) => x as usize,
-            Err(y) => r_print::report(&y.to_string()),
-        };
-    }
-    if matches.opt_present("t") {
-        let tmp = matches.opt_str("t").unwrap();
-        status.to = match math.math(&tmp) {
-            Ok(x) => x as usize + 1,
-            Err(y) => r_print::report(&y.to_string()),
-        };
     }
     if matches.opt_present("s") && matches.opt_present("x") {
         r_print::report(" -s and -x are not compatiable, you can not \
@@ -587,9 +595,6 @@ fn main() {
                                   r_hash::size(algobit));
             r_print::report(&err_msg);
         }
-    }
-    if status.to != 0 && status.from >= status.to {
-        r_print::report("Invalid -f or -t offsets\n");
     }
     if !ivseed.is_empty() {
         if ivseed.starts_with("s:") {
