@@ -20,6 +20,13 @@ use libc::*;
 use std::io::{self, Write};
 use std::ffi::CStr;
 use std::process;
+#[derive(PartialEq,Clone)]
+pub enum OutputFormat {
+    Json,
+    Command,
+    Ssh, // used by rahash -k option
+    None,
+}
 #[link(name = "r_util")]
 extern "C" {
     fn r_print_progressbar(rprint: *const c_void, pc: i32, cols: i32);

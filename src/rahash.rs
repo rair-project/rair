@@ -31,19 +31,12 @@ use getopts::{Options, Matches};
 use libc::*;
 use r_hash::RHash;
 use r_util::*;
-use r_util::r_num::RNum;
 use rustc_serialize::hex::FromHex;
 use std::env;
 use std::io::{self, Read, Write};
 use std::fs::File;
 use std::ptr;
-#[derive(PartialEq,Clone)]
-enum OutputFormat {
-    Json,
-    Command,
-    Ssh,
-    None,
-}
+
 #[derive(Clone)]
 struct Status {
     quiet: bool,

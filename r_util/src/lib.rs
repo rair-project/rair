@@ -19,3 +19,5 @@ extern crate libc;
 pub mod r_print;
 pub mod r_num;
 pub mod r_file;
+pub use r_num::RNum;
+pub use r_print::OutputFormat;
