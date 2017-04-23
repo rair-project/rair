@@ -441,31 +441,11 @@ fn parse_state(matches: &Matches) -> State {
         }
     }
     if matches.opt_present("j") {
-        match state.format {
-            OutputFormat::None => state.format = OutputFormat::Json,
-            _ => {
-                r_print::report("`-j`, `-r` and `-k` are not compatiable, you can not \
-                        use any two of them at the same time")
-            }
-        }
-    }
-    if matches.opt_present("r") {
-        match state.format {
-            OutputFormat::None => state.format = OutputFormat::Command,
-            _ => {
-                r_print::report("`-j`, `-r` and `-k` are not compatiable, you can not \
-                        use any two of them at the same time")
-            }
-        }
-    }
-    if matches.opt_present("k") {
-        match state.format {
-            OutputFormat::None => state.format = OutputFormat::Ssh,
-            _ => {
-                r_print::report("`-j`, `-r` and `-k` are not compatiable, you can not \
-                        use any two of them at the same time")
-            }
-        }
+            state.format = OutputFormat::Json;
+    } else if matches.opt_present("r") {
+            state.format = OutputFormat::Command;
+    } else if matches.opt_present("k") {
+            state.format = OutputFormat::Ssh;
     }
     if matches.opt_present("B") {
         state.incremental = false;
@@ -492,6 +472,30 @@ fn parse_state(matches: &Matches) -> State {
     }
     state
 }
+fn handle_incompatiablity(matches: &Matches) {
+    if matches.opt_present("k") && matches.opt_present("r") {
+        r_print::report("`-k` and `-r` are not compatiable, you can not \
+            use both of them at the same time");
+    }
+    if matches.opt_present("k") && matches.opt_present("j") {
+        r_print::report("`-k` and `-j` are not compatiable, you can not \
+            use both of them at the same time");
+    }
+    if matches.opt_present("j") && matches.opt_present("r") {
+        r_print::report("`-j` and `-r` are not compatiable, you can not \
+            use both of them at the same time");
+    }
+    if matches.opt_present("s") && matches.opt_present("x") {
+        r_print::report(" -s and -x are not compatiable, you can not \
+        use both of them at the same time");
+    }
+    if matches.opt_present("c") && matches.opt_present("b") && matches.opt_present("B") {
+        r_print::report("Option -c incompatible with -b and -B options.");
+    }
+    if matches.opt_present("e") && matches.opt_present("d") {
+        r_print::report("Option -e and -d are incompatible with each other.")
+    }
+}
 fn main() {
     //TODO option n that that I dont really know what is the high level description of its
     //behaviour
@@ -508,6 +512,7 @@ fn main() {
     let mut hash: Vec<u8> = Vec::new();
     let mut compare_bin: Vec<u8> = Vec::new();
     let matches = argument_parser();
+    handle_incompatiablity(&matches);
     let mut state = parse_state(&matches);
     if matches.opt_present("l") {
         algolist();
@@ -541,10 +546,6 @@ fn main() {
             Err(y) => r_print::report(&y.to_string()),
         };
     }
-    if matches.opt_present("s") && matches.opt_present("x") {
-        r_print::report(" -s and -x are not compatiable, you can not \
-        use both of them at the same time");
-    }
     if matches.opt_present("s") {
         hashstr = matches.opt_str("s").unwrap();
         ishex = false;
@@ -553,14 +554,8 @@ fn main() {
         hashstr = matches.opt_str("x").unwrap();
         ishex = true;
     }
-    if matches.opt_present("c") && matches.opt_present("b") && matches.opt_present("B") {
-        r_print::report("Option -c incompatible with -b and -B options.");
-    }
     if matches.opt_present("c") {
         compare_str = matches.opt_str("c").unwrap();
-    }
-    if matches.opt_present("e") && matches.opt_present("d") {
-        r_print::report("Option -e and -d are incompatible with each other.")
     }
     if !compare_str.is_empty() {
         let algobit: u64;
@@ -570,6 +565,7 @@ fn main() {
                    -D base91 options.");
         }
         algobit = r_hash::name_to_bits(&algo);
+	//XXX Not sure how this is supposed to work!
         if !is_power_of_two(algobit) {
             r_print::report("Option -c incompatible with multiple algorithms in -a.");
         }
@@ -638,7 +634,7 @@ fn main() {
             }
             let algobit = r_hash::name_to_bits(&algo);
             if algobit == 0 {
-                r_print::report("Invalid algorithm. See -E and -D");
+                r_print::report("Invalid algorithm. See -l");
             }
             //TODO THIS SUCKS SHOULD BE IMPROVED FOR SURE
             let mut i = 1;
