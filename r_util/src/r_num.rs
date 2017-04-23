@@ -17,7 +17,7 @@
 //TODO delete the whole file ^_^
 extern crate libc;
 use libc::*;
-use std::ffi::{CString,CStr};
+use std::ffi::{CString, CStr};
 use std::ptr;
 #[link(name = "r_util")]
 extern "C" {
@@ -25,13 +25,13 @@ extern "C" {
     fn r_num_calc(rnum: *const RNum, STR: *const c_char, err: *const *const c_char) -> u64;
 }
 struct RNumCalcValue {
-    d:f64,
-    n:u64,
+    d: f64,
+    n: u64,
 }
 struct RNumCalc {
     curr_tok: u32, //TODO turn this later into RNumCalcToken
     number_value: RNumCalcValue,
-    string_value: [char;1024], //TODO turn this into string
+    string_value: [char; 1024], //TODO turn this into string
     errors: i32, //TODO make use of rust error handling
     oc: char,
     calr_err: *const c_char,
@@ -41,7 +41,8 @@ struct RNumCalc {
 }
 pub struct RNum {
     callback: *const c_void, //ut64 (*callback)(struct r_num_t *userptr, const char *str, int *ok);
-    cb_from_value: *const c_void, //const char *(*cb_from_value)(struct r_num_t *userptr, ut64 value, int *ok);
+    cb_from_value: *const c_void,
+    //const char *(*cb_from_value)(struct r_num_t *userptr, ut64 value, int *ok);
     value: u64,
     fvalue: f64,
     userptr: *const c_void,
@@ -49,7 +50,10 @@ pub struct RNum {
     nc: RNumCalc,
 }
 impl RNum {
-    pub fn new<'a>(cb: Option<*const c_void>, cb2: Option<*const c_void>, ptr: Option<*const c_void>) -> &'a mut RNum {
+    pub fn new<'a>(cb: Option<*const c_void>,
+                   cb2: Option<*const c_void>,
+                   ptr: Option<*const c_void>)
+                   -> &'a mut RNum {
         let c_cb = match cb {
             Some(x) => x,
             None => ptr::null(),
@@ -62,7 +66,7 @@ impl RNum {
             Some(x) => x,
             None => ptr::null(),
         };
-        unsafe{&mut *r_num_new(c_cb, c_cb2, c_ptr)}
+        unsafe { &mut *r_num_new(c_cb, c_cb2, c_ptr) }
     }
     //TODO Maybe we should turn all results into some sort of Result<whatever, &str>
     pub fn math(&mut self, string: &str) -> Result<u64, String> {
@@ -77,11 +81,11 @@ impl RNum {
         let err: *const c_char = ptr::null();
         let err_string;
         let cstring = CString::new(string).unwrap();
-        let ret = unsafe{r_num_calc(self, cstring.as_ptr(), &err)};
+        let ret = unsafe { r_num_calc(self, cstring.as_ptr(), &err) };
         if err == ptr::null() {
             return Ok(ret);
         } else {
-            err_string = unsafe{CStr::from_ptr(err).to_string_lossy().into_owned()};
+            err_string = unsafe { CStr::from_ptr(err).to_string_lossy().into_owned() };
             return Err(err_string);
         }
     }

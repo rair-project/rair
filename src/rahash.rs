@@ -34,7 +34,6 @@ use r_util::*;
 use r_util::r_num::RNum;
 use rustc_serialize::hex::FromHex;
 use std::env;
-use std::process;
 use std::io::{self, Read, Write};
 use std::fs::File;
 use std::ptr;
@@ -78,10 +77,6 @@ fn algolist() {
     }
 }
 
-fn report(error: &str) -> ! {
-    writeln!(&mut std::io::stderr(), "{}", error).unwrap();
-    process::exit(1);
-}
 fn do_hash_hexprint(c: &[u8], little_endian: bool) {
     if little_endian {
         //TODO BUGGY I believe this code might not do exactly what it promises
@@ -190,7 +185,7 @@ fn do_hash(file: &str,
            s: &r_hash::RHashSeed) {
     let algobit = r_hash::name_to_bits(algo);
     if algobit == r_hash::R_HASH_NONE {
-        report("Invalid hashing algorithm ");
+        r_print::report("Invalid hashing algorithm ");
     }
     let fsize = r_io::size(io);
     if bsize == 0 || bsize > fsize {
@@ -200,7 +195,7 @@ fn do_hash(file: &str,
         status.to = fsize;
     }
     if status.from > status.to {
-        report("Invalid -f -t range");
+        r_print::report("Invalid -f -t range");
     }
     let ctx = RHash::new(true, algobit);
     if status.format == OutputFormat::Json {
@@ -252,7 +247,7 @@ fn do_hash(file: &str,
         }
     } else {
         if !s.buf.is_empty() {
-            report("Seed cannot be used on per-block hashing.");
+            r_print::report("Seed cannot be used on per-block hashing.");
         }
 
         let mut i = 1;
@@ -300,7 +295,7 @@ fn encrypt_or_decrypt_file(algo: &str,
         _ => {
             let mut file = match File::open(file) {
                 Ok(f) => f,
-                Err(why) => report(&why.to_string()),
+                Err(why) => r_print::report(&why.to_string()),
             };
             file.read(&mut buf).unwrap();
         }
@@ -316,26 +311,26 @@ fn encrypt_or_decrypt(algo: &str,
     //TODO find better way ..
     if !(&*algo == "base64" || &*algo == "base91" || &*algo == "punycode") && s.buf.is_empty() {
         if is_decryption {
-            report("Decryption key is not defined. Use -S [key]");
+            r_print::report("Decryption key is not defined. Use -S [key]");
         } else {
-            report("Encryption key is not defined. Use -S [key]");
+            r_print::report("Encryption key is not defined. Use -S [key]");
         }
     }
     let cry = r_crypto::new();
     if !r_crypto::use_algo(cry, algo) {
         if is_decryption {
             let err = format!("Unknown decryption algorithm '{}'", algo);
-            report(&*err);
+            r_print::report(&*err);
         } else {
             let err = format!("Unknown encryption algorithm '{}'", algo);
-            report(&*err);
+            r_print::report(&*err);
         }
     }
     if !r_crypto::set_key(cry, &s.buf, 0, is_decryption) {
-        report("Invalid key");
+        r_print::report("Invalid key");
     }
     if !iv.is_empty() && !r_crypto::set_iv(cry, iv) {
-        report("Invalid initialization vector");
+        r_print::report("Invalid initialization vector");
     }
     r_crypto::update(cry, buf);
     r_crypto::finish(cry, &Vec::new());
@@ -364,7 +359,7 @@ fn do_hash_seed(mut seed: String) -> r_hash::RHashSeed {
     } else {
         r_hash_seed.buf = match (*seed).from_hex() {
             Ok(buf) => buf,
-            Err(why) => report(&(why.to_string())),
+            Err(why) => r_print::report(&(why.to_string())),
         }
     }
     r_hash_seed
@@ -450,7 +445,7 @@ fn main() {
 
     match opts.parse(&args[1..]) {
         Ok(m) => matches = m,
-        Err(f) => report(&f.to_string()),
+        Err(f) => r_print::report(&f.to_string()),
     };
     if matches.opt_present("h") {
         let program = args[0].clone();
@@ -476,14 +471,14 @@ fn main() {
         let tmp = matches.opt_str("i").unwrap();
         match (&tmp).parse() {
             Ok(m) => status.iterations = m,
-            Err(f) => report(&f.to_string()),
+            Err(f) => r_print::report(&f.to_string()),
         }
     }
     if matches.opt_present("j") {
         match status.format {
             OutputFormat::None => status.format = OutputFormat::Json,
             _ => {
-                report("`-j`, `-r` and `-k` are not compatiable, you can not \
+                r_print::report("`-j`, `-r` and `-k` are not compatiable, you can not \
                         use any two of them at the same time")
             }
         }
@@ -492,7 +487,7 @@ fn main() {
         match status.format {
             OutputFormat::None => status.format = OutputFormat::Command,
             _ => {
-                report("`-j`, `-r` and `-k` are not compatiable, you can not \
+                r_print::report("`-j`, `-r` and `-k` are not compatiable, you can not \
                         use any two of them at the same time")
             }
         }
@@ -501,7 +496,7 @@ fn main() {
         match status.format {
             OutputFormat::None => status.format = OutputFormat::Ssh,
             _ => {
-                report("`-j`, `-r` and `-k` are not compatiable, you can not \
+                r_print::report("`-j`, `-r` and `-k` are not compatiable, you can not \
                         use any two of them at the same time")
             }
         }
@@ -529,9 +524,9 @@ fn main() {
     }
     if matches.opt_present("b") {
         let tmp = matches.opt_str("b").unwrap();
-        bsize = match math.math( &tmp) {
+        bsize = match math.math(&tmp) {
             Ok(x) => x as usize,
-            Err(y) => report(&y.to_string()),
+            Err(y) => r_print::report(&y.to_string()),
         };
 
     }
@@ -539,18 +534,18 @@ fn main() {
         let tmp = matches.opt_str("f").unwrap();
         status.from = match math.math(&tmp) {
             Ok(x) => x as usize,
-            Err(y) => report(&y.to_string()),
+            Err(y) => r_print::report(&y.to_string()),
         };
     }
     if matches.opt_present("t") {
         let tmp = matches.opt_str("t").unwrap();
         status.to = match math.math(&tmp) {
             Ok(x) => x as usize + 1,
-            Err(y) => report(&y.to_string()),
+            Err(y) => r_print::report(&y.to_string()),
         };
     }
     if matches.opt_present("s") && matches.opt_present("x") {
-        report(" -s and -x are not compatiable, you can not \
+        r_print::report(" -s and -x are not compatiable, you can not \
         use both of them at the same time");
     }
     if matches.opt_present("s") {
@@ -562,27 +557,27 @@ fn main() {
         ishex = true;
     }
     if matches.opt_present("c") && matches.opt_present("b") && matches.opt_present("B") {
-        report("Option -c incompatible with -b and -B options.");
+        r_print::report("Option -c incompatible with -b and -B options.");
     }
     if matches.opt_present("c") {
         compare_str = matches.opt_str("c").unwrap();
     }
     if matches.opt_present("e") && matches.opt_present("d") {
-        report("Option -e and -d are incompatible with each other.")
+        r_print::report("Option -e and -d are incompatible with each other.")
     }
     if !compare_str.is_empty() {
         let algobit: u64;
         if &encrypt == "base64" || &encrypt == "base91" || &decrypt == "base64" ||
            &decrypt == "base91" {
-            report("Option -c incompatible with -E base64, -E base91, -D base64 or \
+            r_print::report("Option -c incompatible with -E base64, -E base91, -D base64 or \
                    -D base91 options.");
         }
         algobit = r_hash::name_to_bits(&algo);
         if !is_power_of_two(algobit) {
-            report("Option -c incompatible with multiple algorithms in -a.");
+            r_print::report("Option -c incompatible with multiple algorithms in -a.");
         }
         compare_bin = match (*compare_str).from_hex() {
-            Err(why) => report(&why.to_string()),
+            Err(why) => r_print::report(&why.to_string()),
             Ok(x) => x,
         };
         if compare_bin.len() != r_hash::size(algobit) {
@@ -590,18 +585,18 @@ fn main() {
                 selected algorithm returns {} bytes.",
                                   compare_bin.len(),
                                   r_hash::size(algobit));
-            report(&err_msg);
+            r_print::report(&err_msg);
         }
     }
     if status.to != 0 && status.from >= status.to {
-        report("Invalid -f or -t offsets\n");
+        r_print::report("Invalid -f or -t offsets\n");
     }
     if !ivseed.is_empty() {
         if ivseed.starts_with("s:") {
             iv.extend(ivseed[2..].as_bytes());
         } else {
             iv = match (*ivseed).from_hex() {
-                Err(why) => report(&why.to_string()),
+                Err(why) => r_print::report(&why.to_string()),
                 Ok(x) => x,
             }
         }
@@ -613,17 +608,17 @@ fn main() {
         }
         if ishex {
             hash = match (*hashstr).from_hex() {
-                Err(why) => report(&why.to_string()),
+                Err(why) => r_print::report(&why.to_string()),
                 Ok(x) => x,
             }
         } else {
             hash.extend(hashstr.as_bytes());
         }
         if status.from >= hash.len() {
-            report("-f value is greater than hash length");
+            r_print::report("-f value is greater than hash length");
         }
         if status.to > hash.len() {
-            report("-t value is greater than hash length");
+            r_print::report("-t value is greater than hash length");
         }
         if status.to == 0 {
             status.to = hash.len();
@@ -649,7 +644,7 @@ fn main() {
             }
             let algobit = r_hash::name_to_bits(&algo);
             if algobit == 0 {
-                report("Invalid algorithm. See -E and -D");
+                r_print::report("Invalid algorithm. See -E and -D");
             }
             //TODO THIS SUCKS SHOULD BE IMPROVED FOR SURE
             let mut i = 1;
@@ -689,17 +684,17 @@ fn main() {
                 let virtual_file = format!("malloc://{}", buf.len());
                 if r_io::open_nomap(io, &virtual_file, 0, 0).is_null() {
                     let error = format!("Cannot open {}", virtual_file);
-                    report(&error);
+                    r_print::report(&error);
                 }
                 r_io::pwrite(io, 0, &buf);
 
             } else {
                 if r_file::is_directory(file) {
-                    report("Cannot hash directories");
+                    r_print::report("Cannot hash directories");
                 }
                 if r_io::open_nomap(io, file, 0, 0).is_null() {
                     let error = format!("Cannot open {}", file);
-                    report(&error);
+                    r_print::report(&error);
                 }
             }
             do_hash(file,

@@ -17,7 +17,9 @@
 //TODO delete the whole file ^_^
 extern crate libc;
 use libc::*;
+use std::io::{self, Write};
 use std::ffi::CStr;
+use std::process;
 #[link(name = "r_util")]
 extern "C" {
     fn r_print_progressbar(rprint: *const c_void, pc: i32, cols: i32);
@@ -29,4 +31,8 @@ pub fn progressbar(rprint: *const c_void, pc: i32, cols: i32) {
 pub fn randomart(digest: &[u8], addr: usize) -> String {
     let x = unsafe { r_print_randomart(digest.as_ptr(), digest.len(), addr) };
     unsafe { CStr::from_ptr(x).to_string_lossy().into_owned() }
+}
+pub fn report(error: &str) -> ! {
+    writeln!(&mut io::stderr(), "{}", error).unwrap();
+    process::exit(1);
 }
