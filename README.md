@@ -46,7 +46,7 @@ Currently rair is incomplete project and under heavy development it depends on l
 |   r_bin   	|      NA      	|       NA      	|    NA   	|
 |    r_bp   	|      NA      	|       NA      	|    NA   	|
 |  r_config 	|      NA      	|       NA      	|    NA   	|
-|   r_cons  	|      NA      	|       NA      	|    NA   	|
+|   r_cons  	|  Partial FFI 	|       NA      	|    NA   	|
 |   r_core  	|      NA      	|       NA      	|    NA   	|
 |  r_crypto 	|  Partial FFI 	|       NA      	|    NA   	|
 |  r_debug  	|      NA      	|       NA      	|    NA   	|
