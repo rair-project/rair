@@ -26,6 +26,44 @@ Currently rair is incomplete project and under heavy development it depends on l
 - getopts
 - rust-serialize
 
+## Current status
+|   Module  	| Rust Porting 	| Documentation 	| Testing 	|
+|:---------:	|:------------:	|:-------------:	|:-------:	|
+|  R2agent  	|      NA      	|       NA      	|    NA   	|
+|    R2pm   	|      NA      	|       NA      	|    NA   	|
+|   Rabin   	|      NA      	|       NA      	|    NA   	|
+|    Ragg   	|      NA      	|       NA      	|    NA   	|
+|   Rahash  	|     Done     	|       NA      	|    NA   	|
+|   Rarun   	|      NA      	|       NA      	|    NA   	|
+|   Radare  	|      NA      	|       NA      	|    NA   	|
+|  Ragg-cc  	|      NA      	|       NA      	|    NA   	|
+|    Rasm   	|      NA      	|       NA      	|    NA   	|
+|    Rax    	|      NA      	|       NA      	|    NA   	|
+|   Radiff  	|      NA      	|       NA      	|    NA   	|
+|   Rafind  	|      NA      	|       NA      	|    NA   	|
+|   r_anal  	|      NA      	|       NA      	|    NA   	|
+|   r_asm   	|      NA      	|       NA      	|    NA   	|
+|   r_bin   	|      NA      	|       NA      	|    NA   	|
+|    r_bp   	|      NA      	|       NA      	|    NA   	|
+|  r_config 	|      NA      	|       NA      	|    NA   	|
+|   r_cons  	|      NA      	|       NA      	|    NA   	|
+|   r_core  	|      NA      	|       NA      	|    NA   	|
+|  r_crypto 	|  Partial FFI 	|       NA      	|    NA   	|
+|  r_debug  	|      NA      	|       NA      	|    NA   	|
+|   r_egg   	|      NA      	|       NA      	|    NA   	|
+|   r_flag  	|      NA      	|       NA      	|    NA   	|
+|    r_fs   	|      NA      	|       NA      	|    NA   	|
+|   r_hash  	|  Partial FFI 	|       NA      	|    NA   	|
+|    r_io   	|  Partial FFI 	|       NA      	|    NA   	|
+|   r_lang  	|      NA      	|       NA      	|    NA   	|
+|  r_magic  	|      NA      	|       NA      	|    NA   	|
+|  r_parse  	|      NA      	|       NA      	|    NA   	|
+|   r_reg   	|      NA      	|       NA      	|    NA   	|
+|  r_search 	|      NA      	|       NA      	|    NA   	|
+|  r_socket 	|      NA      	|       NA      	|    NA   	|
+| r_syscall 	|      NA      	|       NA      	|    NA   	|
+|   r_util  	|  Partial FFI 	|       NA      	|    NA   	|
+
 ## Get involved
 
 Regardless to how skilled you are, there will always be something for you to do! I always try to keep the code base clean.
