@@ -122,7 +122,12 @@ fn do_hash_print(ctx: &r_hash::RHash, algo: u64, len: usize, state: &State) {
     };
 }
 
-fn do_hash_internal(ctx: &r_hash::RHash, algo: u64, buf: &[u8], print: bool,state: &State, s: &r_hash::RHashSeed) {
+fn do_hash_internal(ctx: &r_hash::RHash,
+                    algo: u64,
+                    buf: &[u8],
+                    print: bool,
+                    state: &State,
+                    s: &r_hash::RHashSeed) {
     let dlen = ctx.calculate(algo, buf);
     if dlen == 0 {
         return;
@@ -209,8 +214,8 @@ fn do_hash(file: &str,
                     } else {
                         bsize
                     };
-                    let buf: Vec<u8> = vec![0; nsize];
-                    r_io::pread(io, j as u64, &buf);
+                    let mut buf: Vec<u8> = vec![0; nsize];
+                    r_io::pread(io, j as u64, &mut buf);
                     do_hash_internal(ctx, hashbit, &buf, false, state, s);
                     j += bsize;
                 }
@@ -241,8 +246,8 @@ fn do_hash(file: &str,
                 let mut state_c = state.clone();
                 while j < state.to {
                     let nsize = if j + bsize < fsize { bsize } else { fsize - j };
-                    let buf: Vec<u8> = vec![0; nsize];
-                    r_io::pread(io, j as u64, &buf);
+                    let mut buf: Vec<u8> = vec![0; nsize];
+                    r_io::pread(io, j as u64, &mut buf);
                     state_c.from = j;
                     state_c.to = j + bsize;
                     if state_c.to > fsize {
@@ -407,7 +412,7 @@ fn argument_parser() -> Matches {
         let program = args[0].clone();
         let help = format!("Usage: {} [-rBhlkvje] [-b S] [-a A] [-c H] [-e A] \
                             [-s S] [-f O] [-t O] [file] ...",
-                            program);
+                           program);
         r_print::report(&help);
     }
     if matches.opt_present("h") {
@@ -441,11 +446,11 @@ fn parse_state(matches: &Matches) -> State {
         }
     }
     if matches.opt_present("j") {
-            state.format = OutputFormat::Json;
+        state.format = OutputFormat::Json;
     } else if matches.opt_present("r") {
-            state.format = OutputFormat::Command;
+        state.format = OutputFormat::Command;
     } else if matches.opt_present("k") {
-            state.format = OutputFormat::Ssh;
+        state.format = OutputFormat::Ssh;
     }
     if matches.opt_present("B") {
         state.incremental = false;
@@ -565,7 +570,7 @@ fn main() {
                    -D base91 options.");
         }
         algobit = r_hash::name_to_bits(&algo);
-	//XXX Not sure how this is supposed to work!
+        //XXX Not sure how this is supposed to work!
         if !is_power_of_two(algobit) {
             r_print::report("Option -c incompatible with multiple algorithms in -a.");
         }
@@ -644,12 +649,7 @@ fn main() {
                     let ctx = RHash::new(true, hashbit);
                     state.from = 0;
                     state.to = full_str.len();
-                    do_hash_internal(ctx,
-                                     hashbit,
-                                     &full_str,
-                                     true,
-                                     &state,
-                                     &hash_seed);
+                    do_hash_internal(ctx, hashbit, &full_str, true, &state, &hash_seed);
                     if !compare_bin.is_empty() {
                         let hash_size = r_hash::size(algobit);
                         compare_hashes(ctx, &compare_bin, hash_size);
@@ -686,13 +686,7 @@ fn main() {
                     r_print::report(&error);
                 }
             }
-            do_hash(file,
-                    &algo,
-                    io,
-                    bsize,
-                    &compare_bin,
-                    &mut state,
-                    &hash_seed);
+            do_hash(file, &algo, io, bsize, &compare_bin, &mut state, &hash_seed);
         }
     }
 }

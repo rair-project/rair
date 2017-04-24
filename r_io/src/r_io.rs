@@ -1,5 +1,4 @@
 /*
- *  {one line to give the program's name and a brief idea of what it does.}
  *  Copyright (C) 2017  Ahmed Abd El Mawgood
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -17,7 +16,7 @@
  */
 use libc::*;
 use std::ffi::CString;
-
+pub const READ: i32 = 4;
 #[link(name = "r_io")]
 extern "C" {
     fn r_io_new() -> *const c_void;
@@ -29,9 +28,15 @@ extern "C" {
                        -> *const c_void;
     fn r_io_pwrite(io: *const c_void, paddr: u64, buf: *const u8, len: usize);
     fn r_io_pread(io: *const c_void, paddr: u64, buff: *const u8, len: usize);
+    fn r_io_seek(io: *const c_void, offset: u64, whence: i32);
 }
 pub fn new<'a>() -> &'a c_void {
     unsafe { &*r_io_new() }
+}
+pub enum Seek {
+    Set,
+    Cur,
+    End,
 }
 pub fn size(io: &c_void) -> usize {
     unsafe { r_io_size(io) }
@@ -41,8 +46,11 @@ pub fn open_nomap(io: &c_void, file: &str, flags: i32, mode: i32) -> *const c_vo
     unsafe { r_io_open_nomap(io, cstr.as_ptr(), flags, mode) }
 }
 pub fn pwrite(io: &c_void, paddr: u64, buf: &[u8]) {
-    unsafe { r_io_pwrite(io, paddr, buf.as_ptr(), buf.len()) }
+    unsafe { r_io_pwrite(io, paddr, buf.as_ptr(), buf.len()) };
 }
-pub fn pread(io: &c_void, paddr: u64, buf: &[u8]) {
+pub fn pread(io: &c_void, paddr: u64, buf: &mut [u8]) {
     unsafe { r_io_pread(io, paddr, buf.as_ptr(), buf.len()) };
+}
+pub fn seek(io: &c_void, offset: u64, whence: Seek) {
+    unsafe { r_io_seek(io, offset, whence as i32) };
 }
