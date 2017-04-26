@@ -18,7 +18,16 @@ I prefered the later approach because it will make rair usable right from the be
 
 ## Get started
 
-`TODO`
+Currently rair depends almost completely on libr so the simplest way to have libr installed is to install radare2 fully first then installing rair.
+
+``` bash
+$ git clone https://github.com/radare/radare2.git
+$ git clone https://github.com/oddcoder/rair.git
+$ cd radare2
+$ sys /install.sh
+$ cd ../rair
+$ cargo install
+```
 
 ## Dependencies
 Currently rair is incomplete project and under heavy development it depends on libr completely plus those rust libraraies:
@@ -35,7 +44,7 @@ Currently rair is incomplete project and under heavy development it depends on l
 |    Ragg   	|      NA      	|       NA      	|    NA   	|
 |   Rahash  	|     Done     	|       NA      	|    NA   	|
 |   Rarun   	|      NA      	|       NA      	|    NA   	|
-|   Radare  	|      NA      	|       NA      	|    NA   	|
+|    Rair  	|      NA      	|       NA      	|    NA   	|
 |  Ragg-cc  	|      NA      	|       NA      	|    NA   	|
 |    Rasm   	|      NA      	|       NA      	|    NA   	|
 |    Rax    	|      NA      	|       NA      	|    NA   	|
