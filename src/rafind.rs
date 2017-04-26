@@ -233,10 +233,7 @@ fn rafind_process(file: &str, list: &[SearchEntry], mut state: State) {
     for entry in list {
         match entry.mode {
             SearchMode::Strings => {
-                unimplemented!();
-                //TODO line 131
-                //TODO or line 159 this line looks buggy
-                //not sure which one is the real
+                rs.regex_add(r"[[:print:]][[:print:]][[:print:]][[:print:]]*").unwrap();
             }
             SearchMode::Magic => {
                 unimplemented!();
