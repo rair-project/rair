@@ -63,7 +63,6 @@ fn argument_parser() -> Matches {
     let mut opts = Options::new();
     let matches;
     let args: Vec<String> = env::args().collect();
-    opts.optopt("a", "", "only accept aligned hits", "");
     opts.optopt("a", "", "only accept aligned hits", "align");
     opts.optopt("b", "", "set block size", "size");
     opts.optopt("e",
@@ -209,12 +208,13 @@ fn hit(kw: &RSearchKeyword, addr: usize, buf: &[u8]) {
        print!("Match at 0x{:08x}: ", addr);
        println!("{}", String::from_utf8_lossy(&kw.bin_keyword));
     } else {
-        println!("Match at 0x{:08x}:", addr);
+        println!("Match at 0x{:08x}", addr);
     }
     if state.hexdump {
         let pr = r_print::new();
         let cur = addr%state.bsize;
-        r_print::hexdump(pr,addr,&buf[cur..cur + 100],16, true);
+        let end = if cur+100 > buf.len() {buf.len()} else {cur+100};
+        r_print::hexdump(pr,addr,&buf[cur..end],16, true);
     }
 
 }
