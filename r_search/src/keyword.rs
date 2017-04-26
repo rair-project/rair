@@ -54,11 +54,11 @@ impl RSearchKeyword {
     pub fn len(&self) -> usize {
         return self.bin_keyword.len();
     }
-    fn new(buf: Vec<u8>, mask: Vec<u8>) -> RSearchKeyword {
+    pub fn new(buf: Vec<u8>, mask: Vec<u8>) -> RSearchKeyword {
         let mut kw = RSearchKeyword {
             mode: RSearchKeywordMode::Binary,
             bin_keyword: buf,
-            bin_mask: mask,
+             bin_mask: mask,
             bad_char: Vec::new(),
             transform: RSearchKeyword::pass_as_it_is,
         };

@@ -16,6 +16,7 @@
  */
 extern crate libc;
 extern crate rustc_serialize;
+extern crate regex;
 mod search;
 mod keyword;
 mod searchmode;

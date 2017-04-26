@@ -6,3 +6,4 @@ authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
 [dependencies]
 libc = "*"
 rustc-serialize= "*"
+regex = "*"

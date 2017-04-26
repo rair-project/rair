@@ -76,7 +76,6 @@ fn argument_parser() -> Matches {
                 "",
                 "set a binary mask to be applied on keywords",
                 "str");
-    opts.optflag("n", "", "do not stop on read errors");
     opts.optflag("r", "", "print as radare2 flag commands");
     opts.optmulti("s",
                   "",
@@ -245,7 +244,10 @@ fn rafind_process(file: &str, list: &[SearchEntry], mut state: State) {
             }
             SearchMode::Keyword => insert_keyword(&mut rs, entry, &state),
             SearchMode::Regex => {
-                //TODO doesn't exist anywhere!
+                match rs.regex_add(&entry.entry){
+                    Err(y) => r_print::report(&y.to_string()),
+                    _ => (),
+                }
             }
             _ => unimplemented!(),
 
@@ -282,7 +284,7 @@ fn insert_keyword(search: &mut RSearch, entry: &SearchEntry, state: &State) {
             }
         }
     }
-    search.kw_add(kw);
+    search.kw_add(kw).unwrap();
 }
 
 fn main() {
