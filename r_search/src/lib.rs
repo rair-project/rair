@@ -14,11 +14,11 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use libc::*;
-#[link(name = "r_cons")]
-extern "C" {
-    fn r_cons_new() -> *const c_void;
-}
-pub fn new<'a>() -> &'a c_void {
-    unsafe { &*r_cons_new() }
-}
+extern crate libc;
+extern crate rustc_serialize;
+mod search;
+mod keyword;
+mod searchmode;
+pub use search::*;
+pub use keyword::*;
+pub use searchmode::*;

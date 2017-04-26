@@ -30,7 +30,9 @@ pub enum OutputFormat {
 #[link(name = "r_util")]
 extern "C" {
     fn r_print_progressbar(rprint: *const c_void, pc: i32, cols: i32);
-    pub fn r_print_randomart(digest: *const u8, digest_len: usize, addr: usize) -> *const c_char;
+    fn r_print_randomart(digest: *const u8, digest_len: usize, addr: usize) -> *const c_char;
+    fn r_print_new() -> *const c_void;
+    fn r_print_hexdump(pr: *const c_void, addr: usize, buf: *const u8, len: usize, base: usize, step: bool);
 }
 pub fn progressbar(rprint: *const c_void, pc: i32, cols: i32) {
     unsafe { r_print_progressbar(rprint, pc, cols) }
@@ -42,4 +44,10 @@ pub fn randomart(digest: &[u8], addr: usize) -> String {
 pub fn report(error: &str) -> ! {
     writeln!(&mut io::stderr(), "{}", error).unwrap();
     process::exit(1);
+}
+pub fn new<'a>() -> &'a c_void{
+    unsafe{&*r_print_new()}
+}
+pub fn hexdump(pr: &c_void, addr:usize, buf:&[u8], base: usize, step: bool) {
+    unsafe{r_print_hexdump(pr, addr, buf.as_ptr(), buf.len(), base, step)}
 }

@@ -8,11 +8,17 @@ build = "build.rs"
 name = "rahash"
 path = "src/rahash.rs"
 
+[[bin]]
+name = "rafind"
+path = "src/rafind.rs"
+
 [dependencies]
 libc = "*"
 getopts = "*"
+r_cons = {path = "r_cons"}
 r_crypto = {path = "r_crypto"}
 r_hash = {path = "r_hash"}
 r_io = {path = "r_io"}
+r_search = {path = "r_search"}
 r_util = {path = "r_util"}
 rustc-serialize= "*"

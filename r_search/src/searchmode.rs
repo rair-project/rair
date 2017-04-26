@@ -14,11 +14,16 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use libc::*;
-#[link(name = "r_cons")]
-extern "C" {
-    fn r_cons_new() -> *const c_void;
-}
-pub fn new<'a>() -> &'a c_void {
-    unsafe { &*r_cons_new() }
+
+#[derive(PartialEq,Clone)]
+pub enum SearchMode {
+    Keyword,
+    Regex,
+    Pattern,
+    Strings,
+    XRef,
+    AES,
+    DeltaKey,
+    Magic,
+    Last,
 }

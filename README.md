@@ -40,7 +40,7 @@ Currently rair is incomplete project and under heavy development it depends on l
 |    Rasm   	|      NA      	|       NA      	|    NA   	|
 |    Rax    	|      NA      	|       NA      	|    NA   	|
 |   Radiff  	|      NA      	|       NA      	|    NA   	|
-|   Rafind  	|      NA      	|       NA      	|    NA   	|
+|   Rafind  	|   Partial    	|       NA      	|    NA   	|
 |   r_anal  	|      NA      	|       NA      	|    NA   	|
 |   r_asm   	|      NA      	|       NA      	|    NA   	|
 |   r_bin   	|      NA      	|       NA      	|    NA   	|
@@ -59,7 +59,7 @@ Currently rair is incomplete project and under heavy development it depends on l
 |  r_magic  	|      NA      	|       NA      	|    NA   	|
 |  r_parse  	|      NA      	|       NA      	|    NA   	|
 |   r_reg   	|      NA      	|       NA      	|    NA   	|
-|  r_search 	|      NA      	|       NA      	|    NA   	|
+|  r_search 	|   Partial    	|       NA      	|    NA   	|
 |  r_socket 	|      NA      	|       NA      	|    NA   	|
 | r_syscall 	|      NA      	|       NA      	|    NA   	|
 |   r_util  	|  Partial FFI 	|       NA      	|    NA   	|
@@ -81,7 +81,6 @@ This is list of what you can do from easy to the more challenging:
 	* ragg2
 	* rasm2
 	* radare2
-	* rafind2
 	* ragg2-cc
 	* rarun2
 	* rax2
