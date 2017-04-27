@@ -28,13 +28,6 @@ $ sys /install.sh
 $ cd ../rair
 $ cargo install
 ```
-
-## Dependencies
-Currently rair is incomplete project and under heavy development it depends on libr completely plus those rust libraraies:
-- libc
-- getopts
-- rust-serialize
-
 ## Current status
 |   Module  	| Rust Porting 	| Documentation 	| Testing 	|
 |:---------:	|:------------:	|:-------------:	|:-------:	|
