@@ -618,8 +618,8 @@ fn main() {
         if state.to == 0 {
             state.to = hash.len();
         }
-        hash.drain(0..state.from);
         hash.drain(state.to..);
+        hash.drain(0..state.from);
         if !encrypt.is_empty() {
             encrypt_or_decrypt(&encrypt, false, &hash, &iv, &hash_seed);
             return;
@@ -647,8 +647,8 @@ fn main() {
                 let hashbit = algobit & i;
                 if hashbit != 0 {
                     let ctx = RHash::new(true, hashbit);
-                    state.from = 0;
-                    state.to = full_str.len();
+                    //state.from = 0;
+                    //state.to = full_str.len();
                     do_hash_internal(ctx, hashbit, &full_str, true, &state, &hash_seed);
                     if !compare_bin.is_empty() {
                         let hash_size = r_hash::size(algobit);
