@@ -1,7 +1,7 @@
 #! /bin/bash
 . assert.sh
 #XXX
-echo "TODO -c -d -e -I -S -E, -i, -v are untested"
+echo "TODO -I -E -v are untested"
 
 #testing without arguments
 assert "../target/release/rahash" ""
@@ -100,6 +100,15 @@ assert "../target/release/rahash -x 68656c6c6f" "0x00000000-0x00000004 sha256: 2
 #testing -r
 assert "../target/release/rahash -s hello -r" "e file.sha256=2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
 
+#testing -e
+assert "../target/release/rahash -e base64 -s hello_world" "aGVsbG9fd29ybGQ="
+
+#testing -d
+assert "../target/release/rahash -d base64 -s aGVsbG9fd29ybGQ=" "hello_world"
+
+# testing -i
+assert "../target/release/rahash -s hello_world -i 2" "0x00000000-0x0000000a sha256: dd6543a79024af95cdaad4c2e66a6d683a01cbe3eddfdd1b68ec5737b8fb306d"
+
 #testing -q
 assert "../target/release/rahash -s hello -q" "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
 
@@ -122,6 +131,24 @@ assert "../target/release/rahash -s hello -j" "{\"name\":\"sha256\",\"hash\":\"2
 
 #testing -a
 assert "../target/release/rahash -s hello -a md5" "0x00000000-0x00000004 md5: 5d41402abc4b2a76b9719d911017c592"
+
+#testing -c 
+assert "../target/release/rahash -s hello -a md5 -c 5d41402abc4b2a76b9719d911017c592" "0x00000000-0x00000004 md5: 5d41402abc4b2a76b9719d911017c592
+Computed hash matches the expected one."
+assert "../target/release/rahash -s hello -a md5 -c 5d41402abc4b2a76b9719d911017c593" "0x00000000-0x00000004 md5: 5d41402abc4b2a76b9719d911017c592
+Computed hash doesn't match the expected one."
+
+#testing -S 
+assert "../target/release/rahash -s hello -S 41" "0x00000000-0x00000004 sha256: 105d6b297d17fb03d5ce7489cc466b9e2340f7fe6f28f8fc724c90b0967ffd30"
+
+#testing -S with s:
+assert "../target/release/rahash -s hello -S s:A" "0x00000000-0x00000004 sha256: 105d6b297d17fb03d5ce7489cc466b9e2340f7fe6f28f8fc724c90b0967ffd30"
+
+#testing -S with ^
+assert "../target/release/rahash -s hello -S ^41" "0x00000000-0x00000004 sha256: e7d9c374ddb268ca1c0ce86141850a434f40f680b816ed70797ac58065c46a40"
+
+#testing -S with ^s:
+assert "../target/release/rahash -s hello -S ^s:A" "0x00000000-0x00000004 sha256: e7d9c374ddb268ca1c0ce86141850a434f40f680b816ed70797ac58065c46a40"
 
 #testing hashing file
 assert "../target/release/rahash ./assert.sh" "./assert.sh 0x00000000-0x000011c8 sha256: 84cd96140dd20b58a312e37eff0eaee0647b6f27593d30b9d9f8e164897f445c"

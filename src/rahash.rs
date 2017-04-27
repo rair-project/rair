@@ -341,7 +341,7 @@ fn do_hash_seed(mut seed: String) -> r_hash::RHashSeed {
     } else {
         r_hash_seed.prefix = false;
     }
-    if seed.starts_with("S:") {
+    if seed.starts_with("s:") {
         seed.drain(0..2);
         r_hash_seed.buf.extend(seed.as_bytes());
     } else {
@@ -624,7 +624,7 @@ fn main() {
             encrypt_or_decrypt(&encrypt, false, &hash, &iv, &hash_seed);
             return;
         } else if !decrypt.is_empty() {
-            encrypt_or_decrypt(&decrypt, false, &hash, &iv, &hash_seed);
+            encrypt_or_decrypt(&decrypt, true, &hash, &iv, &hash_seed);
             return;
         } else {
             let full_str: Vec<u8>;

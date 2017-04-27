@@ -36,14 +36,14 @@ $ cargo install
 |    R2pm   	|      NA      	|       NA      	|    NA   	|
 |   Rabin   	|      NA      	|       NA      	|    NA   	|
 |    Ragg   	|      NA      	|       NA      	|    NA   	|
-|   Rahash  	|     Done     	|       NA      	|  Partial   	|
+|   Rahash  	|     Done     	|       -h      	|   Done     	|
 |   Rarun   	|      NA      	|       NA      	|    NA   	|
 |    Rair  	|      NA      	|       NA      	|    NA   	|
 |  Ragg-cc  	|      NA      	|       NA      	|    NA   	|
 |    Rasm   	|      NA      	|       NA      	|    NA   	|
 |    Rax    	|      NA      	|       NA      	|    NA   	|
 |   Radiff  	|      NA      	|       NA      	|    NA   	|
-|   Rafind  	|   Partial    	|       NA      	|    NA   	|
+|   Rafind  	|   Partial    	|       -h      	|    NA   	|
 |   r_anal  	|      NA      	|       NA      	|    NA   	|
 |   r_asm   	|      NA      	|       NA      	|    NA   	|
 |   r_bin   	|      NA      	|       NA      	|    NA   	|
