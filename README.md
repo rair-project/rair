@@ -43,7 +43,7 @@ $ cargo install
 |    Rasm   	|      NA      	|       NA      	|    NA   	|
 |    Rax    	|      NA      	|       NA      	|    NA   	|
 |   Radiff  	|      NA      	|       NA      	|    NA   	|
-|   Rafind  	|   Partial    	|       -h      	|    NA   	|
+|   Rafind  	|   Partial    	|       -h      	|   Done   	|
 |   r_anal  	|      NA      	|       NA      	|    NA   	|
 |   r_asm   	|      NA      	|       NA      	|    NA   	|
 |   r_bin   	|      NA      	|       NA      	|    NA   	|

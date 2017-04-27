@@ -182,8 +182,8 @@ fn parse_state(matches: &Matches) -> State {
     }
     if matches.opt_present("t") {
         let tmp = matches.opt_str("t").unwrap();
-        state.from = match math.math(&tmp) {
-            Ok(x) => x as usize,
+        state.to = match math.math(&tmp) {
+            Ok(x) => x as usize + 1, //x didn't work so I guessed + 1 will
             Err(y) => r_print::report(&y.to_string()),
         }
     }

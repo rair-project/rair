@@ -114,10 +114,12 @@ impl RSearch {
     }
     fn add_kw_hit(&mut self, idx: usize, addr: usize) {
         if self.align != 0 && addr % self.align != 0 {
+            /*
             writeln!(&mut io::stderr(),
                      "Found new unaligned hit at 0x{:08x}",
                      addr)
                     .unwrap();
+            */
             return;
         }
         match self.callback {
