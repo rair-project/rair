@@ -22,9 +22,10 @@ enum RSearchKeywordMode {
     Binary,
 }
 type TransformCB = fn(&RSearchKeyword, &[u8]) -> Vec<u8>;
-pub struct RSearchKeyword {
+/// RSearchKeyword struct stores keyword instance to search for in RSearch
+pub struct RSearchKeyword { //TODO make this public restricted when it is avaialble 
     mode: RSearchKeywordMode,
-    pub bin_keyword: Vec<u8>, // same as bellow
+    pub bin_keyword: Vec<u8>,
     bin_mask: Vec<u8>,
     pub bad_char: Vec<i64>,
     pub transform: TransformCB,
@@ -96,5 +97,34 @@ impl RSearchKeyword {
             new_buf.push(buf[i] & self.bin_mask[i % self.bin_mask.len()]);
         }
         new_buf
+    }
+    pub fn is_string (&self) -> bool{
+        self.mode == RSearchKeywordMode::Strings
+    }
+}
+
+#[cfg(test)]
+mod test{
+    use super::*;
+    #[test]
+    fn testing_new() { 
+        let masked_kw = RSearchKeyword::new(vec![0x68,0x65, 0x6c, 0x6c, 0x6f], vec![0x40, 0x40]);
+        assert!(masked_kw.mode == RSearchKeywordMode::Binary);
+        assert!(masked_kw.bin_keyword == vec![0x68,0x65, 0x6c, 0x6c, 0x6f]);
+        assert!(masked_kw.bin_mask == vec![0x40, 0x40]);
+    }
+    #[test]
+    fn testing_new_hex() {
+        let masked_kw = RSearchKeyword::new_hex("68656c6c6f".to_owned(), "4040".to_owned()).unwrap();
+        assert!(masked_kw.mode == RSearchKeywordMode::Binary);
+        assert!(masked_kw.bin_keyword == vec![0x68,0x65, 0x6c, 0x6c, 0x6f]);
+        assert!(masked_kw.bin_mask == vec![0x40, 0x40]);
+    }
+    #[test]
+    fn testing_buggy_new_hex() {
+        let buggy_kw1 = RSearchKeyword::new_hex("68656c6c6".to_owned(), "4040".to_owned());
+        assert!(buggy_kw1.is_err());
+        let buggy_kw2 = RSearchKeyword::new_hex("68656c6c6f".to_owned(), "404".to_owned());
+        assert!(buggy_kw1.is_err());
     }
 }
