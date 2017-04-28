@@ -1,12 +1,32 @@
 language: rust
 sudo: required
 #sudo: false # get this back when radare2 source is removed
-rust:
-  - stable
-  - nightly
+matrix:
+  include:
+    - env: TARGET=i686-unknown-linux-gnu
+    - env: TARGET=i686-unknown-linux-musl
+    - env: TARGET=x86_64-unknown-linux-gnu
+    - env: TARGET=x86_64-unknown-linux-musl
+    - env: TARGET=i686-apple-darwin
+      os: osx
+    - env: TARGET=x86_64-apple-darwin
+      os: osx
+    - env: TARGET=aarch64-unknown-linux-gnu
+    - env: TARGET=armv7-unknown-linux-gnueabihf
+    - env: TARGET=mips-unknown-linux-gnu
+    - env: TARGET=mips64-unknown-linux-gnuabi64
+    - env: TARGET=mips64el-unknown-linux-gnuabi64
+    - env: TARGET=mipsel-unknown-linux-gnu
+    - env: TARGET=powerpc-unknown-linux-gnu
+    - env: TARGET=powerpc64-unknown-linux-gnu
+    - env: TARGET=powerpc64le-unknown-linux-gnu
+    - env: TARGET=x86_64-unknown-linux-gnu
+      rust: nightly
+    - env: TARGET=x86_64-apple-darwin
+      os: osx
+      rust: nightly
 
-# those are for r2 get rid of them when you don't need them
-addons:
+addons: #all of the addons are for r2 get rid of them
   apt:
     sources:
       - ubuntu-toolchain-r-test
@@ -21,7 +41,7 @@ addons:
       - gcc-4.8
       - g++-4.8
 
-script:
+install:
   - git clone https://github.com/radare/radare2.git
   - cd radare2
   - sys/install.sh
@@ -30,5 +50,9 @@ script:
   - export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib:${LD_LIBRARY_PATH}
   - cd ../
   - cargo build --release
+script:
   - cd test
   - for f in *.sh; do bash "$f"; done
+notifications:
+  email:
+    on_success: never
