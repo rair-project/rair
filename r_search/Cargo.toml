@@ -7,4 +7,6 @@ authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
 libc = "*"
 rustc-serialize= "*"
 regex = "*"
+
+[dev-dependencies]
 lazy_static = "*"

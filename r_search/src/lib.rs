@@ -17,6 +17,7 @@
 extern crate libc;
 extern crate rustc_serialize;
 extern crate regex;
+#[cfg(test)]
 #[macro_use]
 extern crate lazy_static;
 

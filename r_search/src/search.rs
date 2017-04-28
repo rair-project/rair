@@ -18,7 +18,6 @@
 use keyword::*;
 use regex::bytes::*;
 use regex;
-use std::io::{self, Write};
 type RSearchCallback = fn(&RSearchKeyword, usize, &[u8]);
 struct RKeywordHit {
     idx: usize,
@@ -64,9 +63,6 @@ impl RSearch {
     pub fn regex_add (&mut self, regex :&str) -> Result<usize, regex::Error>{
         self.regexs.push(Regex::new(regex)?);
         Ok(self.regexs.len())
-    }
-    pub fn begin(&mut self) {
-        //SHOULD THIS EXIST ?
     }
     pub fn buf(&mut self) -> &mut Vec<u8> {
         &mut self.buf

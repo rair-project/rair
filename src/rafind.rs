@@ -250,7 +250,6 @@ fn rafind_process(file: &str, list: &[SearchEntry], mut state: State) {
 
         }
     }
-    rs.begin();
     r_io::seek(io, state.from as u64, r_io::Seek::Set);
     let mut last = false;
     let mut cur = state.from;
