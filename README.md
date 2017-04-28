@@ -1,6 +1,8 @@
 # RAIR [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 
-[![Build Status](https://travis-ci.org/oddcoder/rair.svg?branch=master)](https://travis-ci.org/oddcoder/rair)
+**Travis CI:**  [![Build Status](https://travis-ci.org/oddcoder/rair.svg?branch=master)](https://travis-ci.org/oddcoder/rair)
+
+**AppVeyor:** [![Build status](https://ci.appveyor.com/api/projects/status/sn9d2w6vcctn7mvt/branch/master?svg=true)](https://ci.appveyor.com/project/oddcoder/rair/branch/master)
 
 RAIR is a work in progress rewrite of [radare2](http://github.com/radare/radare2) in rust with these goals:
 - native speed.

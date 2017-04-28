@@ -28,19 +28,9 @@ addons: #all of the addons are for r2 get rid of them
       - g++-4.8
 
 install:
-  - git clone https://github.com/radare/radare2.git
-  - cd radare2
-  - sys/install.sh
-  - export PKG_CONFIG_PATH=${TRAVIS_BUILD_DIR}/pkgcfg:${PKG_CONFIG_PATH}
-  - export PATH=${TRAVIS_BUILD_DIR}/install/bin:${PATH}
-  - export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib:${LD_LIBRARY_PATH}
-  - cd ../
-  - cargo build --release --verbose
+  - ci/install.sh
 script:
-  - cd test
-  - for f in *.sh; do bash "$f"; done
-  - cd ../r_search
-  - cargo test --verbose
+  - ci/test.sh
 notifications:
   email:
     on_success: never
