@@ -1,5 +1,6 @@
 #! /bin/bash
 . assert.sh
+echo "Testing:" `../target/release/rahash -v`
 #XXX
 echo "TODO -I -E -v are untested"
 

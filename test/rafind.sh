@@ -1,5 +1,6 @@
 #! /bin/bash
 . assert.sh
+echo "Testing:" `../target/release/rafind -v`
 #XXX
 echo "TODO -v -X -b are untested"
 echo "TODO -m is neither implemented nor tested"
