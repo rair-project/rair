@@ -21,7 +21,7 @@ enum RSearchKeywordMode {
     Strings,
     Binary,
 }
-pub type TransformCB = fn(&RSearchKeyword, &[u8]) -> Vec<u8>;
+type TransformCB = fn(&RSearchKeyword, &[u8]) -> Vec<u8>;
 pub struct RSearchKeyword {
     mode: RSearchKeywordMode,
     pub bin_keyword: Vec<u8>, // same as bellow
