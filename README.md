@@ -64,7 +64,7 @@ $ cargo install
 |  r_magic  	|      NA      	|       NA      	|    NA   	|
 |  r_parse  	|      NA      	|       NA      	|    NA   	|
 |   r_reg   	|      NA      	|       NA      	|    NA   	|
-|  r_search 	|   Partial    	|       NA      	|    NA   	|
+|  r_search 	|   Partial    	|       NA      	|   Done  	|
 |  r_socket 	|      NA      	|       NA      	|    NA   	|
 | r_syscall 	|      NA      	|       NA      	|    NA   	|
 |   r_util  	|  Partial FFI 	|       NA      	|    NA   	|

@@ -23,7 +23,8 @@ enum RSearchKeywordMode {
 }
 type TransformCB = fn(&RSearchKeyword, &[u8]) -> Vec<u8>;
 /// RSearchKeyword struct stores keyword instance to search for in RSearch
-pub struct RSearchKeyword { //TODO make this public restricted when it is avaialble 
+pub struct RSearchKeyword {
+    //TODO make this public restricted when it is avaialble
     mode: RSearchKeywordMode,
     #[doc(hidden)]
     pub bin_keyword: Vec<u8>,
@@ -63,7 +64,7 @@ impl RSearchKeyword {
         let mut kw = RSearchKeyword {
             mode: RSearchKeywordMode::Binary,
             bin_keyword: buf,
-             bin_mask: mask,
+            bin_mask: mask,
             bad_char: Vec::new(),
             transform: RSearchKeyword::pass_as_it_is,
         };
@@ -104,16 +105,16 @@ impl RSearchKeyword {
         }
         new_buf
     }
-    pub fn is_string (&self) -> bool{
+    pub fn is_string(&self) -> bool {
         self.mode == RSearchKeywordMode::Strings
     }
 }
 
 #[cfg(test)]
-mod test{
+mod test {
     use super::*;
     lazy_static! {
-        static ref KW1:RSearchKeyword = RSearchKeyword::new(vec![0x68,0x65, 0x6c, 0x6c, 0x6f], vec![0x40, 0x40]);
+        static ref KW1:RSearchKeyword = RSearchKeyword::new(vec![0x68, 0x65, 0x6c, 0x6c, 0x6f],vec![0x40, 0x40]);
         static ref KW2:RSearchKeyword = RSearchKeyword::new_hex("68656c6c6f".to_owned(), "4040".to_owned()).unwrap();
         static ref KW3:RSearchKeyword = RSearchKeyword::new_str("hello".to_owned(), "4040".to_owned()).unwrap();
         static ref KW4:RSearchKeyword = RSearchKeyword::new_caseless_str("H3LlO mY w0rLd".to_owned()).unwrap();
@@ -121,16 +122,16 @@ mod test{
         static ref KW6:RSearchKeyword = RSearchKeyword::new_str("HeLlO".to_owned(), "".to_owned()).unwrap();
     }
     #[test]
-    fn testing_new() { 
+    fn testing_new() {
         assert!(KW1.mode == RSearchKeywordMode::Binary);
-        assert!(KW1.bin_keyword == vec![0x68,0x65, 0x6c, 0x6c, 0x6f]);
+        assert!(KW1.bin_keyword == vec![0x68, 0x65, 0x6c, 0x6c, 0x6f]);
         assert!(KW1.bin_mask == vec![0x40, 0x40]);
         assert!(KW1.bad_char.len() == 256);
     }
     #[test]
     fn testing_new_hex() {
         assert!(KW2.mode == RSearchKeywordMode::Binary);
-        assert!(KW2.bin_keyword == vec![0x68,0x65, 0x6c, 0x6c, 0x6f]);
+        assert!(KW2.bin_keyword == vec![0x68, 0x65, 0x6c, 0x6c, 0x6f]);
         assert!(KW2.bin_mask == vec![0x40, 0x40]);
         assert!(!KW2.is_string());
         assert!(KW2.bad_char.len() == 256);
@@ -145,20 +146,22 @@ mod test{
     #[test]
     fn testing_new_str() {
         assert!(KW3.mode == RSearchKeywordMode::Strings);
-        assert!(KW3.bin_keyword == vec![0x68,0x65, 0x6c, 0x6c, 0x6f]);
+        assert!(KW3.bin_keyword == vec![0x68, 0x65, 0x6c, 0x6c, 0x6f]);
         assert!(KW3.bin_mask == vec![0x40, 0x40]);
         assert!(KW3.is_string());
         assert!(KW3.bad_char.len() == 256);
     }
     #[test]
     fn testing_buggy_new_str() {
-        let buggy_kw = RSearchKeyword::new_str ("hello".to_owned(), "404".to_owned());
+        let buggy_kw = RSearchKeyword::new_str("hello".to_owned(), "404".to_owned());
         assert!(buggy_kw.is_err());
     }
     #[test]
     fn testing_new_caseless_str() {
         assert!(KW4.mode == RSearchKeywordMode::Strings);
-        assert!(KW4.bin_keyword == vec![0x48, 0x33, 0x4c, 0x6c, 0x4f, 0x20, 0x6d, 0x59, 0x20, 0x77, 0x30, 0x72, 0x4c ,0x64]);
+        assert!(KW4.bin_keyword ==
+                vec![0x48, 0x33, 0x4c, 0x6c, 0x4f, 0x20, 0x6d, 0x59, 0x20, 0x77, 0x30, 0x72,
+                     0x4c, 0x64]);
         assert!(KW4.bin_mask.is_empty());
         assert!(KW4.is_string());
         assert!(KW4.bad_char.len() == 256);
@@ -172,7 +175,7 @@ mod test{
         assert!(KW5.len() == 14);
     }
     #[test]
-    fn testing_qs_badchar(){
+    fn testing_qs_badchar() {
         //TODO
     }
     #[test]
@@ -184,7 +187,8 @@ mod test{
         assert!((KW4.transform)(&KW4, &KW4.bin_keyword) == (KW5.transform)(&KW5, &KW5.bin_keyword));
     }
     #[test]
-    fn testing_do_mask () {
-        assert!((KW1.transform)(&KW1, &KW1.bin_keyword) == (KW1.transform)(&KW1, &[0x71, 0x72, 0x73, 0x74, 0x75]))
+    fn testing_do_mask() {
+        assert!((KW1.transform)(&KW1, &KW1.bin_keyword) ==
+                (KW1.transform)(&KW1, &[0x71, 0x72, 0x73, 0x74, 0x75]))
     }
 }

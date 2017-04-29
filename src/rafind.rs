@@ -202,18 +202,22 @@ fn hit(kw: &RSearchKeyword, addr: usize, buf: &[u8]) {
         println!("f hit_{}_{:x} 0x{:x}", kw.bin_keyword.to_hex(), addr, addr);
         return;
     }
-    
+
     if state.show_str {
-       print!("Match at 0x{:08x}: ", addr);
-       println!("{}", String::from_utf8_lossy(&kw.bin_keyword));
+        print!("Match at 0x{:08x}: ", addr);
+        println!("{}", String::from_utf8_lossy(&kw.bin_keyword));
     } else {
         println!("Match at 0x{:08x}", addr);
     }
     if state.hexdump {
         let pr = r_print::new();
-        let cur = addr%state.bsize;
-        let end = if cur+100 > buf.len() {buf.len()} else {cur+100};
-        r_print::hexdump(pr,addr,&buf[cur..end],16, true);
+        let cur = addr % state.bsize;
+        let end = if cur + 100 > buf.len() {
+            buf.len()
+        } else {
+            cur + 100
+        };
+        r_print::hexdump(pr, addr, &buf[cur..end], 16, true);
     }
 
 }
@@ -233,7 +237,8 @@ fn rafind_process(file: &str, list: &[SearchEntry], mut state: State) {
     for entry in list {
         match entry.mode {
             SearchMode::Strings => {
-                rs.regex_add(r"[[:print:]][[:print:]][[:print:]][[:print:]]*").unwrap();
+                rs.regex_add(r"[[:print:]][[:print:]][[:print:]][[:print:]]*")
+                    .unwrap();
             }
             SearchMode::Magic => {
                 unimplemented!();
@@ -241,7 +246,7 @@ fn rafind_process(file: &str, list: &[SearchEntry], mut state: State) {
             }
             SearchMode::Keyword => insert_keyword(&mut rs, entry, &state),
             SearchMode::Regex => {
-                match rs.regex_add(&entry.entry){
+                match rs.regex_add(&entry.entry) {
                     Err(y) => r_print::report(&y.to_string()),
                     _ => (),
                 }
@@ -260,7 +265,7 @@ fn rafind_process(file: &str, list: &[SearchEntry], mut state: State) {
         }
         rs.resize_buf(state.bsize); //TODO DELETE ME
         r_io::pread(io, cur as u64, rs.buf()); //XXX pread doesn't extend the buffer you know!;
-        rs.update(cur);
+        rs.search(cur);
         cur += state.bsize;
     }
 }
