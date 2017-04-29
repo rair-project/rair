@@ -70,10 +70,12 @@ impl RSearchKeyword {
         if !kw.bin_mask.is_empty() {
             kw.transform = RSearchKeyword::do_mask;
         }
+        kw.qs_badchar();
         kw
     }
     fn qs_badchar(&mut self) {
         let buf = (self.transform)(self, &self.bin_keyword);
+        self.bad_char.drain(..);
         for _ in 0..256 {
             self.bad_char.push(buf.len() as i64 + 1);
         }
@@ -123,6 +125,7 @@ mod test{
         assert!(KW1.mode == RSearchKeywordMode::Binary);
         assert!(KW1.bin_keyword == vec![0x68,0x65, 0x6c, 0x6c, 0x6f]);
         assert!(KW1.bin_mask == vec![0x40, 0x40]);
+        assert!(KW1.bad_char.len() == 256);
     }
     #[test]
     fn testing_new_hex() {
@@ -130,6 +133,7 @@ mod test{
         assert!(KW2.bin_keyword == vec![0x68,0x65, 0x6c, 0x6c, 0x6f]);
         assert!(KW2.bin_mask == vec![0x40, 0x40]);
         assert!(!KW2.is_string());
+        assert!(KW2.bad_char.len() == 256);
     }
     #[test]
     fn testing_buggy_new_hex() {
@@ -144,6 +148,7 @@ mod test{
         assert!(KW3.bin_keyword == vec![0x68,0x65, 0x6c, 0x6c, 0x6f]);
         assert!(KW3.bin_mask == vec![0x40, 0x40]);
         assert!(KW3.is_string());
+        assert!(KW3.bad_char.len() == 256);
     }
     #[test]
     fn testing_buggy_new_str() {
@@ -156,7 +161,7 @@ mod test{
         assert!(KW4.bin_keyword == vec![0x48, 0x33, 0x4c, 0x6c, 0x4f, 0x20, 0x6d, 0x59, 0x20, 0x77, 0x30, 0x72, 0x4c ,0x64]);
         assert!(KW4.bin_mask.is_empty());
         assert!(KW4.is_string());
-    
+        assert!(KW4.bad_char.len() == 256);
     }
     #[test]
     fn testing_len() {
