@@ -20,13 +20,13 @@ extern crate r_io;
 extern crate r_util;
 extern crate r_search;
 extern crate r_cons;
-extern crate rustc_serialize;
+extern crate hex;
 mod version;
 
 use getopts::{Options, Matches};
 use r_search::*;
 use r_util::*;
-use rustc_serialize::hex::ToHex;
+use hex::*;
 use std::env;
 use std::ptr;
 #[derive(Clone)]

@@ -21,5 +21,5 @@ r_hash = {path = "r_hash"}
 r_io = {path = "r_io"}
 r_search = {path = "r_search"}
 r_util = {path = "r_util"}
-rustc-serialize= "*"
 serde_json = "*"
+hex = "*"

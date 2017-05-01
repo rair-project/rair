@@ -15,7 +15,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 extern crate libc;
-extern crate rustc_serialize;
+extern crate hex;
 extern crate regex;
 #[cfg(test)]
 #[macro_use]

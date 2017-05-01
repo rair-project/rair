@@ -15,7 +15,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use rustc_serialize::hex::*;
+use hex::*;
 #[derive(PartialEq,Clone)]
 enum RSearchKeywordMode {
     Strings,
@@ -36,14 +36,14 @@ pub struct RSearchKeyword {
 }
 impl RSearchKeyword {
     pub fn new_hex(kwhex: String, bitmask_hex: String) -> Result<RSearchKeyword, FromHexError> {
-        let kwbuf = kwhex.from_hex()?;
-        let bitmaskbuf = bitmask_hex.from_hex()?;
+        let kwbuf = FromHex::from_hex(kwhex)?;
+        let bitmaskbuf = FromHex::from_hex(bitmask_hex)?;
         let mut kw = RSearchKeyword::new(kwbuf, bitmaskbuf);
         kw.qs_badchar();
         Ok(kw)
     }
     pub fn new_str(kwbuf: String, bitmask_hex: String) -> Result<RSearchKeyword, FromHexError> {
-        let bitmaskbuf: Vec<u8> = bitmask_hex.from_hex()?;
+        let bitmaskbuf: Vec<u8> = FromHex::from_hex(bitmask_hex)?;
         let mut kw = RSearchKeyword::new(kwbuf.as_bytes().to_vec(), bitmaskbuf);
         kw.mode = RSearchKeywordMode::Strings;
         kw.qs_badchar();

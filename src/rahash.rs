@@ -22,8 +22,7 @@ extern crate r_crypto;
 extern crate r_hash;
 extern crate r_io;
 extern crate r_util;
-//TODO get rid of rustc_serialize
-extern crate rustc_serialize;
+extern crate hex;
 
 mod version;
 
@@ -31,7 +30,7 @@ use getopts::{Options, Matches};
 use libc::*;
 use r_hash::RHash;
 use r_util::*;
-use rustc_serialize::hex::FromHex;
+use hex::*;
 use std::env;
 use std::io::{self, Read, Write};
 use std::fs::File;
@@ -345,7 +344,7 @@ fn do_hash_seed(mut seed: String) -> r_hash::RHashSeed {
         seed.drain(0..2);
         r_hash_seed.buf.extend(seed.as_bytes());
     } else {
-        r_hash_seed.buf = match (*seed).from_hex() {
+        r_hash_seed.buf = match FromHex::from_hex(seed) {
             Ok(buf) => buf,
             Err(why) => r_print::report(&(why.to_string())),
         }
@@ -574,8 +573,8 @@ fn main() {
         if !is_power_of_two(algobit) {
             r_print::report("Option -c incompatible with multiple algorithms in -a.");
         }
-        compare_bin = match (*compare_str).from_hex() {
-            Err(why) => r_print::report(&why.to_string()),
+        compare_bin = match FromHex::from_hex(compare_str) {
+            Err(why) => r_print::report(&((why as hex::FromHexError).to_string())),
             Ok(x) => x,
         };
         if compare_bin.len() != r_hash::size(algobit) {
@@ -590,8 +589,8 @@ fn main() {
         if ivseed.starts_with("s:") {
             iv.extend(ivseed[2..].as_bytes());
         } else {
-            iv = match (*ivseed).from_hex() {
-                Err(why) => r_print::report(&why.to_string()),
+            iv = match FromHex::from_hex(ivseed) {
+                Err(why) => r_print::report(&(why as hex::FromHexError).to_string()),
                 Ok(x) => x,
             }
         }
@@ -602,8 +601,8 @@ fn main() {
             io::stdin().read_to_string(&mut hashstr).unwrap();
         }
         if ishex {
-            hash = match (*hashstr).from_hex() {
-                Err(why) => r_print::report(&why.to_string()),
+            hash = match FromHex::from_hex(hashstr) {
+                Err(why) => r_print::report(&(why as hex::FromHexError).to_string()),
                 Ok(x) => x,
             }
         } else {
