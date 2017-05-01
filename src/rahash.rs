@@ -407,7 +407,7 @@ fn argument_parser() -> Matches {
         Ok(m) => matches = m,
         Err(f) => r_print::report(&f.to_string()),
     };
-    if env::args().len() == 1 {
+    if args.len() == 1 {
         let program = args[0].clone();
         let help = format!("Usage: {} [-rBhlkvje] [-b S] [-a A] [-c H] [-e A] \
                             [-s S] [-f O] [-t O] [file] ...",
