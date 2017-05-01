@@ -33,7 +33,7 @@ addons:
     - gcc-4.8
     - g++-4.8
 install:
-- if [ $CLIPPY ]; then cargo install clippy; cargo clippy; else ci/install.sh; fi
+- if [ $CLIPPY ]; then ci/clippy.sh; else ci/install.sh; fi
 script:
 - ci/test.sh
 notifications:
