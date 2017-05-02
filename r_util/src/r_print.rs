@@ -14,7 +14,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-//TODO delete the whole file ^_^
 extern crate libc;
 use libc::*;
 use std::io::{self, Write};
@@ -22,9 +21,11 @@ use std::ffi::CStr;
 use std::process;
 #[derive(PartialEq,Clone)]
 pub enum OutputFormat {
-    Json,
     Command,
+    Json,
     Ssh, // used by rahash -k option
+    UniOut, // unified output (---+++) used by radiff -u
+    UnitDiff, // unified output using system 'diff' used by radiff -U
     None,
 }
 #[link(name = "r_util")]
