@@ -118,6 +118,7 @@ fn do_hash_print(ctx: &r_hash::RHash, algo: u64, len: usize, state: &State) {
             let art = r_print::randomart(&c, state.from);
             println!("{}\n{}", hname, art);
         }
+        _ => (),
     };
 }
 
