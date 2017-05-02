@@ -29,6 +29,7 @@ use r_util::*;
 use hex::*;
 use std::env;
 use std::ptr;
+
 #[derive(Clone)]
 struct State {
     align: usize,
@@ -40,16 +41,19 @@ struct State {
     hexdump: bool,
     show_str: bool,
 }
+
 #[derive(PartialEq, Clone)]
 enum EntryFormat {
     Hex,
     None,
 }
+
 struct SearchEntry {
     mode: r_search::SearchMode,
     format: EntryFormat,
     entry: String,
 }
+
 impl SearchEntry {
     fn new(mode: r_search::SearchMode, format: EntryFormat, entry: String) -> SearchEntry {
         SearchEntry {
@@ -59,6 +63,7 @@ impl SearchEntry {
         }
     }
 }
+
 fn argument_parser() -> Matches {
     let mut opts = Options::new();
     let matches;
@@ -110,6 +115,7 @@ fn argument_parser() -> Matches {
     }
     matches
 }
+
 fn get_search_entries(matches: &Matches) -> Vec<SearchEntry> {
     let mut search_list: Vec<SearchEntry> = Vec::new();
     if matches.opt_present("m") {
@@ -138,6 +144,7 @@ fn get_search_entries(matches: &Matches) -> Vec<SearchEntry> {
     }
     search_list
 }
+
 fn parse_state(matches: &Matches) -> State {
     let mut math = RNum::new(None, None, None);
     let mut state = State {
@@ -195,6 +202,7 @@ fn parse_state(matches: &Matches) -> State {
     }
     state
 }
+
 fn hit(kw: &RSearchKeyword, addr: usize, buf: &[u8]) {
     let matches = argument_parser();
     let state = parse_state(&matches);
@@ -221,6 +229,7 @@ fn hit(kw: &RSearchKeyword, addr: usize, buf: &[u8]) {
     }
 
 }
+
 fn rafind_process(file: &str, list: &[SearchEntry], mut state: State) {
     let io = r_io::new();
     let mut rs: RSearch = RSearch::new();
@@ -269,6 +278,7 @@ fn rafind_process(file: &str, list: &[SearchEntry], mut state: State) {
         cur += state.bsize;
     }
 }
+
 fn insert_keyword(search: &mut RSearch, entry: &SearchEntry, state: &State) {
     let kw: RSearchKeyword;
     match entry.format {
