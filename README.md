@@ -50,7 +50,7 @@ $ cargo install
 |   r_asm   	|      NA      	|       NA      	|    NA   	|
 |   r_bin   	|      NA      	|       NA      	|    NA   	|
 |    r_bp   	|      NA      	|       NA      	|    NA   	|
-|  r_config 	|      NA      	|       NA      	|    NA   	|
+|  r_config 	|   Partial    	|       NA      	|   Done   	|
 |   r_cons  	|  Partial FFI 	|       NA      	|    NA   	|
 |   r_core  	|      NA      	|       NA      	|    NA   	|
 |  r_crypto 	|  Partial FFI 	|       NA      	|    NA   	|

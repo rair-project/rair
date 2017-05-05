@@ -1,0 +1,9 @@
+[package]
+name = "r_config"
+version = "0.1.0"
+authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
+
+[dependencies]
+
+[dev-dependencies]
+lazy_static = "*"
