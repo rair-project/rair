@@ -17,7 +17,7 @@
 use libc::*;
 use r_config::*;
 pub struct RCore {
-    config: RConfig,
+    //config: RConfig,
     //lib: *mut c_void,
 }
 
@@ -34,7 +34,7 @@ impl RCore {
     }
     pub fn new ()-> RCore {
         let mut core=RCore {
-            config: RConfig::new(),
+            //config: RConfig::new(),
             //lib
         };
         core.config_init();
