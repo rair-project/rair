@@ -18,6 +18,7 @@ matrix:
     rust: nightly
   allow_failures:
   - env: CLIPPY=true
+  - rust: nightly
 addons:
   apt:
     sources:
