@@ -1,7 +1,9 @@
+tags
 *.swo
 *.bk
 *.swp
 *.lock
+*.vi
 target
 target
 Cargo.lock
