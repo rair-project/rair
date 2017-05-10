@@ -17,8 +17,12 @@
 use libc::*;
 use r_config::*;
 pub struct RCore {
-    //config: RConfig,
-    //lib: *mut c_void,
+    config: RConfig<RCoreInternals>,
+    core_internals: RCoreInternals,
+    
+}
+
+struct RCoreInternals {
 }
 
 pub enum LibScope{
@@ -34,8 +38,8 @@ impl RCore {
     }
     pub fn new ()-> RCore {
         let mut core=RCore {
-            //config: RConfig::new(),
-            //lib
+            config: RConfig::new(),
+            core_internals: RCoreInternals{},
         };
         core.config_init();
         return core;
