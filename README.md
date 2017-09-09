@@ -27,7 +27,7 @@ Currently rair depends almost completely on libr so the simplest way to have lib
 $ git clone https://github.com/radare/radare2.git
 $ git clone https://github.com/oddcoder/rair.git
 $ cd radare2
-$ sys /install.sh
+$ sys/install.sh
 $ cd ../rair
 $ cargo install
 ```
