@@ -60,11 +60,11 @@ impl RIO {
                 }
             }
             _ => {
-                desc.paddr = paddr;
-                self.descs.push(desc);
                 location = self.descs.len() - 1;
             }
         }
+        desc.paddr = paddr;
+        self.descs.insert(location, desc);
         return Ok(self.descs[location].get_hndl());
     }
 
@@ -383,11 +383,11 @@ mod rio_tests {
     fn test_phy_to_hndl_cb(paths: &[&Path]) {
         let mut io = RIO::new();
         io.open(&paths[0].to_string_lossy(), IoMode::READ).unwrap();
-        io.open_at(&paths[1].to_string_lossy(), IoMode::READ, 0x1000).unwrap();
-        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, 0x2000).unwrap();
+        io.open_at(&paths[1].to_string_lossy(), IoMode::READ, 0x2000).unwrap();
+        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, 0x1000).unwrap();
         assert_eq!(io.phy_to_hndl(0x10).unwrap(), 0);
-        assert_eq!(io.phy_to_hndl(0x1000).unwrap(), 1);
-        assert_eq!(io.phy_to_hndl(0x2000).unwrap(), 2);
+        assert_eq!(io.phy_to_hndl(0x2000).unwrap(), 1);
+        assert_eq!(io.phy_to_hndl(0x1000).unwrap(), 2);
         assert_eq!(io.phy_to_hndl(0x500), None);
     }
     #[test]
