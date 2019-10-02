@@ -47,6 +47,7 @@ impl RIO {
     fn insert_desc_at(&mut self, mut desc: RIODesc, paddr: u64) -> Result<u64, IoError> {
         let insert_before_me = self.descs.iter().position(|d| paddr + desc.size as u64 <= d.paddr);
         let location: usize;
+        desc.paddr = paddr;
         match insert_before_me {
             Some(i) => {
                 if i == 0 {
@@ -58,13 +59,14 @@ impl RIO {
                     }
                     location = i;
                 }
+                self.descs.insert(location, desc);
             }
             _ => {
+                self.descs.push(desc);
                 location = self.descs.len() - 1;
             }
         }
-        desc.paddr = paddr;
-        self.descs.insert(location, desc);
+
         return Ok(self.descs[location].get_hndl());
     }
 
@@ -374,6 +376,7 @@ mod rio_tests {
         let mut hndl = io.open(&path[0].to_string_lossy(), IoMode::READ).unwrap();
         assert_eq!(io.descs.len(), 1);
         assert_eq!(hndl, 0);
+        assert_eq!(io.descs[0].paddr, 0);
         io.close(hndl);
         assert_eq!(io.descs.len(), 0);
 
@@ -398,6 +401,16 @@ mod rio_tests {
     fn test_open_close() {
         operate_on_files(&test_open_close_cb, &[DATA, DATA, DATA]);
     }
+    fn test_open_at_cb(path: &[&Path]) {
+        let mut io = RIO::new();
+        io.open_at(&path[0].to_string_lossy(), IoMode::READ, 0x5000).unwrap();
+        assert_eq!(io.descs[0].paddr, 0x5000);
+    }
+    #[test]
+    fn test_open_at() {
+        operate_on_files(&test_open_at_cb, &[DATA, DATA, DATA]);
+    }
+
     // TODO: failing open, failing reads, and failing writes.
 
     fn test_phy_to_hndl_cb(paths: &[&Path]) {
