@@ -85,7 +85,19 @@ mod default_plugin_tests {
     fn test_desc_read() {
         operate_on_file(&test_desc_read_cb, DATA)
     }
-
+    fn test_desc_has_paddr_cb(path: &Path) {
+        let mut plugin = defaultplugin::plugin();
+        let mut desc = RIODesc::open(&mut plugin, &path.to_string_lossy(), IoMode::READ, 0).unwrap();
+        desc.paddr = 0x40000;
+        assert_eq!(desc.has_paddr(0x40000), true);
+        assert_eq!(desc.has_paddr(0x5), false);
+        assert_eq!(desc.has_paddr(0x40000 + DATA.len() as u64), false);
+        assert_eq!(desc.has_paddr(0x40000 + DATA.len() as u64 - 1), true);
+    }
+    #[test]
+    fn test_desc_has_paddr() {
+        operate_on_file(&test_desc_has_paddr_cb, DATA);
+    }
     fn test_desc_read_errors_cb(path: &Path) {
         let mut plugin = defaultplugin::plugin();
         let mut desc = RIODesc::open(&mut plugin, &path.to_string_lossy(), IoMode::READ, 0).unwrap();
