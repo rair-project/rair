@@ -81,6 +81,7 @@ impl RIO {
                 if tmp_paddr + desc.size <= self.descs[i + 1].paddr {
                     paddr = tmp_paddr;
                     where_to_insert = i + 1;
+                    break;
                 }
             } else {
                 paddr = self.descs[i].paddr + self.descs[i].size;
@@ -367,19 +368,38 @@ mod rio_tests {
     use super::*;
     use std::path::Path;
     use test_aids::*;
-    fn test_open_close_cb(path: &Path) {
+    fn test_open_close_cb(path: &[&Path]) {
         let mut io = RIO::new();
-        let hndl = io.open(&path.to_string_lossy(), IoMode::READ).unwrap();
+        // Test single file opening and closing
+        let mut hndl = io.open(&path[0].to_string_lossy(), IoMode::READ).unwrap();
         assert_eq!(io.descs.len(), 1);
         assert_eq!(hndl, 0);
         io.close(hndl);
         assert_eq!(io.descs.len(), 0);
+
+        // Now lets open 3 files
+        // close the second one and re opening it and see what happens
+        io.open(&path[0].to_string_lossy(), IoMode::READ).unwrap();
+        hndl = io.open(&path[1].to_string_lossy(), IoMode::READ).unwrap();
+        io.open(&path[2].to_string_lossy(), IoMode::READ).unwrap();
+        assert_eq!(io.descs.len(), 3);
+        assert_eq!(io.descs[0].paddr, 0);
+        assert_eq!(io.descs[1].paddr, io.descs[0].size);
+        assert_eq!(io.descs[2].paddr, io.descs[0].size + io.descs[1].size);
+        io.close(hndl);
+        assert_eq!(io.descs.len(), 2);
+        io.open(&path[1].to_string_lossy(), IoMode::READ).unwrap();
+        assert_eq!(io.descs.len(), 3);
+        assert_eq!(io.descs[0].paddr, 0);
+        assert_eq!(io.descs[1].paddr, io.descs[0].size);
+        assert_eq!(io.descs[2].paddr, io.descs[0].size + io.descs[1].size);
     }
     #[test]
     fn test_open_close() {
-        operate_on_file(&test_open_close_cb, DATA);
+        operate_on_files(&test_open_close_cb, &[DATA, DATA, DATA]);
     }
     // TODO: failing open, failing reads, and failing writes.
+
     fn test_phy_to_hndl_cb(paths: &[&Path]) {
         let mut io = RIO::new();
         io.open(&paths[0].to_string_lossy(), IoMode::READ).unwrap();
@@ -453,15 +473,4 @@ mod rio_tests {
     fn test_pwrite() {
         operate_on_files(&test_pwrite_cb, &[DATA, DATA, DATA]);
     }
-    /*
-        #[test]
-        fn test_phy_vir() {
-            assert!(false, "Not tested yet!");
-            let io = io_new().unwrap();
-            io_open_at(io, "malloc://512", IoMode::READ, 0x1000);
-            let addr = io_vir2phy(io, 0x1100);
-            io_close(io);
-            io_free(io);
-        }
-    */
 }
