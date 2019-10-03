@@ -165,6 +165,9 @@ impl RIO {
                     if i >= self.descs.len() {
                         return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
                     }
+                    if paddr + offset as u64 != self.descs[i].paddr {
+                        return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
+                    }
                     let size = min(buf.len() - offset, self.descs[i].size as usize);
                     orders.push((i, offset, size));
                     offset += size;
@@ -189,6 +192,9 @@ impl RIO {
                 let mut offset = 0;
                 while offset != buf.len() {
                     if i >= self.descs.len() {
+                        return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
+                    }
+                    if paddr + offset as u64 != self.descs[i].paddr {
                         return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
                     }
                     let size = min(buf.len() - offset, self.descs[i].size as usize);
@@ -306,6 +312,9 @@ impl RIO {
                     if i >= self.maps.len() {
                         return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
                     }
+                    if vaddr + offset as u64 != self.maps[i].vaddr {
+                        return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
+                    }
                     let size = min(buf.len() - offset, self.maps[i].size as usize);
                     let paddr = (vaddr - self.maps[i].vaddr + self.maps[i].paddr) as usize + offset;
                     orders.push((paddr, size));
@@ -334,6 +343,10 @@ impl RIO {
                     if i >= self.maps.len() {
                         return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
                     }
+                    if vaddr + offset as u64 != self.maps[i].vaddr {
+                        return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
+                    }
+
                     let size = min(buf.len() - offset, self.maps[i].size as usize);
                     let paddr = (vaddr - self.maps[i].vaddr + self.maps[i].paddr) as usize + offset;
                     orders.push((paddr, size));
@@ -468,11 +481,12 @@ mod rio_tests {
         assert_eq!(io.phy_to_hndl(0x1000).unwrap(), 2);
         assert_eq!(io.phy_to_hndl(0x500), None);
     }
+
     #[test]
     fn test_phy_to_hndl() {
         operate_on_files(&test_phy_to_hndl_cb, &[DATA, DATA, DATA]);
     }
-    // TODO: failing reads, and failing writes.
+
     fn test_pread_cb(paths: &[&Path]) {
         let mut io = RIO::new();
         let mut fillme: Vec<u8> = vec![0; 8];
@@ -505,7 +519,26 @@ mod rio_tests {
     fn test_pread() {
         operate_on_files(&test_pread_cb, &[DATA, DATA, DATA]);
     }
-
+    fn test_fail_pread_cb(paths: &[&Path]) {
+        let mut io = RIO::new();
+        let buffer_overflow = IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow"));
+        let mut fillme: Vec<u8> = vec![0; 8];
+        io.open(&paths[0].to_string_lossy(), IoMode::READ).unwrap();
+        let mut e = io.pread(0x500, &mut fillme);
+        assert_eq!(e.err().unwrap(), IoError::AddressNotFound);
+        fillme = vec![0; DATA.len() + 1];
+        e = io.pread(0, &mut fillme);
+        assert_eq!(e.err().unwrap(), buffer_overflow);
+        io.open(&paths[1].to_string_lossy(), IoMode::READ);
+        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, DATA.len() as u64 * 2 + 1);
+        fillme = vec![0; DATA.len() * 3];
+        e = io.pread(0, &mut fillme);
+        assert_eq!(e.err().unwrap(), buffer_overflow);
+    }
+    #[test]
+    fn test_fail_pread() {
+        operate_on_files(&test_fail_pread_cb, &[DATA, DATA, DATA]);
+    }
     fn test_pwrite_cb(paths: &[&Path]) {
         let mut io = RIO::new();
         let mut fillme: Vec<u8> = vec![0; 8];
