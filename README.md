@@ -33,7 +33,7 @@ $ cargo install
 ## Current status
 |   Module  	| Rust Porting 	| Documentation 	| Testing 	|
 |:---------:	|:------------:	|:-------------:	|:-------:	|
-|   rio       	|      DONE 	|       NA      	|    NA   	|
+|   rio       	|      DONE 	|       NA      	|    WIP   	|
 |  R2agent  	|      NA      	|       NA      	|    NA   	|
 |    R2pm   	|      NA      	|       NA      	|    NA   	|
 |   Rabin   	|      NA      	|       NA      	|    NA   	|
