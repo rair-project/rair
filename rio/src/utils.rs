@@ -39,6 +39,17 @@ pub enum IoError {
     TooManyFilesError,
     Parse(io::Error),
 }
+impl PartialEq for IoError {
+    fn eq(&self, rhs: &IoError) -> bool {
+        match self {
+            IoError::AddressNotFound => if let IoError::AddressNotFound = rhs { true } else { false },
+            IoError::AddressesOverlapError => if let IoError::AddressesOverlapError = rhs { true } else { false },
+            IoError::IoPluginNotFoundError => if let IoError::IoPluginNotFoundError = rhs { true } else { false },
+            IoError::TooManyFilesError => if let IoError::TooManyFilesError = rhs { true } else { false },
+            IoError::Parse(_) => if let IoError::Parse(_) = rhs { true } else { false },
+        }
+    }
+}
 impl fmt::Display for IoError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
