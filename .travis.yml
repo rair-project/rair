@@ -13,12 +13,6 @@ matrix:
   - env: TARGET=x86_64-apple-darwin
     os: osx
     rust: nightly
-  - env: CLIPPY=true
-    os: linux
-    rust: nightly
-  allow_failures:
-  - env: CLIPPY=true
-  - rust: nightly
 addons:
   apt:
     sources:
@@ -34,7 +28,7 @@ addons:
     - gcc-4.8
     - g++-4.8
 install:
-- if [ $CLIPPY ]; then ci/clippy.sh; else ci/install.sh; fi
+- ci/install.sh
 script:
 - ci/test.sh
 notifications:
