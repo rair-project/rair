@@ -62,11 +62,18 @@ impl RIO {
                 self.descs.insert(location, desc);
             }
             _ => {
+                // being here means that A)  we will insert this desc at the very last or
+                // B) we have intersection with the last desc
+                if self.descs.len() != 0 {
+                    let lastdesc = &self.descs[self.descs.len() - 1];
+                    if lastdesc.has_paddr(paddr + desc.size - 1) {
+                        return Err(IoError::AddressesOverlapError);
+                    }
+                }
                 self.descs.push(desc);
                 location = self.descs.len() - 1;
             }
         }
-
         return Ok(self.descs[location].get_hndl());
     }
 
@@ -403,6 +410,7 @@ mod rio_tests {
     fn test_open_close() {
         operate_on_files(&test_open_close_cb, &[DATA, DATA, DATA]);
     }
+
     fn test_open_at_cb(path: &[&Path]) {
         let mut io = RIO::new();
         io.open_at(&path[0].to_string_lossy(), IoMode::READ, 0x5000).unwrap();
@@ -433,9 +441,23 @@ mod rio_tests {
     fn test_open_at() {
         operate_on_files(&test_open_at_cb, &[DATA, DATA, DATA]);
     }
-
-    // TODO: failing open, failing reads, and failing writes.
-
+    fn test_failing_open_cb(path: &[&Path]) {
+        let mut io = RIO::new();
+        let mut bad_path = "badformat://".to_owned();
+        bad_path.push_str(&path[0].to_string_lossy());
+        let mut e = io.open(&bad_path, IoMode::READ);
+        assert_eq!(e.err().unwrap(), IoError::IoPluginNotFoundError);
+        io.open(&path[0].to_string_lossy(), IoMode::READ).unwrap();
+        e = io.open_at(&path[1].to_string_lossy(), IoMode::READ, 0);
+        assert_eq!(e.err().unwrap(), IoError::AddressesOverlapError);
+        io.open(&path[1].to_string_lossy(), IoMode::READ).unwrap();
+        e = io.open_at(&path[1].to_string_lossy(), IoMode::READ, 0);
+        assert_eq!(e.err().unwrap(), IoError::AddressesOverlapError);
+    }
+    #[test]
+    fn test_failing_open() {
+        operate_on_files(&test_failing_open_cb, &[DATA, DATA]);
+    }
     fn test_phy_to_hndl_cb(paths: &[&Path]) {
         let mut io = RIO::new();
         io.open(&paths[0].to_string_lossy(), IoMode::READ).unwrap();
@@ -450,6 +472,7 @@ mod rio_tests {
     fn test_phy_to_hndl() {
         operate_on_files(&test_phy_to_hndl_cb, &[DATA, DATA, DATA]);
     }
+    // TODO: failing reads, and failing writes.
     fn test_pread_cb(paths: &[&Path]) {
         let mut io = RIO::new();
         let mut fillme: Vec<u8> = vec![0; 8];
