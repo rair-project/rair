@@ -75,25 +75,27 @@ impl RIO {
             self.descs.push(desc);
             return &mut self.descs[0];
         }
-        let mut where_to_insert: usize = 0;
-        let mut paddr: u64 = 0;
+        let mut start = 0;
+        let mut where_to_insert: Option<usize> = None;
         for i in 0..self.descs.len() {
-            if i + 1 < self.descs.len() {
-                let tmp_paddr = self.descs[i].paddr + self.descs[i].size;
-                if tmp_paddr + desc.size <= self.descs[i + 1].paddr {
-                    paddr = tmp_paddr;
-                    where_to_insert = i + 1;
-                    break;
-                }
-            } else {
-                paddr = self.descs[i].paddr + self.descs[i].size;
-                where_to_insert = i + 1;
+            if self.descs[i].paddr - start >= desc.size {
+                desc.paddr = start;
+                where_to_insert = Some(i);
                 break;
             }
+            start = self.descs[i].paddr + self.descs[i].size;
         }
-        desc.paddr = paddr;
-        self.descs.insert(where_to_insert, desc);
-        return &mut self.descs[where_to_insert];
+        match where_to_insert {
+            Some(i) => {
+                self.descs.insert(i, desc);
+            }
+            None => {
+                where_to_insert = Some(self.descs.len());
+                desc.paddr = self.descs[self.descs.len() - 1].paddr + self.descs[self.descs.len() - 1].size;
+                self.descs.push(desc);
+            }
+        }
+        return &mut self.descs[where_to_insert.unwrap()];
     }
 
     fn try_open(&mut self, uri: &str, flags: IoMode) -> Result<RIODesc, IoError> {
@@ -405,6 +407,27 @@ mod rio_tests {
         let mut io = RIO::new();
         io.open_at(&path[0].to_string_lossy(), IoMode::READ, 0x5000).unwrap();
         assert_eq!(io.descs[0].paddr, 0x5000);
+        io.close_all();
+        assert_eq!(io.descs.len(), 0);
+
+        // now lets open 3 files where each one has paddr < the one that comes firt
+        io.open_at(&path[0].to_string_lossy(), IoMode::READ, 0x5000).unwrap();
+        io.open_at(&path[0].to_string_lossy(), IoMode::READ, 0x5000 - DATA.len() as u64);
+        io.open(&path[0].to_string_lossy(), IoMode::READ);
+        assert_eq!(io.descs.len(), 3);
+        assert_eq!(io.descs[0].paddr, 0);
+        assert_eq!(io.descs[1].paddr, 0x5000 - io.descs[0].size);
+        assert_eq!(io.descs[2].paddr, 0x5000);
+        io.close_all();
+
+        //now lets open 3 files and close the middle one and re-open it
+        io.open_at(&path[0].to_string_lossy(), IoMode::READ, 0x5000).unwrap();
+        io.open_at(&path[1].to_string_lossy(), IoMode::READ, 0x5000 + DATA.len() as u64 * 2).unwrap();
+        io.open_at(&path[0].to_string_lossy(), IoMode::READ, 0x5000 + DATA.len() as u64).unwrap();
+        assert_eq!(io.descs.len(), 3);
+        assert_eq!(io.descs[0].paddr, 0x5000);
+        assert_eq!(io.descs[1].paddr, 0x5000 + io.descs[0].size);
+        assert_eq!(io.descs[2].paddr, 0x5000 + io.descs[0].size + io.descs[1].size);
     }
     #[test]
     fn test_open_at() {
