@@ -239,40 +239,36 @@ impl RIO {
         }
     }
     pub fn map(&mut self, paddr: u64, vaddr: u64, size: u64) -> Result<(), IoError> {
+        let map = RIOMap {
+            paddr: paddr,
+            vaddr: vaddr,
+            size: size,
+        };
+
         // check if paddr till paddr + size is valid
         if !self.is_phy(paddr, size) {
             return Err(IoError::AddressNotFound);
         }
         // check if vaddr is previosly used or not
         let insert_before_me = self.maps.iter().position(|x| vaddr + size < x.vaddr);
-        let location: usize;
         match insert_before_me {
             Some(i) => {
-                if i == 0 {
-                    location = i;
-                } else {
+                if i != 0 {
                     let prevmap = &self.maps[i - 1];
                     if vaddr >= prevmap.vaddr && vaddr < prevmap.vaddr + prevmap.size {
                         return Err(IoError::AddressesOverlapError);
                     }
-                    location = i;
                 }
+                self.maps.insert(i, map);
             }
             _ => {
-                location = self.maps.len() - 1;
+                self.maps.push(map);
             }
         }
-        // do the mapping
-        let map = RIOMap {
-            paddr: paddr,
-            vaddr: vaddr,
-            size: size,
-        };
-        self.maps.insert(location, map);
         return Ok(());
     }
     fn split_maps(&mut self, i: usize, vaddr: u64) {
-        let delta = self.maps[i].vaddr - vaddr;
+        let delta = vaddr - self.maps[i].vaddr;
         let new_map = RIOMap {
             vaddr: vaddr,
             paddr: self.maps[i].paddr + delta,
@@ -290,9 +286,11 @@ impl RIO {
                     break;
                 }
                 // if the start address is in the middle of the map first split the map
-                if vaddr > self.maps[i].vaddr {
+                if vaddr + progress > self.maps[i].vaddr {
                     self.split_maps(i, vaddr);
                     i += 1
+                } else if vaddr + progress < self.maps[i].vaddr {
+                    break;
                 }
                 // if the end address is at the middle of the map first split the map
                 if vaddr + size < self.maps[i].vaddr + self.maps[i].size {
@@ -608,5 +606,47 @@ mod rio_tests {
     #[test]
     fn test_is_phy() {
         operate_on_files(&test_is_phy_cb, &[DATA, DATA, DATA]);
+    }
+
+    fn test_map_unmap_cb(paths: &[&Path]) {
+        let mut io = RIO::new();
+        io.open(&paths[0].to_string_lossy(), IoMode::READ).unwrap();
+        io.open(&paths[1].to_string_lossy(), IoMode::READ).unwrap();
+        io.open(&paths[2].to_string_lossy(), IoMode::READ).unwrap();
+
+        // simple file open, map and unmap
+        io.map(0, 0x4000, DATA.len() as u64).unwrap();
+        assert_eq!(io.maps.len(), 1);
+        io.unmap(0x4000, DATA.len() as u64);
+        assert_eq!(io.maps.len(), 0);
+        io.map(0, 0x4000, DATA.len() as u64).unwrap();
+        io.map(0, 0x5000, DATA.len() as u64).unwrap();
+        io.map(0, 0x2000, DATA.len() as u64).unwrap();
+        io.map(0, 0x3000, DATA.len() as u64).unwrap();
+        assert_eq!(io.maps.len(), 4);
+        io.unmap(0x5000, 0x1000);
+        io.unmap(0x2000, 0x1000);
+        io.unmap(0x3000, 0x1000);
+        io.unmap(0x4000, 0x1000);
+        assert_eq!(io.maps.len(), 0);
+        io.map(0, 0x1000, DATA.len() as u64 * 3).unwrap();
+        assert_eq!(io.maps.len(), 1);
+        io.unmap(0x1000, 0x10);
+        assert_eq!(io.maps.len(), 1);
+        assert_eq!(io.maps[0].paddr, 0x10);
+        assert_eq!(io.maps[0].vaddr, 0x1010);
+        assert_eq!(io.maps[0].size, DATA.len() as u64 * 3 - 0x10);
+        io.unmap(0x1020, 0x10);
+        assert_eq!(io.maps.len(), 2);
+        assert_eq!(io.maps[0].paddr, 0x10);
+        assert_eq!(io.maps[0].vaddr, 0x1010);
+        assert_eq!(io.maps[0].size, 0x10);
+        assert_eq!(io.maps[1].paddr, 0x30);
+        assert_eq!(io.maps[1].vaddr, 0x1030);
+        assert_eq!(io.maps[1].size, DATA.len() as u64 * 3 - 0x30);
+    }
+    #[test]
+    fn test_map_unmap() {
+        operate_on_files(&test_map_unmap_cb, &[DATA, DATA, DATA]);
     }
 }
