@@ -225,6 +225,10 @@ impl RIO {
                     if i >= self.descs.len() {
                         return false;
                     }
+                    if paddr + offset as u64 != self.descs[i].paddr {
+                        return false;
+                    }
+
                     let delta = min(size - offset, self.descs[i].size);
                     offset += delta;
                     i += 1;
@@ -589,5 +593,20 @@ mod rio_tests {
     #[test]
     fn test_fail_pwrite() {
         operate_on_files(&test_fail_pwrite_cb, &[DATA, DATA, DATA]);
+    }
+    fn test_is_phy_cb(paths: &[&Path]) {
+        let mut io = RIO::new();
+        io.open(&paths[0].to_string_lossy(), IoMode::READ).unwrap();
+        io.open(&paths[1].to_string_lossy(), IoMode::READ | IoMode::WRITE).unwrap();
+        io.open_at(&paths[2].to_string_lossy(), IoMode::READ | IoMode::WRITE, DATA.len() as u64 * 2 + 1).unwrap();
+        assert_eq!(io.is_phy(0, DATA.len() as u64), true);
+        assert_eq!(io.is_phy(0x1000, 5), false);
+        assert_eq!(io.is_phy(0, DATA.len() as u64 * 3), false);
+        io.close(2);
+        assert_eq!(io.is_phy(0, DATA.len() as u64 * 3), false);
+    }
+    #[test]
+    fn test_is_phy() {
+        operate_on_files(&test_is_phy_cb, &[DATA, DATA, DATA]);
     }
 }
