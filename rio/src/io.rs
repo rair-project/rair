@@ -565,4 +565,29 @@ mod rio_tests {
     fn test_pwrite() {
         operate_on_files(&test_pwrite_cb, &[DATA, DATA, DATA]);
     }
+    fn test_fail_pwrite_cb(paths: &[&Path]) {
+        let mut io = RIO::new();
+        let buffer_overflow = IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow"));
+        let permission_denied = IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "File Not Writable"));
+        let mut write_me: Vec<u8> = vec![0; 8];
+        io.open(&paths[0].to_string_lossy(), IoMode::READ).unwrap();
+        let mut e = io.pwrite(0, &mut write_me);
+        assert_eq!(e.err().unwrap(), permission_denied);
+        io.close(0);
+        io.open(&paths[0].to_string_lossy(), IoMode::READ | IoMode::WRITE).unwrap();
+        e = io.pwrite(0x500, &mut write_me);
+        assert_eq!(e.err().unwrap(), IoError::AddressNotFound);
+        write_me = vec![0; DATA.len() + 1];
+        e = io.pwrite(0, &write_me);
+        assert_eq!(e.err().unwrap(), buffer_overflow);
+        io.open(&paths[1].to_string_lossy(), IoMode::READ | IoMode::WRITE).unwrap();
+        io.open_at(&paths[2].to_string_lossy(), IoMode::READ | IoMode::WRITE, DATA.len() as u64 * 2 + 1).unwrap();
+        write_me = vec![0; DATA.len() * 3];
+        e = io.pwrite(0, &write_me);
+        assert_eq!(e.err().unwrap(), buffer_overflow);
+    }
+    #[test]
+    fn test_fail_pwrite() {
+        operate_on_files(&test_fail_pwrite_cb, &[DATA, DATA, DATA]);
+    }
 }
