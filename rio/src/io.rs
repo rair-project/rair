@@ -433,8 +433,8 @@ mod rio_tests {
 
         // now lets open 3 files where each one has paddr < the one that comes firt
         io.open_at(&path[0].to_string_lossy(), IoMode::READ, 0x5000).unwrap();
-        io.open_at(&path[0].to_string_lossy(), IoMode::READ, 0x5000 - DATA.len() as u64);
-        io.open(&path[0].to_string_lossy(), IoMode::READ);
+        io.open_at(&path[0].to_string_lossy(), IoMode::READ, 0x5000 - DATA.len() as u64).unwrap();
+        io.open(&path[0].to_string_lossy(), IoMode::READ).unwrap();
         assert_eq!(io.descs.len(), 3);
         assert_eq!(io.descs[0].paddr, 0);
         assert_eq!(io.descs[1].paddr, 0x5000 - io.descs[0].size);
@@ -500,18 +500,18 @@ mod rio_tests {
         // Second we read through 1 desc into another desc
         fillme = vec![0; DATA.len() * 3 / 2];
         io.pread(0, &mut fillme).unwrap();
-        let mut sanity_data: Vec<u8> = vec![0; (DATA.len() * 3 / 2)];
+        let mut sanity_data: Vec<u8> = vec![0; DATA.len() * 3 / 2];
         sanity_data[0..DATA.len()].copy_from_slice(DATA);
-        let mut l = sanity_data.len() - DATA.len();
+        let l = sanity_data.len() - DATA.len();
         sanity_data[DATA.len()..DATA.len() * 3 / 2].copy_from_slice(&DATA[0..l]);
         assert_eq!(fillme, sanity_data);
         // Now we make sure that we can read through all three descs
         fillme = vec![0; DATA.len() * 5 / 2];
         io.pread(0, &mut fillme).unwrap();
-        sanity_data = vec![0; (DATA.len() * 5 / 2)];
+        sanity_data = vec![0; DATA.len() * 5 / 2];
         sanity_data[0..DATA.len()].copy_from_slice(DATA);
         sanity_data[DATA.len()..DATA.len() * 2].copy_from_slice(DATA);
-        let mut l = sanity_data.len() - DATA.len() * 2;
+        let l = sanity_data.len() - DATA.len() * 2;
         sanity_data[DATA.len() * 2..DATA.len() * 5 / 2].copy_from_slice(&DATA[0..l]);
         assert_eq!(fillme, sanity_data);
     }
@@ -529,8 +529,8 @@ mod rio_tests {
         fillme = vec![0; DATA.len() + 1];
         e = io.pread(0, &mut fillme);
         assert_eq!(e.err().unwrap(), buffer_overflow);
-        io.open(&paths[1].to_string_lossy(), IoMode::READ);
-        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, DATA.len() as u64 * 2 + 1);
+        io.open(&paths[1].to_string_lossy(), IoMode::READ).unwrap();
+        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, DATA.len() as u64 * 2 + 1).unwrap();
         fillme = vec![0; DATA.len() * 3];
         e = io.pread(0, &mut fillme);
         assert_eq!(e.err().unwrap(), buffer_overflow);
