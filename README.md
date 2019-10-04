@@ -2,8 +2,6 @@
 
 **Travis CI:**  [![Build Status](https://travis-ci.org/oddcoder/rair.svg?branch=master)](https://travis-ci.org/oddcoder/rair)
 
-**AppVeyor:** [![Build status](https://ci.appveyor.com/api/projects/status/sn9d2w6vcctn7mvt/branch/master?svg=true)](https://ci.appveyor.com/project/oddcoder/rair/branch/master)
-
 RAIR is a work in progress rewrite of [radare2](https://github.com/radare/radare2) in rust with these goals:
 - Native speed.
 - Extremely flexible and modern analysis.
