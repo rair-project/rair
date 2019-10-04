@@ -228,7 +228,6 @@ impl RIO {
                     if paddr + offset as u64 != self.descs[i].paddr {
                         return false;
                     }
-
                     let delta = min(size - offset, self.descs[i].size);
                     offset += delta;
                     i += 1;
@@ -648,5 +647,21 @@ mod rio_tests {
     #[test]
     fn test_map_unmap() {
         operate_on_files(&test_map_unmap_cb, &[DATA, DATA, DATA]);
+    }
+
+    fn test_map_errors_cb(paths: &[&Path]) {
+        let mut io = RIO::new();
+        io.open(&paths[0].to_string_lossy(), IoMode::READ).unwrap();
+        let mut e = io.map(0x1000, 0x4000, DATA.len() as u64);
+        assert_eq!(e.err().unwrap(), IoError::AddressNotFound);
+        e = io.map(0x0, 0x4000, DATA.len() as u64 + 1);
+        assert_eq!(e.err().unwrap(), IoError::AddressNotFound);
+        io.map(0, 0x4000, DATA.len() as u64).unwrap();
+        e = io.map(1, 0x4000, DATA.len() as u64 - 1 as u64);
+        assert_eq!(e.err().unwrap(), IoError::AddressesOverlapError);
+    }
+    #[test]
+    fn test_map_errors() {
+        operate_on_files(&test_map_errors_cb, &[DATA, DATA, DATA]);
     }
 }
