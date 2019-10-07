@@ -1,0 +1,11 @@
+[package]
+name = "rtrees"
+version = "0.1.0"
+authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
+license = "LGPL"
+repository = "https://github.com/oddcoder/rair"
+keywords = ["Trees", "Intervals", "Binary Search Tree", "BST"]
+description = "A Bunch of completely safe augmented tree implementation in rust"
+categories = ["Data structures", "Memory management"]
+readme = "readme.md"
+[dependencies]
