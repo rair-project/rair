@@ -1,24 +1,15 @@
+[workspace]
+members = [
+  "rio",
+  "rtrees",
+]
 [package]
 name = "rair"
 version = "0.1.0"
 authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
-build = "build.rs"
 
 [[bin]]
-name = "rahash"
-path = "src/rahash.rs"
-
-[[bin]]
-name = "rafind"
-path = "src/rafind.rs"
-[[bin]]
-name = "radiff"
-path = "src/radiff.rs"
+name = "rair"
+path = "src/rair.rs"
 
 [dependencies]
-hex = "*"
-libc = "*"
-getopts = "*"
-parking_lot = "*"
-rio = {path = "rio"}
-serde_json = "*"
