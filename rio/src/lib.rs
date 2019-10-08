@@ -1,3 +1,5 @@
+#![warn(clippy::cargo)]
+#![allow(clippy::needless_return)]
 /**
  * rio: rair IO library impelementation
  * Copyright (C) 2019  Oddcoder
@@ -30,7 +32,6 @@ mod desc;
 mod io;
 mod plugin;
 mod utils;
-
 pub use desc::*;
 pub use io::*;
 pub use plugin::*;

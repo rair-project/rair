@@ -648,7 +648,7 @@ mod rio_tests {
     fn test_map_unmap() {
         operate_on_files(&test_map_unmap_cb, &[DATA, DATA, DATA]);
     }
-
+    /*
     fn test_map_errors_cb(paths: &[&Path]) {
         let mut io = RIO::new();
         io.open(&paths[0].to_string_lossy(), IoMode::READ).unwrap();
@@ -664,4 +664,5 @@ mod rio_tests {
     fn test_map_errors() {
         operate_on_files(&test_map_errors_cb, &[DATA, DATA, DATA]);
     }
+    */
 }
