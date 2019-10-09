@@ -19,15 +19,13 @@ addons:
     sources:
     - ubuntu-toolchain-r-test
     packages:
-    - dc
-    - binutils
-    - cabextract
-    - libcurl4-openssl-dev
-    - libelf-dev
-    - libdw-dev
-    - jq
-    - gcc-4.8
-    - g++-4.8
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
+      - cmake
+      - gcc
+      - binutils-dev
+      - libiberty-dev
 install:
 - ci/install.sh
 script:
