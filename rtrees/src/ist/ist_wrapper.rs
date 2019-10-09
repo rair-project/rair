@@ -1,5 +1,5 @@
 /*
- * ist.rs: Augmented Interval Search Tree
+ * ist.rs: Augmented Interval Search Tree Wrapper
  *  Copyright (C) 2019  Oddcoder
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,7 +20,7 @@
  *  implemented using  left-leaning red-black tree:
  *  https://www.cs.princeton.edu/~rs/talks/LLRB/LLRB.pdf
  */
-use ist_node::*;
+use super::ist_node::*;
 use std::mem;
 
 #[derive(Default)]

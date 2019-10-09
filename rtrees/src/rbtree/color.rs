@@ -1,7 +1,5 @@
-#![warn(clippy::cargo)]
-#![allow(clippy::needless_return)]
 /*
- * rtrees: rair trees library impelementation
+ * color.rs: Red black tree color operations.
  * Copyright (C) 2019  Oddcoder
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,6 +14,17 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#[derive(PartialEq)]
+pub enum COLOR {
+    RED,
+    BLACK,
+}
 
-pub mod ist;
-pub mod rbtree;
+impl COLOR {
+    pub fn flip(&mut self) {
+        match self {
+            COLOR::RED => *self = COLOR::BLACK,
+            COLOR::BLACK => *self = COLOR::RED,
+        }
+    }
+}

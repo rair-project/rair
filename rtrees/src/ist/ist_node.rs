@@ -1,4 +1,3 @@
-use interval::Interval;
 /**
  * ist_node.rs: Augmented Interval Search Tree node implementation.
  *  Copyright (C) 2019  Oddcoder
@@ -16,6 +15,7 @@ use interval::Interval;
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **/
+use super::interval::Interval;
 use std::cmp::{max, min};
 use std::mem;
 pub struct ISTNode<K: Ord + Copy, V> {

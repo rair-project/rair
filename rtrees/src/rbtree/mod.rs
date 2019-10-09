@@ -1,7 +1,5 @@
-#![warn(clippy::cargo)]
-#![allow(clippy::needless_return)]
 /*
- * rtrees: rair trees library impelementation
+ * rbtree: Left-Leaning Red Black tree implementation built with augmentation in mind.
  * Copyright (C) 2019  Oddcoder
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,6 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-pub mod ist;
-pub mod rbtree;
+mod node;
+mod rbtree_wrapper;
+mod color;
+pub use self::rbtree_wrapper::*;
