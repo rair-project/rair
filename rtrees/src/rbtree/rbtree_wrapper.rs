@@ -245,34 +245,63 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
     pub(crate) fn is_red(&self) -> bool {
         self.is_node() && self.as_ref().unwrap().is_red()
     }
-
+    /// Returns copy of key of the current Tree node
+    /// # Panics
+    /// panics if current subtree is not a *node*
     pub fn key(&self) -> K {
         self.as_ref().unwrap().key
     }
+    /// Returns data stored in the current Tree node
+    /// # Panics
+    /// panics if current subtree is not a *node*
     pub fn data(self) -> V {
         self.unwrap().data
     }
+    /// Returns non-mutable reference to data stored in the current Tree node
+    /// # Panics
+    /// panics if current subtree is not a *node*
     pub fn data_ref(&self) -> &V {
         &self.as_ref().unwrap().data
     }
+    /// Returns mutable reference to data stored in the current Tree node
+    /// # Panics
+    /// panics if current subtree is not a *node*
     pub fn data_mut(&mut self) -> &mut V {
         &mut self.as_mut().unwrap().data
     }
+    /// Returns the left subtree after ripping it from the current node.
+    /// # Panics
+    /// panics if current subtree is not a *node*
     pub fn left(&mut self) -> RBTree<K, V> {
         self.as_mut().unwrap().left.take()
     }
+    /// Returns a non-mutable reference to left subtree.
+    /// # Panics
+    /// panics if current subtree is not a *node*
     pub fn left_ref(&self) -> &RBTree<K, V> {
         &self.as_ref().unwrap().left
     }
+    /// Returns a mutable reference to left subtree.
+    /// # Panics
+    /// panics if current subtree is not a *node*
     pub fn left_mut(&mut self) -> &mut RBTree<K, V> {
         &mut self.as_mut().unwrap().left
     }
+    /// Returns the right subtree after ripping it from the current node.
+    /// # Panics
+    /// panics if current subtree is not a *node*
     pub fn right(&mut self) -> RBTree<K, V> {
         self.as_mut().unwrap().right.take()
     }
+    /// Returns a non-mutable reference to right subtree.
+    /// # Panics
+    /// panics if current subtree is not a *node*
     pub fn right_ref(&self) -> &RBTree<K, V> {
         &self.as_ref().unwrap().right
     }
+    /// Returns a mutable reference to right subtree.
+    /// # Panics
+    /// panics if current subtree is not a *node*
     pub fn right_mut(&mut self) -> &mut RBTree<K, V> {
         &mut self.as_mut().unwrap().right
     }
