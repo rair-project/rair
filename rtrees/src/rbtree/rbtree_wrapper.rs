@@ -16,6 +16,8 @@
  */
 use super::color::COLOR;
 use super::node::*;
+use std::cmp::Ordering;
+use std::mem;
 
 pub(super) type RBTreeOp<K, V> = Option<Box<Node<K, V>>>;
 
@@ -29,6 +31,127 @@ impl<K: Ord + Copy, V> From<Node<K, V>> for RBTree<K, V> {
 }
 
 impl<K: Ord + Copy, V> RBTree<K, V> {
+    // Implementing wrapper for Option functionality
+    #[inline]
+    pub(super) fn take(&mut self) -> RBTree<K, V> {
+        RBTree(self.0.take())
+    }
+
+    #[inline]
+    pub(super) fn is_node(&self) -> bool {
+        self.0.is_some()
+    }
+
+    #[inline]
+    pub(super) fn as_mut(&mut self) -> Option<&mut Node<K, V>> {
+        self.0.as_mut().map(|x| &mut **x)
+    }
+
+    #[inline]
+    pub(super) fn as_ref(&self) -> Option<&Node<K, V>> {
+        self.0.as_ref().map(|x| &**x)
+    }
+
+    #[inline]
+    pub(super) fn unwrap(self) -> Box<Node<K, V>> {
+        self.0.unwrap()
+    }
+    #[inline]
+    pub(super) fn is_red(&self) -> bool {
+        self.is_node() && self.as_ref().unwrap().is_red()
+    }
+
+    /// Returns copy of key of the current Tree node
+    /// # Panics
+    /// panics if current subtree is not a *node*
+    pub fn key(&self) -> K {
+        self.as_ref().unwrap().key
+    }
+
+    /// Changes the *data* stored in the current Tree node.
+    /// # Panics
+    /// panics if current subtree is not a *node*.
+    pub fn set_data(&mut self, data: V) {
+        self.as_mut().unwrap().data = data;
+    }
+
+    /// Returns data stored in the current Tree node.
+    /// # Panics
+    /// panics if current subtree is not a *node*
+    pub fn data(self) -> V {
+        self.unwrap().data
+    }
+
+    /// Returns non-mutable reference to data stored in the current Tree node
+    /// # Panics
+    /// panics if current subtree is not a *node*
+    pub fn data_ref(&self) -> &V {
+        &self.as_ref().unwrap().data
+    }
+
+    /// Returns mutable reference to data stored in the current Tree node
+    /// # Panics
+    /// panics if current subtree is not a *node*
+    pub fn data_mut(&mut self) -> &mut V {
+        &mut self.as_mut().unwrap().data
+    }
+
+    /// Set the left subtree of the current Node.
+    /// # Panics
+    /// panics if current subtree is not a *node*.
+    pub fn set_left(&mut self, subtree: RBTree<K, V>) {
+        self.as_mut().unwrap().left = subtree;
+    }
+
+    /// Returns the left subtree after ripping it from the current node.
+    /// # Panics
+    /// panics if current subtree is not a *node*
+    pub fn left(&mut self) -> RBTree<K, V> {
+        self.as_mut().unwrap().left.take()
+    }
+
+    /// Returns a non-mutable reference to left subtree.
+    /// # Panics
+    /// panics if current subtree is not a *node*
+    pub fn left_ref(&self) -> &RBTree<K, V> {
+        &self.as_ref().unwrap().left
+    }
+
+    /// Returns a mutable reference to left subtree.
+    /// # Panics
+    /// panics if current subtree is not a *node*
+    pub fn left_mut(&mut self) -> &mut RBTree<K, V> {
+        &mut self.as_mut().unwrap().left
+    }
+
+    /// Set the right subtree of the current Node.
+    /// # Panics
+    /// panics if current subtree is not a *node*.
+    pub fn set_right(&mut self, subtree: RBTree<K, V>) {
+        self.as_mut().unwrap().right = subtree;
+    }
+
+    /// Returns the right subtree after ripping it from the current node.
+    /// # Panics
+    /// panics if current subtree is not a *node*
+    pub fn right(&mut self) -> RBTree<K, V> {
+        self.as_mut().unwrap().right.take()
+    }
+
+    /// Returns a non-mutable reference to right subtree.
+    /// # Panics
+    /// panics if current subtree is not a *node*
+    pub fn right_ref(&self) -> &RBTree<K, V> {
+        &self.as_ref().unwrap().right
+    }
+
+    /// Returns a mutable reference to right subtree.
+    /// # Panics
+    /// panics if current subtree is not a *node*
+    pub fn right_mut(&mut self) -> &mut RBTree<K, V> {
+        &mut self.as_mut().unwrap().right
+    }
+
     /// Returns new Red Black Tree
     /// # Example
     /// ```
@@ -77,12 +200,40 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
             None => return 0,
         }
     }
+    fn sync_aug(&mut self) {
+        self.as_mut().unwrap().sync_builtin_aug();
+    }
 
-    pub(super) fn insert_random_node(self, key: K, data: V) -> RBTree<K, V> {
-        return RBTree::from(match self.0 {
-            Some(root) => root.insert(key, data),
-            None => Node::new(key, data),
-        });
+    fn balance(mut self) -> Self {
+        self.sync_aug();
+        if self.right_ref().is_red() && !self.left_ref().is_red() {
+            self = self.unwrap().rotate_left().into();
+        }
+        if self.left_ref().is_red() && self.left_ref().left_ref().is_red() {
+            self = self.unwrap().rotate_right().into();
+        }
+        if self.left_ref().is_red() && self.right_ref().is_red() {
+            self.as_mut().unwrap().flip_colors();
+        }
+        return self;
+    }
+    fn insert_not_root(mut self, key: K, data: V) -> RBTree<K, V> {
+        if !self.is_node() {
+            return Node::new(key, data).into();
+        }
+        match key.cmp(&self.key()) {
+            Ordering::Equal => self.set_data(data),
+            Ordering::Greater => {
+                let right = self.right();
+                self.set_right(right.insert_not_root(key, data));
+            }
+            Ordering::Less => {
+                let left = self.left();
+                self.set_left(left.insert_not_root(key, data));
+            }
+        }
+        self = self.balance();
+        return self;
     }
     /// Deletes the minimum value in the tree and returns the data stored in that node.
     /// #example
@@ -111,12 +262,6 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
         *self = result.0;
         return result.1;
     }
-    pub(super) fn delete_min_not_root(mut self) -> (Self, Option<V>) {
-        if !self.left_ref().is_node() {
-            return (self.left(), Some(self.data()));
-        }
-        return self.unwrap().delete_min_not_root();
-    }
 
     /// Inserts *data* associated with *key* into tree. *insert* does not support
     /// duplicated key. In case of inserting into an already existing key, the old
@@ -131,7 +276,7 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
     /// assert_eq!(rbtree.at(10), [&"First Insertion"]);*/
     /// ```
     pub fn insert(&mut self, key: K, data: V) {
-        *self = self.take().insert_random_node(key, data);
+        *self = self.take().insert_not_root(key, data);
         self.as_mut().unwrap().color = COLOR::BLACK;
     }
     /// Returns a non mutable references of the data stored at *key*
@@ -148,12 +293,10 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
     pub fn search(&self, key: K) -> Option<&V> {
         let mut subtree = self;
         while subtree.is_node() {
-            if key == subtree.key() {
-                return Some(subtree.data_ref());
-            } else if key < subtree.key() {
-                subtree = subtree.left_ref();
-            } else {
-                subtree = subtree.right_ref()
+            match key.cmp(&subtree.key()) {
+                Ordering::Equal => return Some(subtree.data_ref()),
+                Ordering::Greater => subtree = subtree.right_ref(),
+                Ordering::Less => subtree = subtree.left_ref(),
             }
         }
         return None;
@@ -171,23 +314,53 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
     pub fn search_mut(&mut self, key: K) -> Option<&mut V> {
         let mut subtree = self;
         while subtree.is_node() {
-            if key == subtree.key() {
-                return Some(subtree.data_mut());
-            } else if key < subtree.key() {
-                subtree = subtree.left_mut();
-            } else {
-                subtree = subtree.right_mut()
+            match key.cmp(&subtree.key()) {
+                Ordering::Equal => return Some(subtree.data_mut()),
+                Ordering::Greater => subtree = subtree.right_mut(),
+                Ordering::Less => subtree = subtree.left_mut(),
             }
         }
         return None;
     }
-    pub(super) fn delete_random_node(self, key: K) -> (RBTree<K, V>, Option<V>) {
-        if self.is_node() {
-            let (node, data) = self.unwrap().delete(key);
-            return (node, data);
-        } else {
+    pub(super) fn delete_random_node(mut self, key: K) -> (RBTree<K, V>, Option<V>) {
+        if !self.is_node() {
             return (self, None);
         }
+        let mut result;
+        if key < self.key() {
+            if !self.left_ref().is_red() && self.left_ref().is_node() && !self.left_ref().left_ref().is_red() {
+                self = self.unwrap().move_red_left().into();
+            }
+            result = self.left().delete_random_node(key);
+            self.set_left(result.0);
+            result.0 = self;
+        } else {
+            if self.left_ref().is_red() {
+                self = self.unwrap().rotate_right().into();
+            }
+            if key == self.key() && !self.right_ref().is_node() {
+                return (RBTree::new(), Some(self.data()));
+            }
+            // do we really need self.right().is_node()
+            if !self.right_ref().is_red() && self.right_ref().is_node() && !self.right_ref().left_ref().is_red() {
+                self = self.unwrap().move_red_right().into();
+            }
+            if self.key() == key {
+                let mut right = self.right();
+                let x = right.node_min().as_mut().unwrap();
+                self.as_mut().unwrap().key = x.key;
+                mem::swap(&mut self.as_mut().unwrap().data, &mut x.data);
+                result = right.delete_min_not_root();
+                self.set_right(result.0);
+                result.0 = self;
+            } else {
+                result = self.right().delete_random_node(key);
+                self.set_right(result.0);
+                result.0 = self;
+            }
+        }
+        result.0 = result.0.balance();
+        return result;
     }
     /// Deletes tree node represented by *key*. The return
     /// value is data stored there.
@@ -203,9 +376,7 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
     /// ```
 
     pub fn delete(&mut self, key: K) -> Option<V> {
-        if self.search(key).is_none() {
-            return None;
-        }
+        self.search(key)?; // Do we really need this line
         if !self.left_ref().is_red() && !self.right_ref().is_red() {
             self.as_mut().unwrap().color = COLOR::RED;
         }
@@ -216,94 +387,25 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
         }
         return result;
     }
-    // Implementing wrapper for Option functionality
-    #[inline]
-    pub(crate) fn take(&mut self) -> RBTree<K, V> {
-        RBTree(self.0.take())
+    fn node_min(&mut self) -> &mut RBTree<K, V> {
+        if self.left_ref().is_node() {
+            return self.left_mut().node_min();
+        } else {
+            return self;
+        }
     }
+    pub(super) fn delete_min_not_root(mut self) -> (Self, Option<V>) {
+        if !self.left_ref().is_node() {
+            return (self.left(), Some(self.data()));
+        }
 
-    #[inline]
-    pub(crate) fn is_node(&self) -> bool {
-        self.0.is_some()
-    }
-
-    #[inline]
-    pub(crate) fn as_mut(&mut self) -> Option<&mut Box<Node<K, V>>> {
-        self.0.as_mut()
-    }
-
-    #[inline]
-    pub(crate) fn as_ref(&self) -> Option<&Box<Node<K, V>>> {
-        self.0.as_ref()
-    }
-
-    #[inline]
-    pub(crate) fn unwrap(self) -> Box<Node<K, V>> {
-        self.0.unwrap()
-    }
-    #[inline]
-    pub(crate) fn is_red(&self) -> bool {
-        self.is_node() && self.as_ref().unwrap().is_red()
-    }
-    /// Returns copy of key of the current Tree node
-    /// # Panics
-    /// panics if current subtree is not a *node*
-    pub fn key(&self) -> K {
-        self.as_ref().unwrap().key
-    }
-    /// Returns data stored in the current Tree node
-    /// # Panics
-    /// panics if current subtree is not a *node*
-    pub fn data(self) -> V {
-        self.unwrap().data
-    }
-    /// Returns non-mutable reference to data stored in the current Tree node
-    /// # Panics
-    /// panics if current subtree is not a *node*
-    pub fn data_ref(&self) -> &V {
-        &self.as_ref().unwrap().data
-    }
-    /// Returns mutable reference to data stored in the current Tree node
-    /// # Panics
-    /// panics if current subtree is not a *node*
-    pub fn data_mut(&mut self) -> &mut V {
-        &mut self.as_mut().unwrap().data
-    }
-    /// Returns the left subtree after ripping it from the current node.
-    /// # Panics
-    /// panics if current subtree is not a *node*
-    pub fn left(&mut self) -> RBTree<K, V> {
-        self.as_mut().unwrap().left.take()
-    }
-    /// Returns a non-mutable reference to left subtree.
-    /// # Panics
-    /// panics if current subtree is not a *node*
-    pub fn left_ref(&self) -> &RBTree<K, V> {
-        &self.as_ref().unwrap().left
-    }
-    /// Returns a mutable reference to left subtree.
-    /// # Panics
-    /// panics if current subtree is not a *node*
-    pub fn left_mut(&mut self) -> &mut RBTree<K, V> {
-        &mut self.as_mut().unwrap().left
-    }
-    /// Returns the right subtree after ripping it from the current node.
-    /// # Panics
-    /// panics if current subtree is not a *node*
-    pub fn right(&mut self) -> RBTree<K, V> {
-        self.as_mut().unwrap().right.take()
-    }
-    /// Returns a non-mutable reference to right subtree.
-    /// # Panics
-    /// panics if current subtree is not a *node*
-    pub fn right_ref(&self) -> &RBTree<K, V> {
-        &self.as_ref().unwrap().right
-    }
-    /// Returns a mutable reference to right subtree.
-    /// # Panics
-    /// panics if current subtree is not a *node*
-    pub fn right_mut(&mut self) -> &mut RBTree<K, V> {
-        &mut self.as_mut().unwrap().right
+        if !self.left_ref().is_red() && !self.left_ref().left_ref().is_red() {
+            self = self.unwrap().move_red_left().into();
+        }
+        let (new_left, deleted_value) = self.left().delete_min_not_root();
+        self.set_left(new_left);
+        self = self.balance();
+        return (self, deleted_value);
     }
 }
 #[cfg(test)]

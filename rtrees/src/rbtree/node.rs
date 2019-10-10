@@ -18,8 +18,7 @@
 use super::color::COLOR;
 use super::rbtree_wrapper::RBTree;
 use std::cmp::max;
-use std::mem;
-pub struct Node<K: Ord + Copy, V> {
+pub(super) struct Node<K: Ord + Copy, V> {
     pub(super) key: K,
     pub(super) data: V,
     pub(super) level: u64,
@@ -27,14 +26,6 @@ pub struct Node<K: Ord + Copy, V> {
     pub(super) color: COLOR,
     pub(super) left: RBTree<K, V>,
     pub(super) right: RBTree<K, V>,
-}
-
-fn node_min<K: Ord + Copy, V>(root: &mut RBTree<K, V>) -> &mut RBTree<K, V> {
-    if root.left_ref().is_node() {
-        return node_min(root.left_mut());
-    } else {
-        return root;
-    }
 }
 
 impl<K: Ord + Copy, V> Node<K, V> {
@@ -56,37 +47,37 @@ impl<K: Ord + Copy, V> Node<K, V> {
         };
     }
     //sync augmented data
-    fn sync_aug(&mut self) {
+    pub(super) fn sync_builtin_aug(&mut self) {
         self.size = self.left.size() + self.right.size() + 1;
         self.level = max(self.left.get_level(), self.right.get_level()) + 1;
     }
     // We don't check if this node is valid for the operation
     // or not in the case of rotate_left and rotate_right, and
     // flip_colors. normally user will only use them when they are needed.
-    fn rotate_left(mut self) -> Self {
+    pub(super) fn rotate_left(mut self) -> Self {
         let mut x = self.right.take();
         self.right = x.as_mut().unwrap().left.take();
         x.as_mut().unwrap().color = self.color;
         self.color = COLOR::RED;
-        self.sync_aug();
+        self.sync_builtin_aug();
         x.as_mut().unwrap().left = self.into();
         let mut new_node = x.unwrap();
-        new_node.sync_aug();
+        new_node.sync_builtin_aug();
         return *new_node;
     }
-    fn rotate_right(mut self) -> Self {
+    pub(super) fn rotate_right(mut self) -> Self {
         let mut x = self.left.take();
         self.left = x.as_mut().unwrap().right.take();
         x.as_mut().unwrap().color = self.color;
         self.color = COLOR::RED;
-        self.sync_aug();
+        self.sync_builtin_aug();
         x.as_mut().unwrap().right = self.into();
         let mut new_node = x.unwrap();
-        new_node.sync_aug();
+        new_node.sync_builtin_aug();
         return *new_node;
     }
     #[inline]
-    fn flip_colors(&mut self) {
+    pub(super) fn flip_colors(&mut self) {
         self.color.flip();
         self.left.as_mut().unwrap().color.flip();
         self.right.as_mut().unwrap().color.flip();
@@ -95,32 +86,7 @@ impl<K: Ord + Copy, V> Node<K, V> {
     pub(super) fn is_red(&self) -> bool {
         self.color == COLOR::RED
     }
-    fn balance(mut self) -> Self {
-        self.sync_aug();
-        if self.right.is_red() && !self.left.is_red() {
-            self = self.rotate_left();
-        }
-        if self.left.is_red() && self.left.as_ref().unwrap().left.is_red() {
-            self = self.rotate_right();
-        }
-        if self.left.is_red() && self.right.is_red() {
-            self.flip_colors();
-        }
-        return self;
-    }
-    pub fn insert(mut self, key: K, data: V) -> Self {
-        if key < self.key {
-            self.left = self.left.insert_random_node(key, data);
-        } else if key > self.key {
-            self.right = self.right.insert_random_node(key, data);
-        } else {
-            self.data = data;
-        }
-        self = self.balance();
-        return self;
-    }
-
-    fn move_red_left(mut self) -> Self {
+    pub(super) fn move_red_left(mut self) -> Self {
         self.flip_colors();
         if self.right.as_ref().unwrap().left.is_red() {
             self.right = self.right.unwrap().rotate_right().into();
@@ -129,7 +95,7 @@ impl<K: Ord + Copy, V> Node<K, V> {
         }
         return self;
     }
-    fn move_red_right(mut self) -> Self {
+    pub(super) fn move_red_right(mut self) -> Self {
         assert!(self.is_red());
         self.flip_colors();
         if self.left.as_ref().unwrap().left.is_red() {
@@ -137,50 +103,5 @@ impl<K: Ord + Copy, V> Node<K, V> {
             self.flip_colors();
         }
         return self;
-    }
-    pub(super) fn delete_min_not_root(mut self) -> (RBTree<K, V>, Option<V>) {
-        if !self.left.is_red() && !self.left.as_ref().unwrap().left.is_red() {
-            self = self.move_red_left();
-        }
-        let result = self.left.delete_min_not_root();
-        self.left = result.0;
-        self = self.balance();
-
-        return (self.into(), result.1);
-    }
-    pub fn delete(mut self, key: K) -> (RBTree<K, V>, Option<V>) {
-        let mut result;
-        if key < self.key {
-            if !self.left.is_red() && self.left.is_node() && !self.left.as_ref().unwrap().left.is_red() {
-                self = self.move_red_left();
-            }
-            result = self.left.delete_random_node(key);
-            self.left = result.0;
-            result.0 = self.into();
-        } else {
-            if self.left.is_red() {
-                self = self.rotate_right();
-            }
-            if key == self.key && !self.right.is_node() {
-                return (RBTree::new(), Some(self.data));
-            }
-            if !self.right.is_red() && self.right.is_node() && !self.right.as_ref().unwrap().left.is_red() {
-                self = self.move_red_right();
-            }
-            if self.key == key {
-                let x = node_min(&mut self.right).as_mut().unwrap();
-                self.key = x.key;
-                mem::swap(&mut self.data, &mut x.data);
-                result = self.right.delete_min_not_root();
-                self.right = result.0;
-                result.0 = self.into();
-            } else {
-                result = self.right.delete_random_node(key);
-                self.right = result.0;
-                result.0 = self.into();
-            }
-        }
-        result.0 = result.0.unwrap().balance().into();
-        return result;
     }
 }
