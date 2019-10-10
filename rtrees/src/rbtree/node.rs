@@ -16,28 +16,33 @@
  */
 
 use super::color::COLOR;
-use super::rbtree_wrapper::RBTree;
+use super::rbtree_wrapper::*;
 use std::cmp::max;
-pub(super) struct Node<K: Ord + Copy, V> {
+pub(super) struct Node<K: Ord + Copy, A: Copy, V> {
     pub(super) key: K,
+    pub(super) aug_data: A,
     pub(super) data: V,
     pub(super) level: u64,
     size: u64,
     pub(super) color: COLOR,
-    pub(super) left: RBTree<K, V>,
-    pub(super) right: RBTree<K, V>,
+    pub(super) left: RBTree<K, A, V>,
+    pub(super) right: RBTree<K, A, V>,
 }
 
-impl<K: Ord + Copy, V> Node<K, V> {
+impl<K: Ord + Copy, A: Copy, V> Node<K, A, V>
+where
+    RBTree<K, A, V>: Augment<A>,
+{
     pub fn size(&self) -> u64 {
         return self.size;
     }
     pub fn get_level(&self) -> u64 {
         return self.level;
     }
-    pub fn new(key: K, data: V) -> Self {
+    pub fn new(key: K, aug_data: A, data: V) -> Self {
         return Node {
             key,
+            aug_data,
             data,
             level: 1,
             size: 1,

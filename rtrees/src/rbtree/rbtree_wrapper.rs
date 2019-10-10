@@ -19,21 +19,26 @@ use super::node::*;
 use std::cmp::Ordering;
 use std::mem;
 
-pub(super) type RBTreeOp<K, V> = Option<Box<Node<K, V>>>;
+pub(super) type RBTreeOp<K, A, V> = Option<Box<Node<K, A, V>>>;
 
 #[derive(Default)]
-pub struct RBTree<K: Ord + Copy, V>(RBTreeOp<K, V>);
+pub struct RBTree<K: Ord + Copy, A: Copy, V>(RBTreeOp<K, A, V>);
 
-impl<K: Ord + Copy, V> From<Node<K, V>> for RBTree<K, V> {
-    fn from(node: Node<K, V>) -> Self {
+impl<K: Ord + Copy, A: Copy, V> From<Node<K, A, V>> for RBTree<K, A, V> {
+    fn from(node: Node<K, A, V>) -> Self {
         RBTree(Some(Box::new(node)))
     }
 }
-
-impl<K: Ord + Copy, V> RBTree<K, V> {
+pub trait Augment<T: Copy> {
+    fn sync_custom_aug(&mut self) {}
+}
+impl<K: Ord + Copy, A: Copy, V> RBTree<K, A, V>
+where
+    RBTree<K, A, V>: Augment<A>,
+{
     // Implementing wrapper for Option functionality
     #[inline]
-    pub(super) fn take(&mut self) -> RBTree<K, V> {
+    pub(super) fn take(&mut self) -> RBTree<K, A, V> {
         RBTree(self.0.take())
     }
 
@@ -43,17 +48,17 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
     }
 
     #[inline]
-    pub(super) fn as_mut(&mut self) -> Option<&mut Node<K, V>> {
+    pub(super) fn as_mut(&mut self) -> Option<&mut Node<K, A, V>> {
         self.0.as_mut().map(|x| &mut **x)
     }
 
     #[inline]
-    pub(super) fn as_ref(&self) -> Option<&Node<K, V>> {
+    pub(super) fn as_ref(&self) -> Option<&Node<K, A, V>> {
         self.0.as_ref().map(|x| &**x)
     }
 
     #[inline]
-    pub(super) fn unwrap(self) -> Box<Node<K, V>> {
+    pub(super) fn unwrap(self) -> Box<Node<K, A, V>> {
         self.0.unwrap()
     }
     #[inline]
@@ -66,6 +71,20 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
     /// panics if current subtree is not a *node*
     pub fn key(&self) -> K {
         self.as_ref().unwrap().key
+    }
+
+    /// Changes the *aug_data* stored in the current Tree node.
+    /// # Panics
+    /// panics if current subtree is not a *node*.
+    pub fn set_aug_data(&mut self, aug_data: A) {
+        self.as_mut().unwrap().aug_data = aug_data;
+    }
+
+    /// Returns *aug_data* stored in the current Tree node.
+    /// # Panics
+    /// panics if current subtree is not a *node*
+    pub fn aug_data(self) -> A {
+        self.as_ref().unwrap().aug_data
     }
 
     /// Changes the *data* stored in the current Tree node.
@@ -99,80 +118,88 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
     /// Set the left subtree of the current Node.
     /// # Panics
     /// panics if current subtree is not a *node*.
-    pub fn set_left(&mut self, subtree: RBTree<K, V>) {
+    pub fn set_left(&mut self, subtree: RBTree<K, A, V>) {
         self.as_mut().unwrap().left = subtree;
     }
 
     /// Returns the left subtree after ripping it from the current node.
     /// # Panics
     /// panics if current subtree is not a *node*
-    pub fn left(&mut self) -> RBTree<K, V> {
+    pub fn left(&mut self) -> RBTree<K, A, V> {
         self.as_mut().unwrap().left.take()
     }
 
     /// Returns a non-mutable reference to left subtree.
     /// # Panics
     /// panics if current subtree is not a *node*
-    pub fn left_ref(&self) -> &RBTree<K, V> {
+    pub fn left_ref(&self) -> &RBTree<K, A, V> {
         &self.as_ref().unwrap().left
     }
 
     /// Returns a mutable reference to left subtree.
     /// # Panics
     /// panics if current subtree is not a *node*
-    pub fn left_mut(&mut self) -> &mut RBTree<K, V> {
+    pub fn left_mut(&mut self) -> &mut RBTree<K, A, V> {
         &mut self.as_mut().unwrap().left
     }
 
     /// Set the right subtree of the current Node.
     /// # Panics
     /// panics if current subtree is not a *node*.
-    pub fn set_right(&mut self, subtree: RBTree<K, V>) {
+    pub fn set_right(&mut self, subtree: RBTree<K, A, V>) {
         self.as_mut().unwrap().right = subtree;
     }
 
     /// Returns the right subtree after ripping it from the current node.
     /// # Panics
     /// panics if current subtree is not a *node*
-    pub fn right(&mut self) -> RBTree<K, V> {
+    pub fn right(&mut self) -> RBTree<K, A, V> {
         self.as_mut().unwrap().right.take()
     }
 
     /// Returns a non-mutable reference to right subtree.
     /// # Panics
     /// panics if current subtree is not a *node*
-    pub fn right_ref(&self) -> &RBTree<K, V> {
+    pub fn right_ref(&self) -> &RBTree<K, A, V> {
         &self.as_ref().unwrap().right
     }
 
     /// Returns a mutable reference to right subtree.
     /// # Panics
     /// panics if current subtree is not a *node*
-    pub fn right_mut(&mut self) -> &mut RBTree<K, V> {
+    pub fn right_mut(&mut self) -> &mut RBTree<K, A, V> {
         &mut self.as_mut().unwrap().right
     }
 
     /// Returns new Red Black Tree
     /// # Example
     /// ```
-    /// use rtrees::rbtree::RBTree;
-    /// let mut rbtree: RBTree<u64, &'static str> = RBTree::new();
+    /// use rtrees::rbtree::*;
+    /// #[derive(Copy, Clone)]
+    /// struct PlaceHolder();
+    /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
+    /// type Tree = RBTree<u64, PlaceHolder,  &'static str>;
+    /// let my_tree = Tree::new();
     /// ```
-    pub fn new() -> RBTree<K, V> {
+    pub fn new() -> RBTree<K, A, V> {
         RBTree(None)
     }
 
     /// Returns the number of elements in the tree
     /// # Example
     /// ```
-    /// use rtrees::rbtree::RBTree;
-    /// let mut rbtree: RBTree<u64, &'static str> = RBTree::new();
+    /// use rtrees::rbtree::*;
+    /// #[derive(Copy, Clone)]
+    /// struct PlaceHolder();
+    /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
+    /// type Tree = RBTree<u64, PlaceHolder,  &'static str>;
+    /// let mut rbtree = Tree::new();
     /// assert_eq!(rbtree.size(), 0);
-    /// rbtree.insert(0,"Zero");
+    /// rbtree.insert(0, PlaceHolder(), "Zero");
     /// assert_eq!(rbtree.size(), 1);
-    /// rbtree.insert(1, "One");
+    /// rbtree.insert(1, PlaceHolder(), "One");
     /// assert_eq!(rbtree.size(), 2);
-    /// rbtree.insert(2, "Two");
+    /// rbtree.insert(2, PlaceHolder(), "Two");
     /// assert_eq!(rbtree.size(), 3);
     /// ```
     pub fn size(&self) -> u64 {
@@ -186,11 +213,15 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
     /// returns 1 + the number of connections between root and the farthest node from it.
     /// # Example
     /// ```
-    /// use rtrees::rbtree::RBTree;
-    /// let mut rbtree: RBTree<u64, &'static str> = RBTree::new();
+    /// use rtrees::rbtree::*;
+    /// #[derive(Copy, Clone)]
+    /// struct PlaceHolder();
+    /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
+    /// type Tree = RBTree<u64, PlaceHolder,  &'static str>;
+    /// let mut rbtree = Tree::new();
     /// assert_eq!(rbtree.get_level(), 0);
     /// for i in 0..1024 {
-    ///     rbtree.insert(i, "Random Value");
+    ///     rbtree.insert(i, PlaceHolder(), "Random Value");
     /// }
     /// assert!(rbtree.get_level() >= 10 && rbtree.get_level() <= 20);
     /// ```
@@ -200,8 +231,10 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
             None => return 0,
         }
     }
+
     fn sync_aug(&mut self) {
         self.as_mut().unwrap().sync_builtin_aug();
+        self.sync_custom_aug();
     }
 
     fn balance(mut self) -> Self {
@@ -217,19 +250,20 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
         }
         return self;
     }
-    fn insert_not_root(mut self, key: K, data: V) -> RBTree<K, V> {
+
+    fn insert_not_root(mut self, key: K, aug_data: A, data: V) -> RBTree<K, A, V> {
         if !self.is_node() {
-            return Node::new(key, data).into();
+            return Node::new(key, aug_data, data).into();
         }
         match key.cmp(&self.key()) {
             Ordering::Equal => self.set_data(data),
             Ordering::Greater => {
                 let right = self.right();
-                self.set_right(right.insert_not_root(key, data));
+                self.set_right(right.insert_not_root(key, aug_data, data));
             }
             Ordering::Less => {
                 let left = self.left();
-                self.set_left(left.insert_not_root(key, data));
+                self.set_left(left.insert_not_root(key, aug_data, data));
             }
         }
         self = self.balance();
@@ -238,11 +272,15 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
     /// Deletes the minimum value in the tree and returns the data stored in that node.
     /// #example
     /// ```
-    /// use rtrees::rbtree::RBTree;
+    /// use rtrees::rbtree::*;
+    /// #[derive(Copy, Clone)]
+    /// struct PlaceHolder();
+    /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
+    /// type Tree = RBTree<u64, PlaceHolder,  &'static str>;
     /// let mut rbtree = RBTree::new();
-    /// rbtree.insert(0, "First Insertion");
-    /// rbtree.insert(5, "Second Insertion");
-    /// rbtree.insert(10, "Third Insertion");
+    /// rbtree.insert(0, PlaceHolder(), "First Insertion");
+    /// rbtree.insert(5, PlaceHolder(), "Second Insertion");
+    /// rbtree.insert(10, PlaceHolder(), "Third Insertion");
     /// assert_eq!(rbtree.delete_min().unwrap(), "First Insertion");
     /// assert_eq!(rbtree.delete_min().unwrap(), "Second Insertion");
     /// assert_eq!(rbtree.delete_min().unwrap(), "Third Insertion");
@@ -268,24 +306,34 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
     /// *data* will silently be repalced by the new *data*.
     /// # Example
     /// ```
-    /// use rtrees::rbtree::RBTree;
-    /// let mut rbtree: RBTree<u64, &'static str> = RBTree::new();
-    /// /*rbtree.insert(0,10, "First Insertion");
-    /// assert_eq!(rbtree.at(0), [&"First Insertion"]);
-    /// assert_eq!(rbtree.at(2), [&"First Insertion"]);
-    /// assert_eq!(rbtree.at(10), [&"First Insertion"]);*/
+    /// use rtrees::rbtree::*;
+    /// #[derive(Copy, Clone)]
+    /// struct PlaceHolder();
+    /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, u64> {}
+    /// type Tree = RBTree<u64, PlaceHolder, u64>;
+    /// let mut rbtree = Tree::new();
+    /// rbtree.insert(0, PlaceHolder(), 0);
+    /// rbtree.insert(1, PlaceHolder(), 1);
+    /// rbtree.insert(2, PlaceHolder(), 2);
+    /// assert_eq!(rbtree.search(0).unwrap(), &0);
+    /// assert_eq!(rbtree.search(1).unwrap(), &1);
+    /// assert_eq!(rbtree.search(2).unwrap(), &2);
     /// ```
-    pub fn insert(&mut self, key: K, data: V) {
-        *self = self.take().insert_not_root(key, data);
+    pub fn insert(&mut self, key: K, aug_data: A, data: V) {
+        *self = self.take().insert_not_root(key, aug_data, data);
         self.as_mut().unwrap().color = COLOR::BLACK;
     }
     /// Returns a non mutable references of the data stored at *key*
     /// #example
     /// ```
-    /// use rtrees::rbtree::RBTree;
-    /// let mut rbtree = RBTree::new();
-    /// rbtree.insert(0, "First Insertion");
-    /// rbtree.insert(5, "Second Insertion");
+    /// use rtrees::rbtree::*;
+    /// #[derive(Copy, Clone)]
+    /// struct PlaceHolder();
+    /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
+    /// type Tree = RBTree<u64, PlaceHolder,  &'static str>;
+    /// let mut rbtree = Tree::new();
+    /// rbtree.insert(0, PlaceHolder(), "First Insertion");
+    /// rbtree.insert(5, PlaceHolder(), "Second Insertion");
     /// assert_eq!(rbtree.search(0).unwrap(), &"First Insertion");
     /// assert_eq!(rbtree.search(5).unwrap(), &"Second Insertion");
     /// assert_eq!(rbtree.search(21), None);
@@ -305,9 +353,13 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
     /// Returns a mutable references of the data stored at *key*.
     /// #example
     /// ```
-    /// use rtrees::rbtree::RBTree;
+    /// use rtrees::rbtree::*;
+    /// #[derive(Copy, Clone)]
+    /// struct PlaceHolder();
+    /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, String> {}
+    /// type Tree = RBTree<u64, PlaceHolder,  String>;
     /// let mut rbtree = RBTree::new();
-    /// rbtree.insert(0, String::from("First Insertion"));
+    /// rbtree.insert(0, PlaceHolder(), String::from("First Insertion"));
     /// rbtree.search_mut(0).unwrap().push_str(" Modified");
     /// assert_eq!(rbtree.search(0).unwrap(), &"First Insertion Modified");
     /// ```
@@ -322,7 +374,7 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
         }
         return None;
     }
-    pub(super) fn delete_random_node(mut self, key: K) -> (RBTree<K, V>, Option<V>) {
+    fn delete_random_node(mut self, key: K) -> (RBTree<K, A, V>, Option<V>) {
         if !self.is_node() {
             return (self, None);
         }
@@ -349,6 +401,7 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
                 let mut right = self.right();
                 let x = right.node_min().as_mut().unwrap();
                 self.as_mut().unwrap().key = x.key;
+                self.as_mut().unwrap().aug_data = x.aug_data;
                 mem::swap(&mut self.as_mut().unwrap().data, &mut x.data);
                 result = right.delete_min_not_root();
                 self.set_right(result.0);
@@ -367,10 +420,14 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
     ///
     /// # Example
     /// ```
-    /// use rtrees::rbtree::RBTree;
-    /// let mut rbtree = RBTree::new();
-    /// rbtree.insert(10, String::from("First Insertion"));
-    /// rbtree.insert(15, String::from("Second Insertion"));
+    /// use rtrees::rbtree::*;
+    /// #[derive(Copy, Clone)]
+    /// struct PlaceHolder();
+    /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
+    /// type Tree = RBTree<u64, PlaceHolder,  &'static str>;
+    /// let mut rbtree = Tree::new();
+    /// rbtree.insert(10, PlaceHolder(), "First Insertion");
+    /// rbtree.insert(15, PlaceHolder(), "Second Insertion");
     /// assert_eq!(rbtree.delete(10).unwrap(), "First Insertion");
     /// assert_eq!(rbtree.delete(15).unwrap(), "Second Insertion");
     /// ```
@@ -387,14 +444,14 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
         }
         return result;
     }
-    fn node_min(&mut self) -> &mut RBTree<K, V> {
+    fn node_min(&mut self) -> &mut RBTree<K, A, V> {
         if self.left_ref().is_node() {
             return self.left_mut().node_min();
         } else {
             return self;
         }
     }
-    pub(super) fn delete_min_not_root(mut self) -> (Self, Option<V>) {
+    fn delete_min_not_root(mut self) -> (Self, Option<V>) {
         if !self.left_ref().is_node() {
             return (self.left(), Some(self.data()));
         }
@@ -410,8 +467,12 @@ impl<K: Ord + Copy, V> RBTree<K, V> {
 }
 #[cfg(test)]
 mod rbtree_tests {
-    use super::RBTree;
-    fn dfs(tree: &RBTree<u64, u64>, counter: &mut u64, blackcounter: u64, blackvec: &mut Vec<u64>) -> u64 {
+    use super::{Augment, RBTree};
+    #[derive(Copy, Clone)]
+    struct PlaceHolder();
+    impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, u64> {}
+    type Tree = RBTree<u64, PlaceHolder, u64>;
+    fn dfs(tree: &Tree, counter: &mut u64, blackcounter: u64, blackvec: &mut Vec<u64>) -> u64 {
         if !tree.is_node() {
             assert_eq!(tree.is_red(), false);
             blackvec.push(blackcounter + 1);
@@ -431,7 +492,7 @@ mod rbtree_tests {
         let l2 = dfs(tree.right_ref(), counter, newbc, blackvec);
         return 1 + std::cmp::max(l1, l2);
     }
-    fn verify_tree(tree: &RBTree<u64, u64>) {
+    fn verify_tree(tree: &Tree) {
         let mut counter = 0;
         let mut blackvec = Vec::with_capacity(tree.size() as usize / 2);
         let level = dfs(tree, &mut counter, 0, &mut blackvec);
@@ -446,13 +507,13 @@ mod rbtree_tests {
         let mut rbtree = RBTree::new();
         assert_eq!(rbtree.get_level(), 0);
         for i in 0..1024 {
-            rbtree.insert(i, i);
+            rbtree.insert(i, PlaceHolder(), i);
             verify_tree(&rbtree);
         }
         assert!(rbtree.get_level() >= 10 && rbtree.get_level() <= 20);
         rbtree = RBTree::new();
         for i in (0..1024).rev() {
-            rbtree.insert(i, i);
+            rbtree.insert(i, PlaceHolder(), i);
             verify_tree(&rbtree);
         }
         assert!(rbtree.get_level() >= 10 && rbtree.get_level() <= 20);
@@ -463,7 +524,7 @@ mod rbtree_tests {
         let mut rbtree = RBTree::new();
         assert_eq!(rbtree.get_level(), 0);
         for i in 0..1024 {
-            rbtree.insert(i, i);
+            rbtree.insert(i, PlaceHolder(), i);
         }
         for i in 0..1024 {
             assert_eq!(rbtree.search(i).unwrap(), &i);
@@ -474,7 +535,7 @@ mod rbtree_tests {
     fn test_delete() {
         let mut rbtree = RBTree::new();
         for i in 0..10 {
-            rbtree.insert(i, i);
+            rbtree.insert(i, PlaceHolder(), i);
             verify_tree(&rbtree);
         }
         for i in 0..10 {
@@ -482,7 +543,7 @@ mod rbtree_tests {
             verify_tree(&rbtree);
         }
         for i in 0..20 {
-            rbtree.insert(i, i);
+            rbtree.insert(i, PlaceHolder(), i);
             verify_tree(&rbtree);
         }
         for i in 15..20 {
@@ -490,7 +551,7 @@ mod rbtree_tests {
             verify_tree(&rbtree);
         }
         for i in 15..2000 {
-            rbtree.insert(i, i);
+            rbtree.insert(i, PlaceHolder(), i);
             verify_tree(&rbtree);
         }
         for i in 100..2000 {
