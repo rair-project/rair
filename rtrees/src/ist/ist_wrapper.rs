@@ -20,8 +20,9 @@
  *  implemented using  left-leaning red-black tree:
  *  https://www.cs.princeton.edu/~rs/talks/LLRB/LLRB.pdf
  */
+use super::interval::*;
 use super::ist_node::*;
-use std::mem;
+use rbtree::*;
 
 #[derive(Default)]
 /// Interval Query data type based on augmented binary search tree,
@@ -29,11 +30,24 @@ use std::mem;
 ///
 /// IST support handling overlapping intervals as well as non-overlapping intervals.
 pub struct IST<K: Ord + Copy, V> {
-    root: SubTree<K, V>,
-    size: u64,
-    level: u64,
+    //root: SubTree<K, V>,
+    //size: u64,
+    //level: u64,
+    root: RBTree<Interval<K>, Interval<K>, Vec<V>>,
 }
 
+impl<K: Ord + Copy, V> Augment<Interval<K>> for RBTree<Interval<K>, Interval<K>, Vec<V>> {
+    fn sync_custom_aug(&mut self) {
+        let mut int = self.key();
+        if self.left_ref().is_node() {
+            int.absorb(self.left_ref().aug_data());
+        }
+        if self.right_ref().is_node() {
+            int.absorb(self.right_ref().aug_data());
+        }
+        self.set_aug_data(int);
+    }
+}
 impl<K: Ord + Copy, V> IST<K, V> {
     /// Returns new Interval Search Tree
     /// # Example
@@ -42,7 +56,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// let mut ist: IST<u64, &'static str> = IST::new();
     /// ```
     pub fn new() -> IST<K, V> {
-        return IST { root: None, size: 0, level: 0 };
+        return IST { root: RBTree::new() };
     }
 
     /// Returns the number of elements in the IST
@@ -59,7 +73,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     ///assert_eq!(ist.size(), 3);
     /// ```
     pub fn size(&self) -> u64 {
-        return self.size;
+        return self.root.size();
     }
 
     /// 0 will be returned in case of empty *IST*. If *IST* has nodes, then *get_level*
@@ -79,14 +93,14 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// assert_eq!(ist.get_level(), 3);
     /// ```
     pub fn get_level(&self) -> u64 {
-        return self.level;
+        return self.root.get_level();
     }
 
     /// Inserts an *element* into closed interval *[ lo, hi ]*. Insertion guarantess
     /// <math xmlns="http://www.w3.org/1998/Math/MathML"><mrow><mi>&#x1D4AA;</mi>
     /// <mrow><mo form="prefix">(</mo><mi>log</mi><mi>n</mi><mo form="postfix">)
     /// </mo></mrow></mrow></math>
-    /// time.
+    /// time. Insertion supports
     /// # Panics
     /// Panics if *lo* > *hi*
     /// # Example
@@ -100,12 +114,11 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// ```
     pub fn insert(&mut self, lo: K, hi: K, data: V) {
         assert!(lo <= hi);
-        match &mut self.root {
-            Some(root) => root.insert(lo, hi, data),
-            None => self.root = ISTNode::new(lo, hi, data),
+        let interval = Interval::new(lo, hi);
+        match self.root.search_mut(interval) {
+            Some(data_vec) => data_vec.push(data),
+            None => self.root.insert(interval, interval, vec![data]),
         }
-        self.level = self.root.as_ref().unwrap().level;
-        self.size += 1;
     }
 
     /// Returns a vector of non mutable references of all values belogning to intervals
@@ -124,10 +137,13 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// assert_eq!(ist.at(21), empty_vector);
     /// ```
     pub fn at(&self, point: K) -> Vec<&V> {
-        match &self.root {
-            Some(root) => return root.at(point),
-            None => return Vec::new(),
+        if !self.root.is_node() {
+            return Vec::new();
         }
+        let accept = |key: &Interval<K>, point: &Interval<K>| key.has_point(point.lo);
+        let recurse = |aug: &Interval<K>, point: &Interval<K>| aug.has_point(point.lo);
+        let point_int = Interval::new(point, point);
+        return self.root.generic_search(point_int, &recurse, &accept);
     }
 
     /// Returns a vector of mutable references of all values belogning to intervals
@@ -142,11 +158,15 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// assert_eq!(ist.at(5), [&"First Insertion Modified"]);
     /// ```
     pub fn at_mut(&mut self, point: K) -> Vec<&mut V> {
-        match &mut self.root {
-            Some(root) => return root.at_mut(point),
-            None => return Vec::new(),
+        if !self.root.is_node() {
+            return Vec::new();
         }
+        let accept = |key: &Interval<K>, point: &Interval<K>| key.has_point(point.lo);
+        let recurse = |aug: &Interval<K>, point: &Interval<K>| aug.has_point(point.lo);
+        let point_int = Interval::new(point, point);
+        return self.root.generic_search_mut(point_int, &recurse, &accept);
     }
+
     /// Returns a vector of non mutable references of all values that belongs to intervals
     /// that envelop the interval specified by *[ lo, hi ]*. The vector is ordered based
     /// on intervals' total order.
@@ -169,10 +189,12 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// ```
     pub fn envelop(&self, lo: K, hi: K) -> Vec<&V> {
         assert!(lo <= hi);
-        match &self.root {
-            Some(root) => return root.envelop(lo, hi),
-            None => return Vec::new(),
+        if !self.root.is_node() {
+            return Vec::new();
         }
+        let int = Interval::new(lo, hi);
+        let accept = |big: &Interval<K>, small: &Interval<K>| big.envelop(small);
+        return self.root.generic_search(int, &accept, &accept);
     }
 
     /// Returns a vector of mutable references of all values that belongs to intervals
@@ -193,10 +215,12 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// ```
     pub fn envelop_mut(&mut self, lo: K, hi: K) -> Vec<&mut V> {
         assert!(lo <= hi);
-        match &mut self.root {
-            Some(root) => return root.envelop_mut(lo, hi),
-            None => return Vec::new(),
+        if !self.root.is_node() {
+            return Vec::new();
         }
+        let int = Interval::new(lo, hi);
+        let accept = |big: &Interval<K>, small: &Interval<K>| big.envelop(small);
+        return self.root.generic_search_mut(int, &accept, &accept);
     }
 
     /// Returns a vector of non mutable references of all values that belongs to intervals
@@ -221,11 +245,16 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// ```
     pub fn inverse_envelop(&self, lo: K, hi: K) -> Vec<&V> {
         assert!(lo <= hi);
-        match &self.root {
-            Some(root) => return root.inverse_envelop(lo, hi),
-            None => return Vec::new(),
+        if !self.root.is_node() {
+            return Vec::new();
         }
+        let int = Interval::new(lo, hi);
+        let accept = |small: &Interval<K>, big: &Interval<K>| big.envelop(small);
+        // There might be a better heurestic to tell if I should recurse left or right
+        let recurse = |int1: &Interval<K>, int2: &Interval<K>| int1.overlap(int2);
+        return self.root.generic_search(int, &recurse, &accept);
     }
+
     /// Returns a vector of non mutable references of all values that belongs to intervals
     /// that is enveloped interval specified by *[ lo, hi ]*. The vector is ordered based
     /// on intervals' total order.
@@ -244,11 +273,16 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// ```
     pub fn inverse_envelop_mut(&mut self, lo: K, hi: K) -> Vec<&mut V> {
         assert!(lo <= hi);
-        match &mut self.root {
-            Some(root) => return root.inverse_envelop_mut(lo, hi),
-            None => return Vec::new(),
+        if !self.root.is_node() {
+            return Vec::new();
         }
+        let int = Interval::new(lo, hi);
+        let accept = |small: &Interval<K>, big: &Interval<K>| big.envelop(small);
+        // There might be a better heurestic to tell if I should recurse left or right
+        let recurse = |int1: &Interval<K>, int2: &Interval<K>| int1.overlap(int2);
+        return self.root.generic_search_mut(int, &recurse, &accept);
     }
+
     /// Returns a vector of non mutable references of all values that belongs to intervals
     /// that overlap with the interval specified by *[ lo, hi ]*. The vector is ordered based
     /// on intervals' total order.
@@ -271,10 +305,12 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// ```
     pub fn overlap(&self, lo: K, hi: K) -> Vec<&V> {
         assert!(lo <= hi);
-        match &self.root {
-            Some(root) => return root.overlap(lo, hi),
-            None => Vec::new(),
+        if !self.root.is_node() {
+            return Vec::new();
         }
+        let int = Interval::new(lo, hi);
+        let accept = |int1: &Interval<K>, int2: &Interval<K>| int1.overlap(int2);
+        return self.root.generic_search(int, &accept, &accept);
     }
     /// Returns a vector of mutable references of all values that belongs to intervals that
     /// overlap with the interval specified by *[ lo, hi ]*. The vector is ordered based on
@@ -294,10 +330,12 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// ```
     pub fn overlap_mut(&mut self, lo: K, hi: K) -> Vec<&mut V> {
         assert!(lo <= hi);
-        match &mut self.root {
-            Some(root) => return root.overlap_mut(lo, hi),
-            None => return Vec::new(),
+        if !self.root.is_node() {
+            return Vec::new();
         }
+        let int = Interval::new(lo, hi);
+        let accept = |int1: &Interval<K>, int2: &Interval<K>| int1.overlap(int2);
+        return self.root.generic_search_mut(int, &accept, &accept);
     }
 
     /// Deletes all Intervals that that cover *point*. The returned
@@ -315,19 +353,13 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// assert_eq!(ist.overlap(0, 50), empty_vec);
     /// ```
     pub fn delete_at(&mut self, point: K) -> Vec<V> {
-        if self.root.is_none() {
+        if !self.root.is_node() {
             return Vec::new();
         }
-        let root = mem::replace(&mut self.root, None);
-        let x = root.unwrap().delete_at(point);
-        let deleted = x.1;
-        self.root = x.0;
-        self.size -= deleted.len() as u64;
-        match self.size {
-            0 => self.level = 0,
-            _ => self.level = self.root.as_ref().unwrap().level,
-        }
-        return deleted;
+        let accept = |key: &Interval<K>, point: &Interval<K>| key.has_point(point.lo);
+        let recurse = |aug: &Interval<K>, point: &Interval<K>| aug.has_point(point.lo);
+        let point_int = Interval::new(point, point);
+        return self.root.generic_delete(point_int, &recurse, &accept);
     }
 
     /// Deletes all Intervals that envelop the interval specified by *[ lo, hi ]*.
@@ -353,20 +385,14 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// ```
     pub fn delete_envelop(&mut self, lo: K, hi: K) -> Vec<V> {
         assert!(lo <= hi);
-        if self.root.is_none() {
+        if !self.root.is_node() {
             return Vec::new();
         }
-        let root = mem::replace(&mut self.root, None);
-        let x = root.unwrap().delete_envelop(lo, hi);
-        let deleted = x.1;
-        self.root = x.0;
-        self.size -= deleted.len() as u64;
-        match self.size {
-            0 => self.level = 0,
-            _ => self.level = self.root.as_ref().unwrap().level,
-        }
-        return deleted;
+        let int = Interval::new(lo, hi);
+        let accept = |big: &Interval<K>, small: &Interval<K>| big.envelop(small);
+        return self.root.generic_delete(int, &accept, &accept);
     }
+
     /// Deletes all Intervals that overlap with the interval specified by *[ lo, hi ]*.
     /// The returned data is a vector of data stored inside the deleted intervals.
     ///
@@ -390,19 +416,12 @@ impl<K: Ord + Copy, V> IST<K, V> {
 
     pub fn delete_overlap(&mut self, lo: K, hi: K) -> Vec<V> {
         assert!(lo <= hi);
-        if self.root.is_none() {
+        if !self.root.is_node() {
             return Vec::new();
         }
-        let root = mem::replace(&mut self.root, None);
-        let x = root.unwrap().delete_overlap(lo, hi);
-        let deleted = x.1;
-        self.root = x.0;
-        self.size -= deleted.len() as u64;
-        match self.size {
-            0 => self.level = 0,
-            _ => self.level = self.root.as_ref().unwrap().level,
-        }
-        return deleted;
+        let int = Interval::new(lo, hi);
+        let accept = |int1: &Interval<K>, int2: &Interval<K>| int1.overlap(int2);
+        return self.root.generic_delete(int, &accept, &accept);
     }
 }
 
@@ -427,6 +446,7 @@ mod ist_tests {
         let mut ist = IST::new();
         test_emptiness(&mut ist);
     }
+
     fn get_a_good_tree() -> IST<u64, &'static str> {
         /*
          *  Range [0, 9] should always be empty
@@ -457,6 +477,7 @@ mod ist_tests {
         ist.insert(66, 200, &"[66, 200]");
         return ist;
     }
+
     #[test]
     fn test_1_node_tree() {
         let empty_vec: Vec<&&'static str> = Vec::new();
@@ -481,6 +502,7 @@ mod ist_tests {
         assert_eq!(ist.delete_envelop(10, 20), ["[10, 30]"]);
         test_emptiness(&mut ist);
     }
+
     #[test]
     fn test_insert() {
         let mut ist = IST::new();
