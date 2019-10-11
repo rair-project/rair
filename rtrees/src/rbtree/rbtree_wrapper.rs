@@ -20,7 +20,7 @@ use std::cmp::Ordering;
 use std::mem;
 
 pub(super) type RBTreeOp<K, A, V> = Option<Box<Node<K, A, V>>>;
-
+pub type LeftRightDataTuple<'a, K, A, V> = (&'a mut RBTree<K, A, V>, &'a mut RBTree<K, A, V>, &'a mut V);
 #[derive(Default)]
 pub struct RBTree<K: Ord + Copy, A: Copy, V>(RBTreeOp<K, A, V>);
 
@@ -99,7 +99,20 @@ where
     pub fn data(self) -> V {
         self.unwrap().data
     }
-
+    /// Returns a tuple of tree elements: a mutable reference to left node,
+    /// mutable right node and mutable referent to the value stored
+    /// inside the current node. The reason such functionality might be
+    /// desired, is when user wants to keep mutual reference of at
+    /// least any 2 of either left node, right node or data.
+    /// [left_mut()](struct.RBTree.html#method.left_mut),
+    /// [right_mut()](struct.RBTree.html#method.right_mut)
+    /// and [data_mut()](struct.RBTree.html#method.data_mut) will not
+    /// work because rust does not support partial
+    /// borrowing [yet](https://github.com/rust-lang/rfcs/issues/1215).
+    pub fn mut_me(&mut self) -> LeftRightDataTuple<K, A, V> {
+        let node = self.as_mut().unwrap();
+        return (&mut node.left, &mut node.right, &mut node.data);
+    }
     /// Returns non-mutable reference to data stored in the current Tree node
     /// # Panics
     /// panics if current subtree is not a *node*
