@@ -244,7 +244,7 @@ where
         }
     }
 
-    fn sync_aug(&mut self) {
+    pub(crate) fn sync_aug(&mut self) {
         self.as_mut().unwrap().sync_builtin_aug();
         self.sync_custom_aug();
     }

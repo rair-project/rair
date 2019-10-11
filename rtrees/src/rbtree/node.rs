@@ -64,22 +64,20 @@ where
         self.right = x.as_mut().unwrap().left.take();
         x.as_mut().unwrap().color = self.color;
         self.color = COLOR::RED;
-        self.sync_builtin_aug();
         x.as_mut().unwrap().left = self.into();
-        let mut new_node = x.unwrap();
-        new_node.sync_builtin_aug();
-        return *new_node;
+        x.as_mut().unwrap().left.sync_aug();
+        x.sync_aug();
+        return *x.unwrap();
     }
     pub(super) fn rotate_right(mut self) -> Self {
         let mut x = self.left.take();
         self.left = x.as_mut().unwrap().right.take();
         x.as_mut().unwrap().color = self.color;
         self.color = COLOR::RED;
-        self.sync_builtin_aug();
         x.as_mut().unwrap().right = self.into();
-        let mut new_node = x.unwrap();
-        new_node.sync_builtin_aug();
-        return *new_node;
+        x.as_mut().unwrap().right.sync_aug();
+        x.sync_aug();
+        return *x.unwrap();
     }
     #[inline]
     pub(super) fn flip_colors(&mut self) {
