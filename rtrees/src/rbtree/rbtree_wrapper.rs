@@ -41,9 +41,8 @@ where
     pub(super) fn take(&mut self) -> RBTree<K, A, V> {
         RBTree(self.0.take())
     }
-
-    #[inline]
-    pub(super) fn is_node(&self) -> bool {
+    /// Return True if the current node is not null node.
+    pub fn is_node(&self) -> bool {
         self.0.is_some()
     }
 
@@ -83,7 +82,7 @@ where
     /// Returns *aug_data* stored in the current Tree node.
     /// # Panics
     /// panics if current subtree is not a *node*
-    pub fn aug_data(self) -> A {
+    pub fn aug_data(&self) -> A {
         self.as_ref().unwrap().aug_data
     }
 
