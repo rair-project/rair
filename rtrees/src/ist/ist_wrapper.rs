@@ -300,8 +300,8 @@ impl<K: Ord + Copy, V> IST<K, V> {
         }
     }
 
-    /// Deletes all Intervals that that cover *point*. The return
-    /// value is number of deleted intervals.
+    /// Deletes all Intervals that that cover *point*. The returned
+    /// data is a vector of data stored inside the deleted intervals.
     ///
     /// # Example
     /// ```
@@ -331,7 +331,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     }
 
     /// Deletes all Intervals that envelop the interval specified by *[ lo, hi ]*.
-    /// The return value is number of deleted intervals.
+    /// The returned data is a vector of data stored inside the deleted intervals.
     ///
     /// An interval *[ A, B ]* is said to be envloping interval
     /// *[ lo, hi ]* IFF *lo ≥ A* and *lo ≤ B* and *hi ≥ A* and *hi ≤ B*.
@@ -368,6 +368,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
         return deleted;
     }
     /// Deletes all Intervals that overlap with the interval specified by *[ lo, hi ]*.
+    /// The returned data is a vector of data stored inside the deleted intervals.
     ///
     /// Two interval *[ A, B ]*, *[ lo, hi ]* are said to be overlapping IFF
     /// *max(A, lo) ≤ min(B, hi)*.
