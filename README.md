@@ -4,6 +4,8 @@
 
 **Code Coverage**: [![codecov](https://codecov.io/gh/oddcoder/rair/branch/master/graph/badge.svg)](https://codecov.io/gh/oddcoder/rair)
 
+**API**: [![API](https://img.shields.io/badge/api-master-purple.svg)](https://oddcoder.github.io/rair/)
+
 RAIR is a work in progress rewrite of [radare2](https://github.com/radare/radare2) in rust with these goals:
 - Native speed.
 - Extremely flexible and modern analysis.
@@ -31,42 +33,43 @@ $ cd rair
 $ cargo install
 ```
 ## Current status
-|   Module  	| Rust Porting 	| Documentation 	| Testing 	|
-|:---------:	|:------------:	|:-------------:	|:-------:	|
-|   rio       	|      DONE 	|       NA      	|    WIP   	|
-|  R2agent  	|      NA      	|       NA      	|    NA   	|
-|    R2pm   	|      NA      	|       NA      	|    NA   	|
-|   Rabin   	|      NA      	|       NA      	|    NA   	|
-|    Ragg   	|      NA      	|       NA      	|    NA   	|
-|   Rahash  	|      NA     	|       NA      	|    NA    	|
-|   Rarun   	|      NA      	|       NA      	|    NA   	|
-|    Rair  	    |      NA      	|       NA      	|    NA   	|
-|  Ragg-cc  	|      NA      	|       NA      	|    NA   	|
-|    Rasm   	|      NA      	|       NA      	|    NA   	|
-|    Rax    	|      NA      	|       NA      	|    NA   	|
-|   Radiff  	|      NA      	|       NA      	|    NA   	|
-|   Rafind  	|      NA       |       NA      	|    NA   	|
-|   r_anal  	|      NA      	|       NA      	|    NA   	|
-|   r_asm   	|      NA      	|       NA      	|    NA   	|
-|   r_bin   	|      NA      	|       NA      	|    NA   	|
-|    r_bp   	|      NA      	|       NA      	|    NA   	|
-|  r_config 	|      NA    	|       NA      	|    NA   	|
-|   r_cons  	|      NA       |       NA      	|    NA   	|
-|   r_core  	|      NA      	|       NA      	|    NA   	|
-|  r_crypto 	|      NA     	|       NA      	|    NA   	|
-|  r_debug  	|      NA      	|       NA      	|    NA   	|
-|   r_egg   	|      NA      	|       NA      	|    NA   	|
-|   r_flag  	|      NA      	|       NA      	|    NA   	|
-|    r_fs   	|      NA      	|       NA      	|    NA   	|
-|   r_hash  	|      NA     	|       NA      	|    NA   	|
-|   r_lang  	|      NA      	|       NA      	|    NA   	|
-|  r_magic  	|      NA      	|       NA      	|    NA   	|
-|  r_parse  	|      NA      	|       NA      	|    NA   	|
-|   r_reg   	|      NA      	|       NA      	|    NA   	|
-|  r_search 	|      NA    	|       NA      	|    NA  	|
-|  r_socket 	|      NA      	|       NA      	|    NA   	|
-| r_syscall 	|      NA      	|       NA      	|    NA   	|
-|   r_util  	|      NA 	    |       NA      	|    NA   	|
+|   Module  	|   Rust Porting   |                                            Documentation                                           |
+|:-------------:|:----------------:|:--------------------------------------------------------------------------------------------------:|
+|   rtrees      |:heavy_check_mark:|[![API](https://img.shields.io/badge/api-master-purple.svg)](https://oddcoder.github.io/rair/rtrees)|
+|   rio       	|        WIP       |                                                NA                                                  |
+|  R2agent  	|        NA        |                                                NA                                                  |
+|    R2pm   	|        NA        |                                                NA                                                  |
+|   Rabin   	|        NA        |                                                NA                                                  |
+|    Ragg   	|        NA        |                                                NA                                                  |
+|   Rahash  	|        NA        |                                                NA                                                  |
+|   Rarun   	|        NA        |                                                NA                                                  |
+|    Rair  	    |        NA        |                                                NA                                                  |
+|  Ragg-cc  	|        NA        |                                                NA                                                  |
+|    Rasm   	|        NA        |                                                NA                                                  |
+|    Rax    	|        NA        |                                                NA                                                  |
+|   Radiff  	|        NA        |                                                NA                                                  |
+|   Rafind  	|        NA        |                                                NA                                                  |
+|   r_anal  	|        NA        |                                                NA                                                  |
+|   r_asm   	|        NA        |                                                NA                                                  |
+|   r_bin   	|        NA        |                                                NA                                                  |
+|    r_bp   	|        NA        |                                                NA                                                  |
+|  r_config 	|        NA        |                                                NA                                                  |
+|   r_cons  	|        NA        |                                                NA                                                  |
+|   r_core  	|        NA        |                                                NA                                                  |
+|  r_crypto 	|        NA        |                                                NA                                                  |
+|  r_debug  	|        NA        |                                                NA                                                  |
+|   r_egg   	|        NA        |                                                NA                                                  |
+|   r_flag  	|        NA        |                                                NA                                                  |
+|    r_fs   	|        NA        |                                                NA                                                  |
+|   r_hash  	|        NA        |                                                NA                                                  |
+|   r_lang  	|        NA        |                                                NA                                                  |
+|  r_magic  	|        NA        |                                                NA                                                  |
+|  r_parse  	|        NA        |                                                NA                                                  |
+|   r_reg   	|        NA        |                                                NA                                                  |
+|  r_search 	|        NA        |                                                NA                                                  |
+|  r_socket 	|        NA        |                                                NA                                                  |
+| r_syscall 	|        NA        |                                                NA                                                  |
+|   r_util  	|        NA        |                                                NA                                                  |
 
 ## Get involved
 
