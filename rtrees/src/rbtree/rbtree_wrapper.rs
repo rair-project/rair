@@ -569,5 +569,19 @@ mod rbtree_tests {
             assert_eq!(rbtree.delete(i).unwrap(), i);
             verify_tree(&rbtree);
         }
+        assert_eq!(rbtree.delete(500), None);
+    }
+
+    #[test]
+    fn test_delete_min() {
+        let mut rbtree = RBTree::new();
+        assert_eq!(rbtree.delete_min(), None);
+        for i in 0..2000 {
+            rbtree.insert(i, PlaceHolder(), i);
+        }
+        for i in 0..2000 {
+            assert_eq!(rbtree.delete_min().unwrap(), i);
+        }
+        assert_eq!(rbtree.delete_min(), None);
     }
 }
