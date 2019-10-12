@@ -436,10 +436,14 @@ mod ist_tests {
         assert_eq!(ist.at(5), empty_vec);
         assert_eq!(ist.envelop(10, 20), empty_vec);
         assert_eq!(ist.overlap(0, 10), empty_vec);
+        assert_eq!(ist.inverse_envelop(7, 21), empty_vec);
         assert_eq!(ist.at_mut(5), empty_vec);
+        assert_eq!(ist.inverse_envelop_mut(7, 21), empty_vec);
         assert_eq!(ist.envelop_mut(10, 20), empty_vec);
         assert_eq!(ist.overlap_mut(0, 10), empty_vec);
         assert_eq!(ist.delete_envelop(10, 20), empty_vec2);
+        assert_eq!(ist.delete_overlap(10, 20), empty_vec2);
+        assert_eq!(ist.delete_at(10), empty_vec2);
     }
     #[test]
     fn test_empty_tree() {
