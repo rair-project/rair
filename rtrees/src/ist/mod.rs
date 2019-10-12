@@ -16,5 +16,5 @@
  */
 mod interval;
 mod rb_helpers;
-pub mod tree;
+mod tree;
 pub use self::tree::*;

@@ -20,7 +20,25 @@ use std::cmp::Ordering;
 use std::mem;
 
 pub(super) type RBTreeOp<K, A, V> = Option<Box<Node<K, A, V>>>;
+
+/// Tuple of 3 elements used with [RBTree::mut_me]. The first element is mutable reference to the left subtree,
+/// the second element is a mutable reference to the right subtree and the third element is a mutable reference
+/// to the data stored in the current node.
 pub type LeftRightDataTuple<'a, K, A, V> = (&'a mut RBTree<K, A, V>, &'a mut RBTree<K, A, V>, &'a mut V);
+
+///  Used to recalculate augmented data stored in each node.
+/// This trait is mainly meant to be only implemented for [RBTree]
+/// before using the tree.
+pub trait Augment<T: Copy> {
+    fn sync_custom_aug(&mut self) {}
+}
+
+/// A left-leaning red–black (LLRB) Tree, optimized for safety, simplicity of implementation,
+/// and augmentation. This tree is mimicking the behavior of a 2-3 tree. Full desciption of the
+/// tree design and complexity analysis is available in the paper titled
+/// [*Left-leaning Red-Black Trees*](https://www.cs.princeton.edu/~rs/talks/LLRB/LLRB.pdf) by
+/// Robert Sedgewick. If you just need a normal non-augmentable tree-baesed map check
+/// [std::collections::BTreeMap] instead.
 #[derive(Default)]
 pub struct RBTree<K: Ord + Copy, A: Copy, V>(RBTreeOp<K, A, V>);
 
@@ -29,9 +47,7 @@ impl<K: Ord + Copy, A: Copy, V> From<Node<K, A, V>> for RBTree<K, A, V> {
         RBTree(Some(Box::new(node)))
     }
 }
-pub trait Augment<T: Copy> {
-    fn sync_custom_aug(&mut self) {}
-}
+
 impl<K: Ord + Copy, A: Copy, V> RBTree<K, A, V>
 where
     RBTree<K, A, V>: Augment<A>,
