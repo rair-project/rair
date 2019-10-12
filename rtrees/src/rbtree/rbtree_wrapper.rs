@@ -445,7 +445,6 @@ where
     /// ```
 
     pub fn delete(&mut self, key: K) -> Option<V> {
-        self.search(key)?; // Do we really need this line
         if !self.left_ref().is_red() && !self.right_ref().is_red() {
             self.as_mut().unwrap().color = COLOR::RED;
         }
