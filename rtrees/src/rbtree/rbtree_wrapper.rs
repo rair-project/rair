@@ -298,7 +298,8 @@ where
         return self;
     }
     /// Deletes the minimum value in the tree and returns the data stored in that node.
-    /// #example
+    ///
+    /// # Example
     /// ```
     /// use rtrees::rbtree::*;
     /// #[derive(Copy, Clone)]
