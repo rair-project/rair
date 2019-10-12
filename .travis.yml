@@ -36,6 +36,7 @@ notifications:
     on_success: never
 before_deploy:
 - sh ci/deploy.sh
+cache: cargo
 deploy:
   provider: releases
   api_key:
