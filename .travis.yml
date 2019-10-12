@@ -6,11 +6,12 @@ env:
 matrix:
   include:
     - os: linux
-      env: DOCOV=true
+      env: COV=true
     - os: osx
     - os: windows
     - os: linux
-      rust: nightly 
+      rust: nightly
+      env: DOC=true 
     - os: osx
       rust: nightly
     - os: windows
