@@ -26,13 +26,12 @@ use rbtree::{Augment, RBTree};
 
 #[derive(Default)]
 /// Interval Query data type based on augmented binary search tree,
-/// written as *IST* but pronounced 'Interval Search Tree'.
+/// written as *IST* but pronounced 'Interval Search Tree'. Balanced using
+/// RBTree.
 ///
-/// IST support handling overlapping intervals as well as non-overlapping intervals.
+/// IST support handling overlapping intervals, non-overlapping intervals, as well as keeping track of
+/// multiple insertions into same interval.
 pub struct IST<K: Ord + Copy, V> {
-    //root: SubTree<K, V>,
-    //size: u64,
-    //level: u64,
     root: RBTree<Interval<K>, Interval<K>, Vec<V>>,
 }
 
@@ -100,7 +99,8 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// <math xmlns="http://www.w3.org/1998/Math/MathML"><mrow><mi>&#x1D4AA;</mi>
     /// <mrow><mo form="prefix">(</mo><mi>log</mi><mi>n</mi><mo form="postfix">)
     /// </mo></mrow></mrow></math>
-    /// time. Insertion supports
+    /// time. Insertion supports inserting multiple time into the same interval,
+    ///  and keeps track of all inserted data.
     /// # Panics
     /// Panics if *lo* > *hi*
     /// # Example
