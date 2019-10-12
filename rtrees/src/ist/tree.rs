@@ -1,5 +1,5 @@
 /*
- * ist.rs: Augmented Interval Search Tree Wrapper
+ * tree.rs: Augmented Interval Search Tree
  *  Copyright (C) 2019  Oddcoder
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,9 +20,9 @@
  *  implemented using  left-leaning red-black tree:
  *  https://www.cs.princeton.edu/~rs/talks/LLRB/LLRB.pdf
  */
-use super::interval::*;
-use super::ist_node::*;
-use rbtree::*;
+use super::interval::Interval;
+use super::rb_helpers::ISTHelpers;
+use rbtree::{Augment, RBTree};
 
 #[derive(Default)]
 /// Interval Query data type based on augmented binary search tree,

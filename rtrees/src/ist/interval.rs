@@ -1,5 +1,5 @@
 /**
- * interval.rs: Auxilary Interval data structure for IST.
+ * interval.rs: Auxilary closed Interval data structure for IST.
  *  Copyright (C) 2019  Oddcoder
  *
  * This program is free software: you can redistribute it and/or modify

@@ -1,5 +1,5 @@
 /**
- * ist_node.rs: Augmented Interval Search Tree node implementation.
+ * rb_helpers.rs: Extend RBTree functionality so it suits IST.
  *  Copyright (C) 2019  Oddcoder
  *
  * This program is free software: you can redistribute it and/or modify

@@ -15,6 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 mod interval;
-mod ist_node;
-pub mod ist_wrapper;
-pub use self::ist_wrapper::*;
+mod rb_helpers;
+pub mod tree;
+pub use self::tree::*;
