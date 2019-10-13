@@ -4,8 +4,9 @@ version = "0.1.0"
 authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
 
 [dependencies]
-bitflags = "*"
-memmap = "*"
-either_n = "*"
+rtrees = {path = "../rtrees"}
+bitflags = "1.2.0"
+memmap = "0.7.0"
+either_n = "0.2.0"
 [dev-dependencies]
-tempfile = "*"
+tempfile = "3.1.0"
