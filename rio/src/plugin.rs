@@ -1,4 +1,4 @@
-/**
+/*
  * plugin.rs: RIO interface for implementing new plugin.
  * Copyright (C) 2019  Oddcoder
  * This program is free software: you can redistribute it and/or modify
@@ -13,7 +13,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 use utils::*;
 
 #[derive(PartialEq)]
@@ -41,15 +41,4 @@ pub trait RIOPlugin {
 pub trait RIOPluginOperations {
     fn read(&mut self, raddr: usize, buffer: &mut [u8]) -> Result<(), IoError>;
     fn write(&mut self, raddr: usize, buffer: &[u8]) -> Result<(), IoError>;
-}
-impl PartialEq for dyn RIOPlugin {
-    fn eq(&self, other: &Self) -> bool {
-        self.get_metadata() == other.get_metadata()
-    }
-}
-
-impl PartialEq for dyn RIOPluginOperations {
-    fn eq(&self, _other: &Self) -> bool {
-        return true;
-    }
 }

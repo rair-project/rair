@@ -1,6 +1,6 @@
 #![warn(clippy::cargo)]
 #![allow(clippy::needless_return)]
-/**
+/*
  * rio: rair IO library impelementation
  * Copyright (C) 2019  Oddcoder
  * This program is free software: you can redistribute it and/or modify
@@ -15,13 +15,13 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #[macro_use]
 extern crate bitflags;
 extern crate either_n;
 extern crate memmap;
-
+extern crate rtrees;
 #[cfg(test)]
 extern crate tempfile;
 #[cfg(test)]
@@ -29,7 +29,9 @@ mod test_aids;
 
 mod defaultplugin;
 mod desc;
+mod descquery;
 mod io;
+mod mapsquery;
 mod plugin;
 mod utils;
 pub use desc::*;

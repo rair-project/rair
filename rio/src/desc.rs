@@ -1,4 +1,4 @@
-/**
+/*
  * desc.rs: file descriptor data structure and needed tools to operate on single file.
  * Copyright (C) 2019  Oddcoder
  * This program is free software: you can redistribute it and/or modify
@@ -13,29 +13,25 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 use plugin::*;
 use utils::*;
 
 pub struct RIODesc {
     pub name: String,
     pub perm: IoMode,
-    hndl: u64,
+    pub hndl: u64,
     pub paddr: u64, //padd is simulated physical address
-    raddr: u64,     // raddr is the IO descriptor address, general rule of interaction paddr is high level lie, while raddr is the real thing.
     pub size: u64,
+    raddr: u64, // raddr is the IO descriptor address, general rule of interaction paddr is high level lie, while raddr is the real thing.
     plugin_operations: Box<dyn RIOPluginOperations>,
 }
-impl PartialEq for RIODesc {
-    fn eq(&self, other: &RIODesc) -> bool {
-        return self.hndl == other.hndl;
-    }
-}
+
 impl RIODesc {
-    pub fn open(plugin: &mut Box<dyn RIOPlugin>, uri: &str, flags: IoMode, hndl: u64) -> Result<RIODesc, IoError> {
+    pub fn open(plugin: &mut Box<dyn RIOPlugin>, uri: &str, flags: IoMode) -> Result<RIODesc, IoError> {
         let plugin_desc = plugin.open(uri, flags)?;
         let desc = RIODesc {
-            hndl: hndl,
+            hndl: 0,
             name: plugin_desc.name,
             perm: plugin_desc.perm,
             paddr: 0,
@@ -44,9 +40,6 @@ impl RIODesc {
             raddr: plugin_desc.raddr,
         };
         return Ok(desc);
-    }
-    pub fn get_hndl(&self) -> u64 {
-        return self.hndl;
     }
     pub fn has_paddr(&self, paddr: u64) -> bool {
         return paddr >= self.paddr && paddr < self.paddr + self.size as u64;
@@ -68,7 +61,7 @@ mod default_plugin_tests {
     use test_aids::*;
     fn test_desc_read_cb(path: &Path) {
         let mut plugin = defaultplugin::plugin();
-        let mut desc = RIODesc::open(&mut plugin, &path.to_string_lossy(), IoMode::READ, 0).unwrap();
+        let mut desc = RIODesc::open(&mut plugin, &path.to_string_lossy(), IoMode::READ).unwrap();
         desc.paddr = 0x40000;
         let mut buffer: &mut [u8] = &mut [0; 8];
         // read at the begining
@@ -87,7 +80,7 @@ mod default_plugin_tests {
     }
     fn test_desc_has_paddr_cb(path: &Path) {
         let mut plugin = defaultplugin::plugin();
-        let mut desc = RIODesc::open(&mut plugin, &path.to_string_lossy(), IoMode::READ, 0).unwrap();
+        let mut desc = RIODesc::open(&mut plugin, &path.to_string_lossy(), IoMode::READ).unwrap();
         desc.paddr = 0x40000;
         assert_eq!(desc.has_paddr(0x40000), true);
         assert_eq!(desc.has_paddr(0x5), false);
@@ -100,7 +93,7 @@ mod default_plugin_tests {
     }
     fn test_desc_read_errors_cb(path: &Path) {
         let mut plugin = defaultplugin::plugin();
-        let mut desc = RIODesc::open(&mut plugin, &path.to_string_lossy(), IoMode::READ, 0).unwrap();
+        let mut desc = RIODesc::open(&mut plugin, &path.to_string_lossy(), IoMode::READ).unwrap();
         desc.paddr = 0x40000;
         let mut buffer: &mut [u8] = &mut [0; 8];
         // read past the end
@@ -132,7 +125,7 @@ mod default_plugin_tests {
 
     fn test_desc_write_cb(path: &Path) {
         let mut plugin = defaultplugin::plugin();
-        let mut desc = RIODesc::open(&mut plugin, &path.to_string_lossy(), IoMode::READ | IoMode::WRITE, 0).unwrap();
+        let mut desc = RIODesc::open(&mut plugin, &path.to_string_lossy(), IoMode::READ | IoMode::WRITE).unwrap();
         let mut buffer: &mut [u8] = &mut [0; 8];
         desc.paddr = 0x40000;
         // write at the begining
@@ -156,7 +149,7 @@ mod default_plugin_tests {
 
     fn test_write_errors_cb(path: &Path) {
         let mut plugin = defaultplugin::plugin();
-        let mut desc = RIODesc::open(&mut plugin, &path.to_string_lossy(), IoMode::READ | IoMode::WRITE, 0).unwrap();
+        let mut desc = RIODesc::open(&mut plugin, &path.to_string_lossy(), IoMode::READ | IoMode::WRITE).unwrap();
         let mut buffer: &[u8] = &[0; 8];
         desc.paddr = 0x40000;
         // write past the end

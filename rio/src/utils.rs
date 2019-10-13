@@ -1,4 +1,4 @@
-/**
+/*
  * utils.rs: Utility data structures for managing RIO.
  * Copyright (C) 2019  Oddcoder
  * This program is free software: you can redistribute it and/or modify
@@ -13,7 +13,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 use std::fmt;
 use std::io;
 
@@ -36,6 +36,7 @@ pub enum IoError {
     AddressNotFound,
     AddressesOverlapError,
     IoPluginNotFoundError,
+    HndlNotFoundError,
     TooManyFilesError,
     Parse(io::Error),
 }
@@ -70,6 +71,13 @@ impl PartialEq for IoError {
                     false
                 }
             }
+            IoError::HndlNotFoundError => {
+                if let IoError::HndlNotFoundError = rhs {
+                    true
+                } else {
+                    false
+                }
+            }
             IoError::Parse(_) => {
                 if let IoError::Parse(_) = rhs {
                     true
@@ -87,6 +95,7 @@ impl fmt::Display for IoError {
             IoError::AddressesOverlapError => write!(f, "Phyiscal addresses overlap"),
             IoError::IoPluginNotFoundError => write!(f, "Can not find Suitable IO Plugin"),
             IoError::TooManyFilesError => write!(f, "You have too many open files."),
+            IoError::HndlNotFoundError => write!(f, "Handle Does not exist"),
             IoError::Parse(ref e) => e.fmt(f),
         }
     }

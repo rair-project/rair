@@ -1,4 +1,4 @@
-/**
+/*
  * io.rs: RIO main implementation.
  * Copyright (C) 2019  Oddcoder
  * This program is free software: you can redistribute it and/or modify
@@ -13,168 +13,74 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 use defaultplugin;
-use desc::*;
+use descquery::RIODescQuery;
+use mapsquery::{RIOMap, RIOMapQuery};
 use plugin::*;
-use std::cmp::min;
-use std::io;
 use utils::*;
-pub struct RIO {
-    descs: Vec<RIODesc>, // sorted vector based on RIODesc.paddr
-    maps: Vec<RIOMap>,   // sorted vector based on RIOMap.
-    plugins: Vec<Box<dyn RIOPlugin>>,
-    default_plugin: Box<dyn RIOPlugin>,
-}
 
-pub struct RIOMap {
-    paddr: u64,
-    vaddr: u64,
-    size: u64,
+pub struct RIO {
+    descs: RIODescQuery,
+    maps: RIOMapQuery,
+    plugins: Vec<Box<dyn RIOPlugin>>,
 }
 
 impl RIO {
-    fn get_new_hndl(&self) -> Result<u64, IoError> {
-        for i in 0..u64::max_value() {
-            let desc = self.descs.iter().find(|&d| i == d.get_hndl());
-            if desc.is_none() {
-                return Ok(i);
-            }
-        }
-        return Err(IoError::TooManyFilesError);
-    }
-
-    fn insert_desc_at(&mut self, mut desc: RIODesc, paddr: u64) -> Result<u64, IoError> {
-        let insert_before_me = self.descs.iter().position(|d| paddr + desc.size as u64 <= d.paddr);
-        let location: usize;
-        desc.paddr = paddr;
-        match insert_before_me {
-            Some(i) => {
-                if i == 0 {
-                    location = i;
-                } else {
-                    let prevdesc = &self.descs[i - 1];
-                    if prevdesc.has_paddr(paddr) {
-                        return Err(IoError::AddressesOverlapError);
-                    }
-                    location = i;
-                }
-                self.descs.insert(location, desc);
-            }
-            _ => {
-                // being here means that A)  we will insert this desc at the very last or
-                // B) we have intersection with the last desc
-                if self.descs.len() != 0 {
-                    let lastdesc = &self.descs[self.descs.len() - 1];
-                    if lastdesc.has_paddr(paddr + desc.size - 1) {
-                        return Err(IoError::AddressesOverlapError);
-                    }
-                }
-                self.descs.push(desc);
-                location = self.descs.len() - 1;
-            }
-        }
-        return Ok(self.descs[location].get_hndl());
-    }
-
-    fn insert_desc(&mut self, mut desc: RIODesc) -> &mut RIODesc {
-        if self.descs.len() == 0 {
-            self.descs.push(desc);
-            return &mut self.descs[0];
-        }
-        let mut start = 0;
-        let mut where_to_insert: Option<usize> = None;
-        for i in 0..self.descs.len() {
-            if self.descs[i].paddr - start >= desc.size {
-                desc.paddr = start;
-                where_to_insert = Some(i);
-                break;
-            }
-            start = self.descs[i].paddr + self.descs[i].size;
-        }
-        match where_to_insert {
-            Some(i) => {
-                self.descs.insert(i, desc);
-            }
-            None => {
-                where_to_insert = Some(self.descs.len());
-                desc.paddr = self.descs[self.descs.len() - 1].paddr + self.descs[self.descs.len() - 1].size;
-                self.descs.push(desc);
-            }
-        }
-        return &mut self.descs[where_to_insert.unwrap()];
-    }
-
-    fn try_open(&mut self, uri: &str, flags: IoMode) -> Result<RIODesc, IoError> {
-        let hndl = self.get_new_hndl()?;
-        for plugin in &mut self.plugins {
-            if plugin.accept_uri(uri) {
-                return RIODesc::open(plugin, uri, flags, hndl);
-            }
-        }
-        if self.default_plugin.accept_uri(uri) {
-            return RIODesc::open(&mut self.default_plugin, uri, flags, hndl);
-        }
-        return Err(IoError::IoPluginNotFoundError);
-    }
-
+    ///
     pub fn new() -> RIO {
         let ret: RIO = RIO {
-            descs: Vec::new(),
-            maps: Vec::new(),
-            plugins: Vec::new(),
-            default_plugin: defaultplugin::plugin(),
+            descs: RIODescQuery::new(),
+            maps: RIOMapQuery::new(),
+            plugins: vec![defaultplugin::plugin()],
         };
         return ret;
     }
 
+    /// THIS FUNCTION IS NOT SUPPOSED TO BE THAT TRIVIAL
+    /// I WANT IT TO LITERALLY OPEN A PLUGIN FILE
     pub fn load_plugin(&mut self, plugin: Box<dyn RIOPlugin>) {
         self.plugins.push(plugin);
     }
 
     pub fn open(&mut self, uri: &str, flags: IoMode) -> Result<u64, IoError> {
-        let desc = self.try_open(uri, flags)?;
-        let desc_ref = self.insert_desc(desc);
-        return Ok(desc_ref.get_hndl());
+        for plugin in &mut self.plugins {
+            if plugin.accept_uri(uri) {
+                return self.descs.register_open(plugin, uri, flags);
+            }
+        }
+        return Err(IoError::IoPluginNotFoundError);
     }
 
     pub fn open_at(&mut self, uri: &str, flags: IoMode, at: u64) -> Result<u64, IoError> {
-        let desc = self.try_open(uri, flags)?;
-        return self.insert_desc_at(desc, at);
+        for plugin in &mut self.plugins {
+            if plugin.accept_uri(uri) {
+                return self.descs.register_open_at(plugin, uri, flags, at);
+            }
+        }
+        return Err(IoError::IoPluginNotFoundError);
     }
 
-    pub fn close(&mut self, hndl: u64) {
-        //delete all memory mappings related to the closed handle
-        self.descs.retain(|desc| desc.get_hndl() != hndl);
+    pub fn close(&mut self, hndl: u64) -> Result<(), IoError> {
+        // delete all memory mappings related to the closed handle
+        self.descs.close(hndl)?;
+        return Ok(());
     }
 
     pub fn close_all(&mut self) {
-        self.maps.clear();
-        self.descs.clear();
+        self.maps = RIOMapQuery::new();
+        self.descs = RIODescQuery::new();
     }
 
     pub fn pread(&mut self, paddr: u64, buf: &mut [u8]) -> Result<(), IoError> {
-        let result = self.descs.iter().position(|x| paddr >= x.paddr && paddr < x.paddr + x.size);
+        let result = self.descs.paddr_range_to_hndl(paddr, buf.len() as u64);
         match result {
-            Some(mut i) => {
-                // the orders variable here represents the read operation orders that needs to be later fulfilled;
-                //collect all the i, offset from paddr, size
-                let mut orders: Vec<(usize, usize, usize)> = Vec::new();
-                let mut offset = 0;
-                while offset != buf.len() {
-                    if i >= self.descs.len() {
-                        return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
-                    }
-                    if paddr + offset as u64 != self.descs[i].paddr {
-                        return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
-                    }
-                    let size = min(buf.len() - offset, self.descs[i].size as usize);
-                    orders.push((i, offset, size));
-                    offset += size;
-                    i += 1;
-                }
-                for (i, delta, size) in orders {
-                    self.descs[i].read(paddr as usize + delta, &mut buf[delta..delta + size])?;
+            Some(operations) => {
+                let mut start = 0;
+                for (hndl, paddr, size) in operations {
+                    let desc = self.descs.hndl_to_mut_desc(hndl).unwrap();
+                    desc.read(paddr as usize, &mut buf[start as usize..(start + size) as usize])?;
+                    start += size;
                 }
                 return Ok(());
             }
@@ -183,149 +89,39 @@ impl RIO {
     }
 
     pub fn pwrite(&mut self, paddr: u64, buf: &[u8]) -> Result<(), IoError> {
-        let result = self.descs.iter().position(|x| paddr >= x.paddr && paddr < x.paddr + x.size);
+        let result = self.descs.paddr_range_to_hndl(paddr, buf.len() as u64);
         match result {
-            Some(mut i) => {
-                // the orders variable here represents the read operation orders that needs to be later fulfilled;
-                //collect all the i, offset from paddr, size
-                let mut orders: Vec<(usize, usize, usize)> = Vec::new();
-                let mut offset = 0;
-                while offset != buf.len() {
-                    if i >= self.descs.len() {
-                        return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
-                    }
-                    if paddr + offset as u64 != self.descs[i].paddr {
-                        return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
-                    }
-                    let size = min(buf.len() - offset, self.descs[i].size as usize);
-                    orders.push((i, offset, size));
-                    offset += size;
-                    i += 1;
-                }
-                for (i, delta, size) in orders {
-                    self.descs[i].write(paddr as usize + delta, &buf[delta..delta + size])?;
+            Some(operations) => {
+                let mut start = 0;
+                for (hndl, paddr, size) in operations {
+                    let desc = self.descs.hndl_to_mut_desc(hndl).unwrap();
+                    desc.write(paddr as usize, &buf[start as usize..(start + size) as usize])?;
+                    start += size;
                 }
                 return Ok(());
             }
             None => return Err(IoError::AddressNotFound),
         }
     }
-
-    pub fn phy_to_hndl(&self, paddr: u64) -> Option<u64> {
-        let desc = self.descs.iter().find(|x| paddr >= x.paddr && paddr < x.paddr + x.size)?;
-        return Some(desc.get_hndl());
-    }
-
-    pub fn is_phy(&self, paddr: u64, size: u64) -> bool {
-        let result = self.descs.iter().position(|x| paddr >= x.paddr && paddr < x.paddr + x.size);
-        match result {
-            Some(mut i) => {
-                let mut offset = 0;
-                while offset != size {
-                    if i >= self.descs.len() {
-                        return false;
-                    }
-                    if paddr + offset as u64 != self.descs[i].paddr {
-                        return false;
-                    }
-                    let delta = min(size - offset, self.descs[i].size);
-                    offset += delta;
-                    i += 1;
-                }
-                return true;
-            }
-            None => return false,
-        }
-    }
     pub fn map(&mut self, paddr: u64, vaddr: u64, size: u64) -> Result<(), IoError> {
-        let map = RIOMap {
-            paddr: paddr,
-            vaddr: vaddr,
-            size: size,
-        };
-
-        // check if paddr till paddr + size is valid
-        if !self.is_phy(paddr, size) {
+        if self.descs.paddr_range_to_hndl(paddr, size).is_none() {
             return Err(IoError::AddressNotFound);
         }
-        // check if vaddr is previosly used or not
-        let insert_before_me = self.maps.iter().position(|x| vaddr + size < x.vaddr);
-        match insert_before_me {
-            Some(i) => {
-                if i != 0 {
-                    let prevmap = &self.maps[i - 1];
-                    if vaddr >= prevmap.vaddr && vaddr < prevmap.vaddr + prevmap.size {
-                        return Err(IoError::AddressesOverlapError);
-                    }
-                }
-                self.maps.insert(i, map);
-            }
-            _ => {
-                self.maps.push(map);
-            }
-        }
-        return Ok(());
+        return self.maps.map(paddr, vaddr, size);
     }
-    fn split_maps(&mut self, i: usize, vaddr: u64) {
-        let delta = vaddr - self.maps[i].vaddr;
-        let new_map = RIOMap {
-            vaddr: vaddr,
-            paddr: self.maps[i].paddr + delta,
-            size: self.maps[i].size - delta,
-        };
-        self.maps[i].size = delta;
-        self.maps.insert(i + 1, new_map);
-    }
-    pub fn unmap(&mut self, vaddr: u64, size: u64) {
-        let unmap_here = self.maps.iter().position(|x| vaddr >= x.vaddr && vaddr <= x.vaddr + x.size);
-        if let Some(mut i) = unmap_here {
-            let mut progress = 0;
-            while progress != size {
-                if i >= self.maps.len() {
-                    break;
-                }
-                // if the start address is in the middle of the map first split the map
-                if vaddr + progress > self.maps[i].vaddr {
-                    self.split_maps(i, vaddr);
-                    i += 1
-                } else if vaddr + progress < self.maps[i].vaddr {
-                    break;
-                }
-                // if the end address is at the middle of the map first split the map
-                if vaddr + size < self.maps[i].vaddr + self.maps[i].size {
-                    self.split_maps(i, vaddr + size);
-                }
-                progress += self.maps[i].size;
-                self.maps.remove(i);
-            }
-        }
+
+    pub fn unmap(&mut self, vaddr: u64, size: u64) -> Result<(), IoError> {
+        self.maps.unmap(vaddr, size)
     }
 
     pub fn vread(&mut self, vaddr: u64, buf: &mut [u8]) -> Result<(), IoError> {
-        let result = self.maps.iter().position(|x| vaddr >= x.vaddr && vaddr < x.vaddr + x.size);
+        let result = self.maps.split_vaddr_range(vaddr, buf.len() as u64);
         match result {
-            Some(mut i) => {
-                // the orders variable here represents the read operation orders that needs to be later fulfilled;
-                //collect all the paddr, size
-                let mut orders: Vec<(usize, usize)> = Vec::new();
-                let mut offset = 0;
-                while offset != buf.len() {
-                    if i >= self.maps.len() {
-                        return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
-                    }
-                    if vaddr + offset as u64 != self.maps[i].vaddr {
-                        return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
-                    }
-                    let size = min(buf.len() - offset, self.maps[i].size as usize);
-                    let paddr = (vaddr - self.maps[i].vaddr + self.maps[i].paddr) as usize + offset;
-                    orders.push((paddr, size));
-                    offset += size;
-                    i += 1;
-                }
-                offset = 0;
-                for (paddr, size) in orders {
-                    self.pread(paddr as u64, &mut buf[offset..size])?;
-                    offset += size;
+            Some(maps) => {
+                let mut start = 0;
+                for map in maps {
+                    self.pread(map.paddr, &mut buf[start as usize..(start + map.size) as usize])?;
+                    start += map.size;
                 }
                 return Ok(());
             }
@@ -333,133 +129,40 @@ impl RIO {
         }
     }
     pub fn vwrite(&mut self, vaddr: u64, buf: &[u8]) -> Result<(), IoError> {
-        let result = self.maps.iter().position(|x| vaddr >= x.vaddr && vaddr < x.vaddr + x.size);
+        let result = self.maps.split_vaddr_range(vaddr, buf.len() as u64);
         match result {
-            Some(mut i) => {
-                // the orders variable here represents the read operation orders that needs to be later fulfilled;
-                //collect all the paddr, size
-                let mut orders: Vec<(usize, usize)> = Vec::new();
-                let mut offset = 0;
-                while offset != buf.len() {
-                    if i >= self.maps.len() {
-                        return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
-                    }
-                    if vaddr + offset as u64 != self.maps[i].vaddr {
-                        return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
-                    }
+            Some(maps) => {
+                let mut start = 0;
+                for map in maps {
+                    self.pwrite(map.paddr, &buf[start as usize..(start + map.size) as usize])?;
+                    start += map.size;
+                }
 
-                    let size = min(buf.len() - offset, self.maps[i].size as usize);
-                    let paddr = (vaddr - self.maps[i].vaddr + self.maps[i].paddr) as usize + offset;
-                    orders.push((paddr, size));
-                    offset += size;
-                    i += 1;
-                }
-                offset = 0;
-                for (paddr, size) in orders {
-                    self.pwrite(paddr as u64, &buf[offset..size])?;
-                    offset += size;
-                }
                 return Ok(());
             }
             None => return Err(IoError::AddressNotFound),
         }
     }
-    pub fn vir_to_phy(&self, vaddr: u64) -> Option<u64> {
-        let i = self.maps.iter().position(|x| vaddr >= x.vaddr && vaddr < x.vaddr + x.size)?;
-        return Some(vaddr - self.maps[i].vaddr + self.maps[i].paddr);
-    }
-    pub fn is_vir(&self, vaddr: u64, size: u64) -> bool {
-        let result = self.maps.iter().position(|x| vaddr >= x.vaddr && vaddr < x.vaddr + x.size);
-        match result {
-            Some(mut i) => {
-                let mut offset = 0;
-                while offset != size {
-                    if i >= self.maps.len() {
-                        return false;
-                    }
-                    let delta = min(size - offset, self.maps[i].size);
-                    offset += delta;
-                    i += 1;
-                }
-                return true;
-            }
-            None => return false,
-        }
+
+    pub fn vir_to_phy(&self, vaddr: u64, size: u64) -> Option<Vec<RIOMap>> {
+        self.maps.split_vaddr_range(vaddr, size)
     }
 }
 
 #[cfg(test)]
 mod rio_tests {
+
     use super::*;
+    use std::io;
     use std::path::Path;
     use test_aids::*;
-    fn test_open_close_cb(path: &[&Path]) {
-        let mut io = RIO::new();
-        // Test single file opening and closing
-        let mut hndl = io.open(&path[0].to_string_lossy(), IoMode::READ).unwrap();
-        assert_eq!(io.descs.len(), 1);
-        assert_eq!(hndl, 0);
-        assert_eq!(io.descs[0].paddr, 0);
-        io.close(hndl);
-        assert_eq!(io.descs.len(), 0);
-
-        // Now lets open 3 files
-        // close the second one and re opening it and see what happens
-        io.open(&path[0].to_string_lossy(), IoMode::READ).unwrap();
-        hndl = io.open(&path[1].to_string_lossy(), IoMode::READ).unwrap();
-        io.open(&path[2].to_string_lossy(), IoMode::READ).unwrap();
-        assert_eq!(io.descs.len(), 3);
-        assert_eq!(io.descs[0].paddr, 0);
-        assert_eq!(io.descs[1].paddr, io.descs[0].size);
-        assert_eq!(io.descs[2].paddr, io.descs[0].size + io.descs[1].size);
-        io.close(hndl);
-        assert_eq!(io.descs.len(), 2);
-        io.open(&path[1].to_string_lossy(), IoMode::READ).unwrap();
-        assert_eq!(io.descs.len(), 3);
-        assert_eq!(io.descs[0].paddr, 0);
-        assert_eq!(io.descs[1].paddr, io.descs[0].size);
-        assert_eq!(io.descs[2].paddr, io.descs[0].size + io.descs[1].size);
-    }
-    #[test]
-    fn test_open_close() {
-        operate_on_files(&test_open_close_cb, &[DATA, DATA, DATA]);
-    }
-
-    fn test_open_at_cb(path: &[&Path]) {
-        let mut io = RIO::new();
-        io.open_at(&path[0].to_string_lossy(), IoMode::READ, 0x5000).unwrap();
-        assert_eq!(io.descs[0].paddr, 0x5000);
-        io.close_all();
-        assert_eq!(io.descs.len(), 0);
-
-        // now lets open 3 files where each one has paddr < the one that comes firt
-        io.open_at(&path[0].to_string_lossy(), IoMode::READ, 0x5000).unwrap();
-        io.open_at(&path[0].to_string_lossy(), IoMode::READ, 0x5000 - DATA.len() as u64).unwrap();
-        io.open(&path[0].to_string_lossy(), IoMode::READ).unwrap();
-        assert_eq!(io.descs.len(), 3);
-        assert_eq!(io.descs[0].paddr, 0);
-        assert_eq!(io.descs[1].paddr, 0x5000 - io.descs[0].size);
-        assert_eq!(io.descs[2].paddr, 0x5000);
-        io.close_all();
-
-        //now lets open 3 files and close the middle one and re-open it
-        io.open_at(&path[0].to_string_lossy(), IoMode::READ, 0x5000).unwrap();
-        io.open_at(&path[1].to_string_lossy(), IoMode::READ, 0x5000 + DATA.len() as u64 * 2).unwrap();
-        io.open_at(&path[0].to_string_lossy(), IoMode::READ, 0x5000 + DATA.len() as u64).unwrap();
-        assert_eq!(io.descs.len(), 3);
-        assert_eq!(io.descs[0].paddr, 0x5000);
-        assert_eq!(io.descs[1].paddr, 0x5000 + io.descs[0].size);
-        assert_eq!(io.descs[2].paddr, 0x5000 + io.descs[0].size + io.descs[1].size);
-    }
-    #[test]
-    fn test_open_at() {
-        operate_on_files(&test_open_at_cb, &[DATA, DATA, DATA]);
-    }
     fn test_failing_open_cb(path: &[&Path]) {
         let mut io = RIO::new();
         let mut bad_path = "badformat://".to_owned();
         bad_path.push_str(&path[0].to_string_lossy());
         let mut e = io.open(&bad_path, IoMode::READ);
+        assert_eq!(e.err().unwrap(), IoError::IoPluginNotFoundError);
+        e = io.open_at(&bad_path, IoMode::READ, 0x500);
         assert_eq!(e.err().unwrap(), IoError::IoPluginNotFoundError);
         io.open(&path[0].to_string_lossy(), IoMode::READ).unwrap();
         e = io.open_at(&path[1].to_string_lossy(), IoMode::READ, 0);
@@ -467,27 +170,12 @@ mod rio_tests {
         io.open(&path[1].to_string_lossy(), IoMode::READ).unwrap();
         e = io.open_at(&path[1].to_string_lossy(), IoMode::READ, 0);
         assert_eq!(e.err().unwrap(), IoError::AddressesOverlapError);
+        io.close_all();
     }
     #[test]
     fn test_failing_open() {
         operate_on_files(&test_failing_open_cb, &[DATA, DATA]);
     }
-    fn test_phy_to_hndl_cb(paths: &[&Path]) {
-        let mut io = RIO::new();
-        io.open(&paths[0].to_string_lossy(), IoMode::READ).unwrap();
-        io.open_at(&paths[1].to_string_lossy(), IoMode::READ, 0x2000).unwrap();
-        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, 0x1000).unwrap();
-        assert_eq!(io.phy_to_hndl(0x10).unwrap(), 0);
-        assert_eq!(io.phy_to_hndl(0x2000).unwrap(), 1);
-        assert_eq!(io.phy_to_hndl(0x1000).unwrap(), 2);
-        assert_eq!(io.phy_to_hndl(0x500), None);
-    }
-
-    #[test]
-    fn test_phy_to_hndl() {
-        operate_on_files(&test_phy_to_hndl_cb, &[DATA, DATA, DATA]);
-    }
-
     fn test_pread_cb(paths: &[&Path]) {
         let mut io = RIO::new();
         let mut fillme: Vec<u8> = vec![0; 8];
@@ -522,24 +210,24 @@ mod rio_tests {
     }
     fn test_fail_pread_cb(paths: &[&Path]) {
         let mut io = RIO::new();
-        let buffer_overflow = IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow"));
         let mut fillme: Vec<u8> = vec![0; 8];
         io.open(&paths[0].to_string_lossy(), IoMode::READ).unwrap();
         let mut e = io.pread(0x500, &mut fillme);
         assert_eq!(e.err().unwrap(), IoError::AddressNotFound);
         fillme = vec![0; DATA.len() + 1];
         e = io.pread(0, &mut fillme);
-        assert_eq!(e.err().unwrap(), buffer_overflow);
+        assert_eq!(e.err().unwrap(), IoError::AddressNotFound);
         io.open(&paths[1].to_string_lossy(), IoMode::READ).unwrap();
         io.open_at(&paths[2].to_string_lossy(), IoMode::READ, DATA.len() as u64 * 2 + 1).unwrap();
         fillme = vec![0; DATA.len() * 3];
         e = io.pread(0, &mut fillme);
-        assert_eq!(e.err().unwrap(), buffer_overflow);
+        assert_eq!(e.err().unwrap(), IoError::AddressNotFound);
     }
     #[test]
     fn test_fail_pread() {
         operate_on_files(&test_fail_pread_cb, &[DATA, DATA, DATA]);
     }
+
     fn test_pwrite_cb(paths: &[&Path]) {
         let mut io = RIO::new();
         let mut fillme: Vec<u8> = vec![0; 8];
@@ -568,101 +256,145 @@ mod rio_tests {
     }
     fn test_fail_pwrite_cb(paths: &[&Path]) {
         let mut io = RIO::new();
-        let buffer_overflow = IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow"));
         let permission_denied = IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "File Not Writable"));
         let mut write_me: Vec<u8> = vec![0; 8];
         io.open(&paths[0].to_string_lossy(), IoMode::READ).unwrap();
         let mut e = io.pwrite(0, &mut write_me);
         assert_eq!(e.err().unwrap(), permission_denied);
-        io.close(0);
+        io.close(0).unwrap();
         io.open(&paths[0].to_string_lossy(), IoMode::READ | IoMode::WRITE).unwrap();
         e = io.pwrite(0x500, &mut write_me);
         assert_eq!(e.err().unwrap(), IoError::AddressNotFound);
         write_me = vec![0; DATA.len() + 1];
         e = io.pwrite(0, &write_me);
-        assert_eq!(e.err().unwrap(), buffer_overflow);
+        assert_eq!(e.err().unwrap(), IoError::AddressNotFound);
         io.open(&paths[1].to_string_lossy(), IoMode::READ | IoMode::WRITE).unwrap();
         io.open_at(&paths[2].to_string_lossy(), IoMode::READ | IoMode::WRITE, DATA.len() as u64 * 2 + 1).unwrap();
         write_me = vec![0; DATA.len() * 3];
         e = io.pwrite(0, &write_me);
-        assert_eq!(e.err().unwrap(), buffer_overflow);
+        assert_eq!(e.err().unwrap(), IoError::AddressNotFound);
     }
     #[test]
     fn test_fail_pwrite() {
         operate_on_files(&test_fail_pwrite_cb, &[DATA, DATA, DATA]);
     }
-    fn test_is_phy_cb(paths: &[&Path]) {
-        let mut io = RIO::new();
-        io.open(&paths[0].to_string_lossy(), IoMode::READ).unwrap();
-        io.open(&paths[1].to_string_lossy(), IoMode::READ | IoMode::WRITE).unwrap();
-        io.open_at(&paths[2].to_string_lossy(), IoMode::READ | IoMode::WRITE, DATA.len() as u64 * 2 + 1).unwrap();
-        assert_eq!(io.is_phy(0, DATA.len() as u64), true);
-        assert_eq!(io.is_phy(0x1000, 5), false);
-        assert_eq!(io.is_phy(0, DATA.len() as u64 * 3), false);
-        io.close(2);
-        assert_eq!(io.is_phy(0, DATA.len() as u64 * 3), false);
-    }
-    #[test]
-    fn test_is_phy() {
-        operate_on_files(&test_is_phy_cb, &[DATA, DATA, DATA]);
-    }
 
     fn test_map_unmap_cb(paths: &[&Path]) {
         let mut io = RIO::new();
-        io.open(&paths[0].to_string_lossy(), IoMode::READ).unwrap();
-        io.open(&paths[1].to_string_lossy(), IoMode::READ).unwrap();
-        io.open(&paths[2].to_string_lossy(), IoMode::READ).unwrap();
-
-        // simple file open, map and unmap
-        io.map(0, 0x4000, DATA.len() as u64).unwrap();
-        assert_eq!(io.maps.len(), 1);
-        io.unmap(0x4000, DATA.len() as u64);
-        assert_eq!(io.maps.len(), 0);
-        io.map(0, 0x4000, DATA.len() as u64).unwrap();
-        io.map(0, 0x5000, DATA.len() as u64).unwrap();
-        io.map(0, 0x2000, DATA.len() as u64).unwrap();
-        io.map(0, 0x3000, DATA.len() as u64).unwrap();
-        assert_eq!(io.maps.len(), 4);
-        io.unmap(0x5000, 0x1000);
-        io.unmap(0x2000, 0x1000);
-        io.unmap(0x3000, 0x1000);
-        io.unmap(0x4000, 0x1000);
-        assert_eq!(io.maps.len(), 0);
-        io.map(0, 0x1000, DATA.len() as u64 * 3).unwrap();
-        assert_eq!(io.maps.len(), 1);
-        io.unmap(0x1000, 0x10);
-        assert_eq!(io.maps.len(), 1);
-        assert_eq!(io.maps[0].paddr, 0x10);
-        assert_eq!(io.maps[0].vaddr, 0x1010);
-        assert_eq!(io.maps[0].size, DATA.len() as u64 * 3 - 0x10);
-        io.unmap(0x1020, 0x10);
-        assert_eq!(io.maps.len(), 2);
-        assert_eq!(io.maps[0].paddr, 0x10);
-        assert_eq!(io.maps[0].vaddr, 0x1010);
-        assert_eq!(io.maps[0].size, 0x10);
-        assert_eq!(io.maps[1].paddr, 0x30);
-        assert_eq!(io.maps[1].vaddr, 0x1030);
-        assert_eq!(io.maps[1].size, DATA.len() as u64 * 3 - 0x30);
+        io.open_at(&paths[0].to_string_lossy(), IoMode::READ, 0x1000).unwrap();
+        io.open_at(&paths[1].to_string_lossy(), IoMode::READ, 0x2000).unwrap();
+        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, 0x3000).unwrap();
+        io.map(0x1000, 0x400, DATA.len() as u64).unwrap();
+        io.map(0x2000, 0x400 + DATA.len() as u64, DATA.len() as u64).unwrap();
+        io.map(0x3000, 0x400 + DATA.len() as u64 * 2, DATA.len() as u64).unwrap();
+        let mut maps = vec![
+            RIOMap {
+                paddr: 0x1000,
+                vaddr: 0x400,
+                size: DATA.len() as u64,
+            },
+            RIOMap {
+                paddr: 0x2000,
+                vaddr: 0x400 + DATA.len() as u64,
+                size: DATA.len() as u64,
+            },
+            RIOMap {
+                paddr: 0x3000,
+                vaddr: 0x400 + DATA.len() as u64 * 2,
+                size: DATA.len() as u64,
+            },
+        ];
+        assert_eq!(io.vir_to_phy(0x400, DATA.len() as u64 * 3).unwrap(), maps);
+        io.unmap(0x400 + DATA.len() as u64, DATA.len() as u64 / 2).unwrap();
+        assert_eq!(io.vir_to_phy(0x400, DATA.len() as u64 * 3), None);
+        maps = vec![RIOMap {
+            paddr: 0x1000,
+            vaddr: 0x400,
+            size: DATA.len() as u64,
+        }];
+        assert_eq!(io.vir_to_phy(0x400, DATA.len() as u64).unwrap(), maps);
+        maps = vec![
+            RIOMap {
+                paddr: 0x2000 + DATA.len() as u64 / 2,
+                vaddr: 0x400 + DATA.len() as u64 * 3 / 2,
+                size: DATA.len() as u64 - DATA.len() as u64 / 2,
+            },
+            RIOMap {
+                paddr: 0x3000,
+                vaddr: 0x400 + DATA.len() as u64 * 2,
+                size: DATA.len() as u64,
+            },
+        ];
+        assert_eq!(io.vir_to_phy(0x400 + DATA.len() as u64 * 3 / 2, DATA.len() as u64 * 2 - DATA.len() as u64 / 2).unwrap(), maps);
+        assert_eq!(io.map(0x200, 0x7000, 0x50).err().unwrap(), IoError::AddressNotFound);
     }
     #[test]
     fn test_map_unmap() {
         operate_on_files(&test_map_unmap_cb, &[DATA, DATA, DATA]);
     }
-    /*
-    fn test_map_errors_cb(paths: &[&Path]) {
+
+    fn test_vread_cb(paths: &[&Path]) {
         let mut io = RIO::new();
-        io.open(&paths[0].to_string_lossy(), IoMode::READ).unwrap();
-        let mut e = io.map(0x1000, 0x4000, DATA.len() as u64);
-        assert_eq!(e.err().unwrap(), IoError::AddressNotFound);
-        e = io.map(0x0, 0x4000, DATA.len() as u64 + 1);
-        assert_eq!(e.err().unwrap(), IoError::AddressNotFound);
-        io.map(0, 0x4000, DATA.len() as u64).unwrap();
-        e = io.map(1, 0x4000, DATA.len() as u64 - 1 as u64);
-        assert_eq!(e.err().unwrap(), IoError::AddressesOverlapError);
+        let mut fillme: Vec<u8> = vec![0; 8];
+        io.open_at(&paths[0].to_string_lossy(), IoMode::READ, 0x1000).unwrap();
+        io.open_at(&paths[1].to_string_lossy(), IoMode::READ, 0x2000).unwrap();
+        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, 0x3000).unwrap();
+        io.map(0x1000, 0x400, DATA.len() as u64).unwrap();
+        io.map(0x2000, 0x400 + DATA.len() as u64, DATA.len() as u64).unwrap();
+        io.map(0x3000, 0x400 + DATA.len() as u64 * 2, DATA.len() as u64).unwrap();
+        io.vread(0x400, &mut fillme).unwrap();
+        assert_eq!(fillme, &DATA[0..8]);
+
+        // second we read from one map into another
+        io.vread(0x400 + DATA.len() as u64 - 4, &mut fillme).unwrap();
+        let mut sanity_data: Vec<u8> = Vec::with_capacity(8);
+        sanity_data.extend(&DATA[DATA.len() - 4..DATA.len()]);
+        sanity_data.extend(&DATA[0..4]);
+        assert_eq!(fillme, sanity_data);
+
+        // Now we make sure that we can read through all maps
+        sanity_data = Vec::with_capacity(DATA.len());
+        fillme = vec![1; DATA.len() * 3];
+        for _ in 0..3 {
+            sanity_data.extend(DATA);
+        }
+        io.vread(0x400, &mut fillme).unwrap();
+        assert_eq!(fillme, sanity_data);
+        assert_eq!(io.vread(0x300, &mut fillme).err().unwrap(), IoError::AddressNotFound);
     }
     #[test]
-    fn test_map_errors() {
-        operate_on_files(&test_map_errors_cb, &[DATA, DATA, DATA]);
+    fn test_vread() {
+        operate_on_files(&test_vread_cb, &[DATA, DATA, DATA]);
     }
-    */
+
+    fn test_vwrite_cb(paths: &[&Path]) {
+        let mut io = RIO::new();
+        let mut fillme: Vec<u8> = vec![0; 8];
+        io.open_at(&paths[0].to_string_lossy(), IoMode::READ | IoMode::WRITE, 0x1000).unwrap();
+        io.open_at(&paths[1].to_string_lossy(), IoMode::READ | IoMode::WRITE, 0x2000).unwrap();
+        io.open_at(&paths[2].to_string_lossy(), IoMode::READ | IoMode::WRITE, 0x3000).unwrap();
+        io.map(0x1000, 0x400, DATA.len() as u64).unwrap();
+        io.map(0x2000, 0x400 + DATA.len() as u64, DATA.len() as u64).unwrap();
+        io.map(0x3000, 0x400 + DATA.len() as u64 * 2, DATA.len() as u64).unwrap();
+        io.vwrite(0x400, &fillme).unwrap();
+        io.vread(0x400, &mut fillme).unwrap();
+        assert_eq!(fillme, &[0; 8]);
+
+        // second we read from one map into another
+        io.vwrite(0x400 + DATA.len() as u64 - 4, &fillme).unwrap();
+        io.vread(0x400 + DATA.len() as u64 - 4, &mut fillme).unwrap();
+        assert_eq!(fillme, &[0; 8]);
+
+        // Now we make sure that we can read through all maps
+
+        fillme = vec![1; DATA.len() * 3];
+        io.vwrite(0x400, &mut fillme).unwrap();
+        io.vread(0x400, &mut fillme).unwrap();
+        assert_eq!(fillme, vec![1; DATA.len() * 3]);
+        assert_eq!(io.vwrite(0x300, &mut fillme).err().unwrap(), IoError::AddressNotFound);
+    }
+    #[test]
+    fn test_vwrite() {
+        operate_on_files(&test_vwrite_cb, &[DATA, DATA, DATA]);
+    }
 }
