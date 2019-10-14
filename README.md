@@ -6,6 +6,8 @@
 
 **API**: [![API](https://img.shields.io/badge/api-master-purple.svg)](https://oddcoder.github.io/rair/)
 
+**Chat**: [![Gitter](https://badges.gitter.im/rair_project/community.svg)](https://gitter.im/rair_project/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+
 RAIR is a work in progress rewrite of [radare2](https://github.com/radare/radare2) in rust with these goals:
 - Native speed.
 - Extremely flexible and modern analysis.
