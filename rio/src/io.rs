@@ -33,7 +33,13 @@ impl Default for RIO {
 }
 
 impl RIO {
+    /// Returns new Input/Output interface to be used
     ///
+    /// # Example
+    /// ````
+    /// use rio::RIO;
+    /// let mut io = RIO::new();
+    /// ````
     pub fn new() -> RIO {
         let ret: RIO = RIO {
             descs: RIODescQuery::new(),
@@ -48,7 +54,23 @@ impl RIO {
     pub fn load_plugin(&mut self, plugin: Box<dyn RIOPlugin>) {
         self.plugins.push(plugin);
     }
-
+    /// Allows us to open file and have it accessable from out physical address space,
+    /// *open* will automatically load the file in the smallest available physical address while
+    /// [RIO::open_at] will allow user to determine what physical address to use. `uri` is
+    /// used to describe file path as well as data encoding if needed. `flags` is used to
+    /// describe permision used while opening file.
+    ///
+    /// # Return value
+    /// the unique file handler represented by [u64] is returned. In case of error, an [IoError]
+    /// is returned explaining why opening file failed.
+    ///
+    /// # Example
+    ///
+    /// ```rust, norun
+    /// use rio::RIO;
+    /// let mut io = RIO::new();
+    /// io.open("hello.txt", IoMode::READ).unwrap();
+    /// ```
     pub fn open(&mut self, uri: &str, flags: IoMode) -> Result<u64, IoError> {
         for plugin in &mut self.plugins {
             if plugin.accept_uri(uri) {
@@ -58,6 +80,22 @@ impl RIO {
         return Err(IoError::IoPluginNotFoundError);
     }
 
+    /// Allows us to open file and have it accessable from out physical address space
+    /// at physicall address of out choice, `uri` is used to describe file path as
+    /// well as data encoding if needed. `flags` is used to describe permision used
+    /// while opening file.
+    ///
+    /// # Return value
+    /// the unique file handler represented by [u64] is returned. In case of error, an [IoError]
+    /// is returned explaining why opening file failed.
+    ///
+    /// # Example
+    ///
+    /// ```rust, norun
+    /// use rio::RIO;
+    /// let mut io = RIO::new();
+    /// io.open_at("hello.txt", IoMode::READ | IoMode::WRITE, 0x4000).unwrap();
+    /// ```
     pub fn open_at(&mut self, uri: &str, flags: IoMode, at: u64) -> Result<u64, IoError> {
         for plugin in &mut self.plugins {
             if plugin.accept_uri(uri) {
@@ -67,17 +105,52 @@ impl RIO {
         return Err(IoError::IoPluginNotFoundError);
     }
 
+    /// Close an opened file, delete its physical and virtual address space.
+    /// In case of Error, an [IoError] is returned explaining why *close* failed.
+    ///
+    /// # Example
+    ///
+    /// ```rust, norun
+    /// use rio::RIO;
+    /// let mut io = RIO::new();
+    /// let hndl = io.open("hello.txt", IoMode::READ).unwrap();
+    /// op.close(hndl);
+    /// ```
+
     pub fn close(&mut self, hndl: u64) -> Result<(), IoError> {
         // delete all memory mappings related to the closed handle
         self.descs.close(hndl)?;
         return Ok(());
     }
 
+    /// Close all open files, and reset all virtual and physical address spaces.
+    ///
+    /// # Example
+    ///
+    /// ```rust, norun
+    /// use rio::RIO;
+    /// let mut io = RIO::new();
+    /// io.open("foo.txt", IoMode::READ).unwrap();
+    /// io.open("bar.txt", IoMode::READ).unwrap();
+    /// op.close_all();
+    /// ```
+
     pub fn close_all(&mut self) {
         self.maps = RIOMapQuery::new();
         self.descs = RIODescQuery::new();
     }
 
+    /// Read from the physical address space of current [RIO] object. If there is no enough
+    /// data to fill *buf* an error is returned.
+    ///
+    /// # Example
+    ///
+    /// ```rust, norun
+    /// let mut io = RIO::new();
+    /// io.open_at("foo.txt", IoMode::READ, 0x20).unwrap();
+    /// let mut fillme: Vec<u8> = vec![0; 8];
+    /// io.pread(0x20, fillme).unwrap();
+    /// ```
     pub fn pread(&mut self, paddr: u64, buf: &mut [u8]) -> Result<(), IoError> {
         let result = self.descs.paddr_range_to_hndl(paddr, buf.len() as u64);
         match result {
@@ -94,6 +167,17 @@ impl RIO {
         }
     }
 
+    /// Write into the physical address space of current [RIO] object. If there is no enough
+    /// space to accomodate *buf* an error is returned.
+    ///
+    /// # Example
+    ///
+    /// ```rust, norun
+    /// let mut io = RIO::new();
+    /// io.open_at("foo.txt", IoMode::READ, 0x20).unwrap();
+    /// let fillme: Vec<u8> = vec![0; 8];
+    /// io.write(0x20, fillme).unwrap();
+    /// ```
     pub fn pwrite(&mut self, paddr: u64, buf: &[u8]) -> Result<(), IoError> {
         let result = self.descs.paddr_range_to_hndl(paddr, buf.len() as u64);
         match result {
@@ -109,6 +193,7 @@ impl RIO {
             None => return Err(IoError::AddressNotFound),
         }
     }
+    ///  Map memory regions from physical address space to virtual address space
     pub fn map(&mut self, paddr: u64, vaddr: u64, size: u64) -> Result<(), IoError> {
         if self.descs.paddr_range_to_hndl(paddr, size).is_none() {
             return Err(IoError::AddressNotFound);
@@ -116,10 +201,12 @@ impl RIO {
         return self.maps.map(paddr, vaddr, size);
     }
 
+    /// unmap already mapped regions
     pub fn unmap(&mut self, vaddr: u64, size: u64) -> Result<(), IoError> {
         self.maps.unmap(vaddr, size)
     }
 
+    /// read memory from virtual address space
     pub fn vread(&mut self, vaddr: u64, buf: &mut [u8]) -> Result<(), IoError> {
         let result = self.maps.split_vaddr_range(vaddr, buf.len() as u64);
         match result {
@@ -134,6 +221,8 @@ impl RIO {
             None => return Err(IoError::AddressNotFound),
         }
     }
+
+    /// write memory into virtual address space
     pub fn vwrite(&mut self, vaddr: u64, buf: &[u8]) -> Result<(), IoError> {
         let result = self.maps.split_vaddr_range(vaddr, buf.len() as u64);
         match result {
@@ -150,6 +239,7 @@ impl RIO {
         }
     }
 
+    /// convert virtual address to physical address
     pub fn vir_to_phy(&self, vaddr: u64, size: u64) -> Option<Vec<RIOMap>> {
         self.maps.split_vaddr_range(vaddr, size)
     }
