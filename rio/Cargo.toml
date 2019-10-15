@@ -2,6 +2,14 @@
 name = "rio"
 version = "0.1.0"
 authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
+license = "LGPL"
+repository = "https://github.com/oddcoder/rair"
+keywords = ["IO", "Memory mapping", "Address Space"]
+description = "IO subsystem for RAIR"
+categories = ["Memory management"]
+readme = "readme.md"
+
+
 
 [dependencies]
 rtrees = {path = "../rtrees"}

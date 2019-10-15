@@ -26,6 +26,12 @@ pub struct RIO {
     plugins: Vec<Box<dyn RIOPlugin>>,
 }
 
+impl Default for RIO {
+    fn default() -> Self {
+        RIO::new()
+    }
+}
+
 impl RIO {
     ///
     pub fn new() -> RIO {
@@ -46,7 +52,7 @@ impl RIO {
     pub fn open(&mut self, uri: &str, flags: IoMode) -> Result<u64, IoError> {
         for plugin in &mut self.plugins {
             if plugin.accept_uri(uri) {
-                return self.descs.register_open(plugin, uri, flags);
+                return self.descs.register_open(&mut **plugin, uri, flags);
             }
         }
         return Err(IoError::IoPluginNotFoundError);
@@ -55,7 +61,7 @@ impl RIO {
     pub fn open_at(&mut self, uri: &str, flags: IoMode, at: u64) -> Result<u64, IoError> {
         for plugin in &mut self.plugins {
             if plugin.accept_uri(uri) {
-                return self.descs.register_open_at(plugin, uri, flags, at);
+                return self.descs.register_open_at(&mut **plugin, uri, flags, at);
             }
         }
         return Err(IoError::IoPluginNotFoundError);

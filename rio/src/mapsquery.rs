@@ -40,7 +40,7 @@ impl RIOMap {
     fn split(mut self, vaddr: u64) -> (RIOMap, RIOMap) {
         let delta = vaddr - self.vaddr;
         let new_map = RIOMap {
-            vaddr: vaddr,
+            vaddr,
             paddr: self.paddr + delta,
             size: self.size - delta,
         };
@@ -63,6 +63,7 @@ impl RIOMap {
     }
 }
 
+#[derive(Default)]
 pub(super) struct RIOMapQuery {
     maps: IST<u64, Rc<RIOMap>>,     //key = virtual address
     rev_maps: IST<u64, Rc<RIOMap>>, // key = physiscal address
@@ -82,7 +83,7 @@ impl RIOMapQuery {
         }
         let mapping = Rc::new(RIOMap { paddr, vaddr, size });
         self.maps.insert(vaddr, vaddr + size - 1, mapping.clone());
-        self.rev_maps.insert(paddr, paddr + size - 1, mapping.clone());
+        self.rev_maps.insert(paddr, paddr + size - 1, mapping);
         return Ok(());
     }
     pub fn split_vaddr_range(&self, vaddr: u64, size: u64) -> Option<Vec<RIOMap>> {
