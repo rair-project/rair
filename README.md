@@ -9,7 +9,7 @@
 |**Travis CI**|  [![Build Status](https://travis-ci.org/oddcoder/rair.svg?branch=master)](https://travis-ci.org/oddcoder/rair)|
 |**Code Coverage**| [![codecov](https://codecov.io/gh/oddcoder/rair/branch/master/graph/badge.svg)](https://codecov.io/gh/oddcoder/rair)|
 |**API**| [![API](https://img.shields.io/badge/api-master-purple.svg)](https://oddcoder.github.io/rair/)|
-|**Chat**| [![Gitter](https://badges.gitter.im/rair_project/community.svg)](https://gitter.im/rair_project/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)|
+|**Chat**| ![Discord](https://img.shields.io/discord/634133396439695382?style=plastic)|
 
 
 RAIR is a work in progress rewrite of [radare2](https://github.com/radare/radare2) in rust with these goals:
