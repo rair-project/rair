@@ -28,8 +28,6 @@ A) start rair completely from scratch.
 
 B) replacing parts from radare till it all becomes written in rust.
 
-~~I prefered the later approach because it will make rair usable right from the begining and it will be testable with [radare2-regressions](https://github.com/radare/radare2-regressions).~~
-
 Ufortunately that didn't work out as expected for many reasons. Idiomatic rust is slightly different from Idiomatic C, where in rust you need to respect a very strict ownership/lifetime model that is almost non existent in C. Also radare2 is moving target and keeping compatiability with such huge system is very hard task on its own.
 ## Get started
 
