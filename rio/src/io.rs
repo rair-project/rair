@@ -66,10 +66,11 @@ impl RIO {
     ///
     /// # Example
     ///
-    /// ```rust, norun
+    /// ```
     /// use rio::RIO;
+    /// use rio::IoMode;
     /// let mut io = RIO::new();
-    /// io.open("hello.txt", IoMode::READ).unwrap();
+    /// io.open("hello.txt", IoMode::READ);
     /// ```
     pub fn open(&mut self, uri: &str, flags: IoMode) -> Result<u64, IoError> {
         for plugin in &mut self.plugins {
@@ -91,10 +92,13 @@ impl RIO {
     ///
     /// # Example
     ///
-    /// ```rust, norun
-    /// use rio::RIO;
-    /// let mut io = RIO::new();
-    /// io.open_at("hello.txt", IoMode::READ | IoMode::WRITE, 0x4000).unwrap();
+    /// ```no_run
+    /// use rio::{RIO, IoMode, IoError};
+    /// fn main() -> Result<(), IoError> {
+    ///     let mut io = RIO::new();
+    ///     io.open_at("hello.txt", IoMode::READ | IoMode::WRITE, 0x4000)?;
+    ///     return Ok(());
+    /// }
     /// ```
     pub fn open_at(&mut self, uri: &str, flags: IoMode, at: u64) -> Result<u64, IoError> {
         for plugin in &mut self.plugins {
@@ -110,11 +114,16 @@ impl RIO {
     ///
     /// # Example
     ///
-    /// ```rust, norun
+    /// ```no_run
     /// use rio::RIO;
-    /// let mut io = RIO::new();
-    /// let hndl = io.open("hello.txt", IoMode::READ).unwrap();
-    /// op.close(hndl);
+    /// use rio::IoMode;
+    /// use rio::IoError;
+    /// fn main() -> Result<(), IoError> {
+    ///     let mut io = RIO::new();
+    ///     let hndl = io.open("hello.txt", IoMode::READ)?;
+    ///     io.close(hndl)?;
+    ///     return Ok(());
+    /// }
     /// ```
 
     pub fn close(&mut self, hndl: u64) -> Result<(), IoError> {
@@ -127,12 +136,17 @@ impl RIO {
     ///
     /// # Example
     ///
-    /// ```rust, norun
+    /// ```no_run
     /// use rio::RIO;
-    /// let mut io = RIO::new();
-    /// io.open("foo.txt", IoMode::READ).unwrap();
-    /// io.open("bar.txt", IoMode::READ).unwrap();
-    /// op.close_all();
+    /// use rio::IoMode;
+    /// use rio::IoError;
+    /// fn main() -> Result<(), IoError> {
+    ///     let mut io = RIO::new();
+    ///     io.open("foo.txt", IoMode::READ)?;
+    ///     io.open("bar.txt", IoMode::READ)?;
+    ///     io.close_all();
+    ///     return Ok(());
+    /// }
     /// ```
 
     pub fn close_all(&mut self) {
@@ -145,11 +159,13 @@ impl RIO {
     ///
     /// # Example
     ///
-    /// ```rust, norun
+    /// ```
+    /// use rio::RIO;
+    /// use rio::IoMode;
     /// let mut io = RIO::new();
-    /// io.open_at("foo.txt", IoMode::READ, 0x20).unwrap();
+    /// io.open_at("foo.txt", IoMode::READ, 0x20);
     /// let mut fillme: Vec<u8> = vec![0; 8];
-    /// io.pread(0x20, fillme).unwrap();
+    /// io.pread(0x20, &mut fillme);
     /// ```
     pub fn pread(&mut self, paddr: u64, buf: &mut [u8]) -> Result<(), IoError> {
         let result = self.descs.paddr_range_to_hndl(paddr, buf.len() as u64);
@@ -172,11 +188,13 @@ impl RIO {
     ///
     /// # Example
     ///
-    /// ```rust, norun
+    /// ```
+    /// use rio::RIO;
+    /// use rio::IoMode;
     /// let mut io = RIO::new();
-    /// io.open_at("foo.txt", IoMode::READ, 0x20).unwrap();
+    /// io.open_at("foo.txt", IoMode::READ, 0x20);
     /// let fillme: Vec<u8> = vec![0; 8];
-    /// io.write(0x20, fillme).unwrap();
+    /// io.pwrite(0x20, &fillme);
     /// ```
     pub fn pwrite(&mut self, paddr: u64, buf: &[u8]) -> Result<(), IoError> {
         let result = self.descs.paddr_range_to_hndl(paddr, buf.len() as u64);
