@@ -19,7 +19,7 @@ if [ $DOC ]; then
   cargo doc  --no-deps --all # building docs
   cargo rustdoc -- -Z unstable-options --enable-index-page
   cargo deadlinks --check-http --dir target/doc #testing docs
-  if [ $TRAVIS_BRANCH = master ]; then
+  if [ $TRAVIS_BRANCH = master ] && [ $TRAVIS_PULL_REQUEST = false ]; then
     pip install ghp-import --user
     ghp-import -n target/doc
     git push -fq https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
