@@ -352,6 +352,22 @@ where
         *self = self.take().insert_not_root(key, aug_data, data);
         self.as_mut().unwrap().color = COLOR::BLACK;
     }
+    /// Force recalculating all agumented data from node matching *key* up to the root node.
+    pub fn force_sync_aug(&mut self, key: K) {
+        if !self.is_node() {
+            return;
+        }
+        match key.cmp(&self.key()) {
+            Ordering::Greater => {
+                self.right_mut().force_sync_aug(key);
+            }
+            Ordering::Less => {
+                self.left_mut().force_sync_aug(key);
+            }
+            _ => (),
+        }
+        self.sync_aug();
+    }
     /// Returns a non mutable references of the data stored at *key*
     /// #example
     /// ```
@@ -380,6 +396,7 @@ where
     }
 
     /// Returns a mutable references of the data stored at *key*.
+    /// We assume that in mutable search caller might modify augmented data,
     /// #example
     /// ```
     /// use rtrees::rbtree::*;

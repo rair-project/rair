@@ -21,7 +21,7 @@
  *  https://www.cs.princeton.edu/~rs/talks/LLRB/LLRB.pdf
  */
 use super::interval::Interval;
-use super::rb_helpers::ISTHelpers;
+use super::rb_helpers::{AugData, ISTHelpers};
 use rbtree::{Augment, RBTree};
 
 /// Interval Query data type based on augmented binary search tree,
@@ -31,7 +31,7 @@ use rbtree::{Augment, RBTree};
 /// IST support handling overlapping intervals, non-overlapping intervals,
 /// as well as keeping track of multiple insertions into same interval.
 pub struct IST<K: Ord + Copy, V> {
-    root: RBTree<Interval<K>, Interval<K>, Vec<V>>,
+    root: RBTree<Interval<K>, AugData<K>, Vec<V>>,
 }
 
 impl<K: Ord + Copy, V> Default for IST<K, V> {
@@ -40,16 +40,20 @@ impl<K: Ord + Copy, V> Default for IST<K, V> {
     }
 }
 
-impl<K: Ord + Copy, V> Augment<Interval<K>> for RBTree<Interval<K>, Interval<K>, Vec<V>> {
+impl<K: Ord + Copy, V> Augment<AugData<K>> for RBTree<Interval<K>, AugData<K>, Vec<V>> {
     fn sync_custom_aug(&mut self) {
-        let mut int = self.key();
+        let mut aug_data = AugData::new(self.key(), self.data_ref().len() as u64);
         if self.left_ref().is_node() {
-            int.absorb(self.left_ref().aug_data());
+            let l = self.left_ref().aug_data();
+            aug_data.interval.absorb(l.interval);
+            aug_data.size += l.size;
         }
         if self.right_ref().is_node() {
-            int.absorb(self.right_ref().aug_data());
+            let r = self.right_ref().aug_data();
+            aug_data.interval.absorb(r.interval);
+            aug_data.size += r.size;
         }
-        self.set_aug_data(int);
+        self.set_aug_data(aug_data);
     }
 }
 impl<K: Ord + Copy, V> IST<K, V> {
@@ -77,7 +81,10 @@ impl<K: Ord + Copy, V> IST<K, V> {
     ///assert_eq!(ist.size(), 3);
     /// ```
     pub fn size(&self) -> u64 {
-        return self.root.size();
+        if !self.root.is_node() {
+            return 0;
+        }
+        return self.root.aug_data().size;
     }
 
     /// 0 will be returned in case of empty *IST*. If *IST* has nodes, then *get_level*
@@ -120,9 +127,13 @@ impl<K: Ord + Copy, V> IST<K, V> {
     pub fn insert(&mut self, lo: K, hi: K, data: V) {
         assert!(lo <= hi);
         let interval = Interval::new(lo, hi);
+        let aug_data = AugData::new(interval, 1);
         match self.root.search_mut(interval) {
-            Some(data_vec) => data_vec.push(data),
-            None => self.root.insert(interval, interval, vec![data]),
+            Some(data_vec) => {
+                data_vec.push(data);
+                self.root.force_sync_aug(interval);
+            },
+            None => self.root.insert(interval, aug_data, vec![data]),
         }
     }
 
@@ -146,7 +157,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
             return Vec::new();
         }
         let accept = |key: &Interval<K>, point: &Interval<K>| key.has_point(point.lo);
-        let recurse = |aug: &Interval<K>, point: &Interval<K>| aug.has_point(point.lo);
+        let recurse = |aug: &AugData<K>, point: &Interval<K>| aug.interval.has_point(point.lo);
         let point_int = Interval::new(point, point);
         return self.root.generic_search(point_int, &recurse, &accept);
     }
@@ -167,7 +178,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
             return Vec::new();
         }
         let accept = |key: &Interval<K>, point: &Interval<K>| key.has_point(point.lo);
-        let recurse = |aug: &Interval<K>, point: &Interval<K>| aug.has_point(point.lo);
+        let recurse = |aug: &AugData<K>, point: &Interval<K>| aug.interval.has_point(point.lo);
         let point_int = Interval::new(point, point);
         return self.root.generic_search_mut(point_int, &recurse, &accept);
     }
@@ -199,7 +210,8 @@ impl<K: Ord + Copy, V> IST<K, V> {
         }
         let int = Interval::new(lo, hi);
         let accept = |big: &Interval<K>, small: &Interval<K>| big.envelop(small);
-        return self.root.generic_search(int, &accept, &accept);
+        let recruse = |big: &AugData<K>, small: &Interval<K>| big.interval.envelop(small);
+        return self.root.generic_search(int, &recruse, &accept);
     }
 
     /// Returns a vector of mutable references of all values that belongs to intervals
@@ -225,7 +237,8 @@ impl<K: Ord + Copy, V> IST<K, V> {
         }
         let int = Interval::new(lo, hi);
         let accept = |big: &Interval<K>, small: &Interval<K>| big.envelop(small);
-        return self.root.generic_search_mut(int, &accept, &accept);
+        let recurse = |big: &AugData<K>, small: &Interval<K>| big.interval.envelop(small);
+        return self.root.generic_search_mut(int, &recurse, &accept);
     }
 
     /// Returns a vector of non mutable references of all values that belongs to intervals
@@ -256,7 +269,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
         let int = Interval::new(lo, hi);
         let accept = |small: &Interval<K>, big: &Interval<K>| big.envelop(small);
         // There might be a better heurestic to tell if I should recurse left or right
-        let recurse = |int1: &Interval<K>, int2: &Interval<K>| int1.overlap(int2);
+        let recurse = |aug_data: &AugData<K>, int: &Interval<K>| aug_data.interval.overlap(int);
         return self.root.generic_search(int, &recurse, &accept);
     }
 
@@ -284,7 +297,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
         let int = Interval::new(lo, hi);
         let accept = |small: &Interval<K>, big: &Interval<K>| big.envelop(small);
         // There might be a better heurestic to tell if I should recurse left or right
-        let recurse = |int1: &Interval<K>, int2: &Interval<K>| int1.overlap(int2);
+        let recurse = |aug_data: &AugData<K>, int: &Interval<K>| aug_data.interval.overlap(int);
         return self.root.generic_search_mut(int, &recurse, &accept);
     }
 
@@ -315,7 +328,8 @@ impl<K: Ord + Copy, V> IST<K, V> {
         }
         let int = Interval::new(lo, hi);
         let accept = |int1: &Interval<K>, int2: &Interval<K>| int1.overlap(int2);
-        return self.root.generic_search(int, &accept, &accept);
+        let recurse = |aug_data: &AugData<K>, int: &Interval<K>| aug_data.interval.overlap(int);
+        return self.root.generic_search(int, &recurse, &accept);
     }
     /// Returns a vector of mutable references of all values that belongs to intervals that
     /// overlap with the interval specified by *[ lo, hi ]*. The vector is ordered based on
@@ -340,7 +354,8 @@ impl<K: Ord + Copy, V> IST<K, V> {
         }
         let int = Interval::new(lo, hi);
         let accept = |int1: &Interval<K>, int2: &Interval<K>| int1.overlap(int2);
-        return self.root.generic_search_mut(int, &accept, &accept);
+        let recurse = |aug_data: &AugData<K>, int: &Interval<K>| aug_data.interval.overlap(int);
+        return self.root.generic_search_mut(int, &recurse, &accept);
     }
 
     /// Deletes all Intervals that that cover *point*. The returned
@@ -362,7 +377,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
             return Vec::new();
         }
         let accept = |key: &Interval<K>, point: &Interval<K>| key.has_point(point.lo);
-        let recurse = |aug: &Interval<K>, point: &Interval<K>| aug.has_point(point.lo);
+        let recurse = |aug: &AugData<K>, point: &Interval<K>| aug.interval.has_point(point.lo);
         let point_int = Interval::new(point, point);
         return self.root.generic_delete(point_int, &recurse, &accept);
     }
@@ -395,7 +410,8 @@ impl<K: Ord + Copy, V> IST<K, V> {
         }
         let int = Interval::new(lo, hi);
         let accept = |big: &Interval<K>, small: &Interval<K>| big.envelop(small);
-        return self.root.generic_delete(int, &accept, &accept);
+        let recurse = |big: &AugData<K>, small: &Interval<K>| big.interval.envelop(small);
+        return self.root.generic_delete(int, &recurse, &accept);
     }
 
     /// Deletes all Intervals that overlap with the interval specified by *[ lo, hi ]*.
@@ -426,7 +442,9 @@ impl<K: Ord + Copy, V> IST<K, V> {
         }
         let int = Interval::new(lo, hi);
         let accept = |int1: &Interval<K>, int2: &Interval<K>| int1.overlap(int2);
-        return self.root.generic_delete(int, &accept, &accept);
+        let recurse = |aug_data: &AugData<K>, int: &Interval<K>| aug_data.interval.overlap(int);
+
+        return self.root.generic_delete(int, &recurse, &accept);
     }
 }
 
@@ -636,5 +654,12 @@ mod ist_tests {
         let mut ist = get_a_good_tree();
         assert_eq!(ist.delete_overlap(150, 210), ["[66, 200]"]);
         assert_eq!(ist.size(), 8);
+    }
+    #[test]
+    fn test_dictionary_size() {
+        // FIX #31
+        let mut ist = get_a_good_tree();
+        ist.insert(50, 60, "Attempt2");
+        assert_eq!(ist.size(), 10)
     }
 }
