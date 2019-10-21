@@ -18,6 +18,7 @@ use std::fmt;
 use std::io;
 
 bitflags! {
+    #[derive(Default)]
     pub struct IoMode: u64 {
     const EXECUTE = 1;
     const WRITE = 2;
