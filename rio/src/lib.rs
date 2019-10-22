@@ -35,6 +35,7 @@ mod mapsquery;
 mod plugin;
 mod utils;
 pub use desc::*;
+pub use mapsquery::*;
 pub use io::*;
 pub use plugin::*;
 pub use utils::*;
