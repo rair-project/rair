@@ -20,16 +20,11 @@ use mapsquery::{RIOMap, RIOMapQuery};
 use plugin::*;
 use utils::*;
 
+#[derive(Default)]
 pub struct RIO {
     descs: RIODescQuery,
     maps: RIOMapQuery,
     plugins: Vec<Box<dyn RIOPlugin>>,
-}
-
-impl Default for RIO {
-    fn default() -> Self {
-        RIO::new()
-    }
 }
 
 impl RIO {
@@ -41,12 +36,9 @@ impl RIO {
     /// let mut io = RIO::new();
     /// ````
     pub fn new() -> RIO {
-        let ret: RIO = RIO {
-            descs: RIODescQuery::new(),
-            maps: RIOMapQuery::new(),
-            plugins: vec![defaultplugin::plugin()],
-        };
-        return ret;
+        let mut io: RIO = Default::default();
+        io.plugins.push(defaultplugin::plugin());
+        return io;
     }
 
     /// THIS FUNCTION IS NOT SUPPOSED TO BE THAT TRIVIAL

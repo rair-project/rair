@@ -22,6 +22,7 @@ use std::collections::BinaryHeap;
 use std::mem;
 use utils::{IoError, IoMode};
 
+#[derive(Default)]
 pub struct RIODescQuery {
     hndl_to_descs: Vec<Option<RIODesc>>,  // key = hndl, value = RIODesc Should it exist
     paddr_to_hndls: IST<u64, u64>,        // key = closed range, value = hndl
@@ -31,12 +32,7 @@ pub struct RIODescQuery {
 
 impl RIODescQuery {
     pub fn new() -> RIODescQuery {
-        RIODescQuery {
-            hndl_to_descs: Vec::new(),
-            paddr_to_hndls: IST::new(),
-            next_hndl: 0,
-            free_hndls: BinaryHeap::new(),
-        }
+        Default::default()
     }
     // under the assumption that we will always have a free handle! I mean who can open 2^64 files!
     fn get_new_hndl(&mut self) -> u64 {
