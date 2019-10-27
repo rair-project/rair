@@ -16,16 +16,22 @@
  */
 use std::cmp::min;
 use std::collections::HashMap;
+
+/// Generic BK-Tree Template used to store dictionary like
+/// structures and perform fuzzy search on them. [K] must implement trait
+/// [Distance] before it can be used as key here.
 pub struct BKTree<K, V>
 where
-    K: Distance,
+    K: Distance + std::fmt::Debug,
+    V: std::fmt::Debug,
 {
     root: Option<BKTreeNode<K, V>>,
 }
-
+#[derive(Debug)]
 struct BKTreeNode<K, V>
 where
-    K: Distance,
+    K: Distance + std::fmt::Debug,
+    V: std::fmt::Debug,
 {
     key: K,
     value: V,
@@ -33,7 +39,8 @@ where
 }
 impl<K, V> BKTreeNode<K, V>
 where
-    K: Distance,
+    K: Distance + std::fmt::Debug,
+    V: std::fmt::Debug,
 {
     fn new(key: K, value: V) -> Self {
         BKTreeNode { key, value, children: HashMap::new() }
@@ -43,40 +50,48 @@ where
         match self.children.get_mut(&distance) {
             Some(child) => child.insert(key, value),
             None => {
-                self.children.insert(distance, BKTreeNode::new(key, value)).unwrap();
+                self.children.insert(distance, BKTreeNode::new(key, value));
             }
         };
     }
 
-    pub fn find(&self, key: &K, tolerance: u64) -> (Vec<&K>, Vec<&V>) {
-        let (mut close, mut exact) = (Vec::new(), Vec::new());
+    fn find(&self, key: &K, tolerance: u64) -> (Vec<&V>, Vec<&K>) {
+        let (mut exact, mut close) = (Vec::new(), Vec::new());
         let current_distance = self.key.distance(&key);
         if current_distance == 0 {
             exact.push(&self.value);
         }
-        for i in current_distance.saturating_sub(tolerance)..current_distance.saturating_add(tolerance) {
+        println!("{:#?}", self.children);
+        for i in current_distance.saturating_sub(tolerance)..current_distance.saturating_add(tolerance) + 1 {
             if let Some(child) = self.children.get(&i) {
                 close.push(&child.key);
                 let mut result = child.find(key, tolerance);
-                close.append(&mut result.0);
-                exact.append(&mut result.1);
+                exact.append(&mut result.0);
+                close.append(&mut result.1);
             }
         }
 
-        return (close, exact);
+        return (exact, close);
     }
 }
+/// This trait used by [BKTree] to tell how close are 2 objects when fuzzy searching.
+/// In case of strings, the [distance] function could be something like Levenshtein distance,
+/// Damerau–Levenshtein distance, Optimal string alignment distance or anything similar.
 pub trait Distance {
     fn distance(&self, other: &Self) -> u64;
 }
 
 impl<K, V> BKTree<K, V>
 where
-    K: Distance,
+    K: Distance + std::fmt::Debug,
+    V: std::fmt::Debug,
 {
+    /// Returns a new BK-Tree
     pub fn new() -> BKTree<K, V> {
         BKTree { root: None }
     }
+
+    /// Inserts a new (*key*, *value*) pair into the KB-Tree
     pub fn insert(&mut self, key: K, value: V) {
         match &mut self.root {
             Some(root) => root.insert(key, value),
@@ -84,7 +99,13 @@ where
         }
     }
 
-    pub fn find(&self, key: &K, tolerance: u64) -> (Vec<&K>, Vec<&V>) {
+    /// Search for the closest Item to *key* with a *tolerance* factor.
+    /// The return value is tuple of 2 vectors, the first of exact matches
+    /// and the second is are approximate matches.
+    ///
+    /// Two keys *key1* and *key2* are said to be approximate match IFF
+    /// `key1.distance(key2) <= tolerance`.
+    pub fn find(&self, key: &K, tolerance: u64) -> (Vec<&V>, Vec<&K>) {
         return match &self.root {
             Some(root) => root.find(&key, tolerance),
             None => (Vec::new(), Vec::new()),
@@ -125,12 +146,27 @@ fn osa_distance(str1: &str, str2: &str) -> u64 {
 }
 
 impl Distance for String {
-    //   distance
     fn distance(&self, other: &Self) -> u64 {
         osa_distance(self, other)
     }
 }
 
+/// a BKTree with string based Key and [Distance] trait optimized for
+/// capturing spelling and typing mistakes.
+///
+/// # Example
+/// ```
+/// use rtrees::bktree::SpellTree;
+/// let mut tree :SpellTree<&str> = SpellTree::new();
+/// tree.insert("hello".to_string(), &"hello");
+/// tree.insert("hell".to_string(), "&hell");
+/// tree.insert("help".to_string(), &"help");
+/// tree.insert("boy".to_string(), &"boy");
+/// tree.insert("interaction".to_string(), &"interaction");
+/// tree.insert("mistake".to_string(), &"mistake");
+/// let (exact, approx) = tree.find(&"hello".to_string(), 1);
+/// //assert_eq!(exact[0], "hello");
+/// ```
 pub type SpellTree<V> = BKTree<String, V>;
 
 #[cfg(test)]
@@ -149,5 +185,21 @@ mod bktree_tests {
         for (s1, s2, d) in s.iter() {
             assert_eq!(osa_distance(s1, s2), *d);
         }
+    }
+    #[test]
+    fn test_spell_tree_one_level() {
+        let mut tree: SpellTree<&str> = SpellTree::new();
+        let words = ["hello", "hell", "held", "helicopter", "helium", "helix", "helmet"];
+        for word in words.iter() {
+            tree.insert(word.to_string(), word);
+        }
+        let mut res = tree.find(&"hello".to_string(), 1);
+        assert_eq!(res.0[0], &"hello");
+        assert_eq!(res.1.len(), 1);
+        assert_eq!(res.1[0], &"hell");
+        res = tree.find(&"helicoptre".to_string(), 1);
+        assert_eq!(res.0.len(), 0);
+        assert_eq!(res.1.len(), 1);
+        assert_eq!(res.1[0], "helicopter");
     }
 }
