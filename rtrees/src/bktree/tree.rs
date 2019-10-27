@@ -56,10 +56,12 @@ where
         let current_distance = self.key.distance(&key);
         if current_distance == 0 {
             exact.push(&self.value);
+        }else if current_distance <= tolerance {
+            close.push(&self.key);
+
         }
         for i in current_distance.saturating_sub(tolerance)..current_distance.saturating_add(tolerance) + 1 {
             if let Some(child) = self.children.get(&i) {
-                close.push(&child.key);
                 let mut result = child.find(key, tolerance);
                 exact.append(&mut result.0);
                 close.append(&mut result.1);
@@ -195,5 +197,8 @@ mod bktree_tests {
         assert_eq!(res.0.len(), 0);
         assert_eq!(res.1.len(), 1);
         assert_eq!(res.1[0], "helicopter");
+        res = tree.find(&"attempt".to_string(), 1);
+        assert_eq!(res.0.len(), 0);
+        assert_eq!(res.1.len(), 0);
     }
 }
