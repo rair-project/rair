@@ -132,7 +132,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
             Some(data_vec) => {
                 data_vec.push(data);
                 self.root.force_sync_aug(interval);
-            },
+            }
             None => self.root.insert(interval, aug_data, vec![data]),
         }
     }
