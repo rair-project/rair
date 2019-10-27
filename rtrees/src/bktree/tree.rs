@@ -20,6 +20,7 @@ use std::collections::HashMap;
 /// Generic BK-Tree Template used to store dictionary like
 /// structures and perform fuzzy search on them. [K] must implement trait
 /// [Distance] before it can be used as key here.
+#[derive(Default)]
 pub struct BKTree<K, V>
 where
     K: Distance,
@@ -60,7 +61,7 @@ where
             close.push(&self.key);
 
         }
-        for i in current_distance.saturating_sub(tolerance)..current_distance.saturating_add(tolerance) + 1 {
+        for i in current_distance.saturating_sub(tolerance)..=current_distance.saturating_add(tolerance) {
             if let Some(child) = self.children.get(&i) {
                 let mut result = child.find(key, tolerance);
                 exact.append(&mut result.0);
@@ -117,14 +118,14 @@ fn osa_distance(str1: &str, str2: &str) -> u64 {
     let a = str1.as_bytes();
     let b = str2.as_bytes();
     let mut d = vec![vec![0; b.len() + 1]; a.len() + 1];
-    for i in 0..a.len() + 1 {
+    for i in 0..=a.len() {
         d[i][0] = i as u64;
     }
-    for j in 0..b.len() + 1 {
+    for j in 0..=b.len() {
         d[0][j] = j as u64;
     }
-    for i in 1..a.len() + 1 {
-        for j in 1..b.len() + 1 {
+    for i in 1..=a.len() {
+        for j in 1..=b.len() {
             let cost = if a[i - 1] == b[j - 1] { 0 } else { 1 };
             d[i][j] = min(
                 d[i - 1][j] + 1, // deletion
