@@ -22,16 +22,13 @@ use std::collections::HashMap;
 /// [Distance] before it can be used as key here.
 pub struct BKTree<K, V>
 where
-    K: Distance + std::fmt::Debug,
-    V: std::fmt::Debug,
+    K: Distance,
 {
     root: Option<BKTreeNode<K, V>>,
 }
-#[derive(Debug)]
 struct BKTreeNode<K, V>
 where
-    K: Distance + std::fmt::Debug,
-    V: std::fmt::Debug,
+    K: Distance,
 {
     key: K,
     value: V,
@@ -39,8 +36,7 @@ where
 }
 impl<K, V> BKTreeNode<K, V>
 where
-    K: Distance + std::fmt::Debug,
-    V: std::fmt::Debug,
+    K: Distance,
 {
     fn new(key: K, value: V) -> Self {
         BKTreeNode { key, value, children: HashMap::new() }
@@ -61,7 +57,6 @@ where
         if current_distance == 0 {
             exact.push(&self.value);
         }
-        println!("{:#?}", self.children);
         for i in current_distance.saturating_sub(tolerance)..current_distance.saturating_add(tolerance) + 1 {
             if let Some(child) = self.children.get(&i) {
                 close.push(&child.key);
@@ -83,8 +78,7 @@ pub trait Distance {
 
 impl<K, V> BKTree<K, V>
 where
-    K: Distance + std::fmt::Debug,
-    V: std::fmt::Debug,
+    K: Distance,
 {
     /// Returns a new BK-Tree
     pub fn new() -> BKTree<K, V> {
