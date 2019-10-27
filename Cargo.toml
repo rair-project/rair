@@ -13,3 +13,7 @@ name = "rair"
 path = "src/rair.rs"
 
 [dependencies]
+clap = "2.33.0"
+rustyline = "5.0.3"
+rtrees = {path = "rtrees"}
+rio = {path = "rio"}
