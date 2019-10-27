@@ -1,0 +1,153 @@
+/*
+ * bktree: Approximate String search data structure.
+ * Copyright (C) 2019  Oddcoder
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+use std::cmp::min;
+use std::collections::HashMap;
+pub struct BKTree<K, V>
+where
+    K: Distance,
+{
+    root: Option<BKTreeNode<K, V>>,
+}
+
+struct BKTreeNode<K, V>
+where
+    K: Distance,
+{
+    key: K,
+    value: V,
+    children: HashMap<u64, BKTreeNode<K, V>>,
+}
+impl<K, V> BKTreeNode<K, V>
+where
+    K: Distance,
+{
+    fn new(key: K, value: V) -> Self {
+        BKTreeNode { key, value, children: HashMap::new() }
+    }
+    fn insert(&mut self, key: K, value: V) {
+        let distance = self.key.distance(&key);
+        match self.children.get_mut(&distance) {
+            Some(child) => child.insert(key, value),
+            None => {
+                self.children.insert(distance, BKTreeNode::new(key, value)).unwrap();
+            }
+        };
+    }
+
+    pub fn find(&self, key: &K, tolerance: u64) -> (Vec<&K>, Vec<&V>) {
+        let (mut close, mut exact) = (Vec::new(), Vec::new());
+        let current_distance = self.key.distance(&key);
+        if current_distance == 0 {
+            exact.push(&self.value);
+        }
+        for i in current_distance.saturating_sub(tolerance)..current_distance.saturating_add(tolerance) {
+            if let Some(child) = self.children.get(&i) {
+                close.push(&child.key);
+                let mut result = child.find(key, tolerance);
+                close.append(&mut result.0);
+                exact.append(&mut result.1);
+            }
+        }
+
+        return (close, exact);
+    }
+}
+pub trait Distance {
+    fn distance(&self, other: &Self) -> u64;
+}
+
+impl<K, V> BKTree<K, V>
+where
+    K: Distance,
+{
+    pub fn new() -> BKTree<K, V> {
+        BKTree { root: None }
+    }
+    pub fn insert(&mut self, key: K, value: V) {
+        match &mut self.root {
+            Some(root) => root.insert(key, value),
+            None => self.root = Some(BKTreeNode::new(key, value)),
+        }
+    }
+
+    pub fn find(&self, key: &K, tolerance: u64) -> (Vec<&K>, Vec<&V>) {
+        return match &self.root {
+            Some(root) => root.find(&key, tolerance),
+            None => (Vec::new(), Vec::new()),
+        };
+    }
+}
+
+fn osa_distance(str1: &str, str2: &str) -> u64 {
+    // Optimal string alignment distance
+    if str1 == str2 {
+        return 0;
+    }
+    let a = str1.as_bytes();
+    let b = str2.as_bytes();
+    let mut d = vec![vec![0; b.len() + 1]; a.len() + 1];
+    for i in 0..a.len() + 1 {
+        d[i][0] = i as u64;
+    }
+    for j in 0..b.len() + 1 {
+        d[0][j] = j as u64;
+    }
+    for i in 1..a.len() + 1 {
+        for j in 1..b.len() + 1 {
+            let cost = if a[i - 1] == b[j - 1] { 0 } else { 1 };
+            d[i][j] = min(
+                d[i - 1][j] + 1, // deletion
+                min(
+                    d[i][j - 1] + 1, // insertion
+                    d[i - 1][j - 1] + cost,
+                ),
+            ); // substitution
+            if i > 1 && j > 1 && a[i - 1] == b[j - 2] && a[i - 2] == b[j - 1] {
+                d[i][j] = min(d[i][j], d[i - 2][j - 2] + cost) // transposition
+            }
+        }
+    }
+    return d[a.len()][b.len()];
+}
+
+impl Distance for String {
+    //   distance
+    fn distance(&self, other: &Self) -> u64 {
+        osa_distance(self, other)
+    }
+}
+
+pub type SpellTree<V> = BKTree<String, V>;
+
+#[cfg(test)]
+mod bktree_tests {
+    use super::*;
+    #[test]
+    fn test_dl_distance() {
+        let s = [
+            ("hello world", "hello world", 0),
+            ("hello world", "hello world ", 1),
+            ("hello world", "h ello World", 2),
+            ("helo wolrd", "hello world", 2),
+            ("open", "opnre", 3), // In case of demere Lavenstien distance this might have been 2
+            ("CA", "ABC", 3),
+        ];
+        for (s1, s2, d) in s.iter() {
+            assert_eq!(osa_distance(s1, s2), *d);
+        }
+    }
+}
