@@ -57,9 +57,8 @@ where
         let current_distance = self.key.distance(&key);
         if current_distance == 0 {
             exact.push(&self.value);
-        }else if current_distance <= tolerance {
+        } else if current_distance <= tolerance {
             close.push(&self.key);
-
         }
         for i in current_distance.saturating_sub(tolerance)..=current_distance.saturating_add(tolerance) {
             if let Some(child) = self.children.get(&i) {
