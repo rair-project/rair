@@ -1,0 +1,88 @@
+/*
+ * cli.pest: Rair RPEL grammar.
+ * Copyright (C) 2019  Oddcoder
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+// Auxillary types
+
+WHITESPACE = _{ " " | "\t" }
+CustomAlpha = _{ASCII_ALPHA | "_"}
+CustomAlphaNum = _{ASCII_ALPHANUMERIC | "_"}
+// Alpha Numerics with White space and some Symbols
+ANWS = {
+    WHITESPACE | ASCII_ALPHANUMERIC | "/" | "\\" | "~" | "!" | "@" | "#" | "$" |
+    "%" | "^" | "&" | "*" | "(" | ")" | "_" | "+" | "="
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+// Numeric Types
+
+
+DEC = @{
+    ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*
+}
+
+BIN = @{
+    "0b" ~ ASCII_BIN_DIGIT+
+}
+
+HEX = @{
+    "0x" ~ ASCII_HEX_DIGIT+
+}
+
+OCT = @{
+    "0" ~ ASCII_OCT_DIGIT+
+}
+///////////////////////////////////////////////////////////////////////////////
+
+// Command Line Interface grammar
+
+Command = @{CustomAlpha ~ CustomAlphaNum*}
+Argument = {
+    CustomAlphaNum+ |
+    "\"" ~ ANWS+ ~"\"" |
+    "`" ~ CommandLine ~ "`"
+}
+Arguments = {
+    Argument+
+}
+
+Loc = {
+    "@" ~ DEC |
+    "@" ~ BIN |
+    "@" ~ HEX |
+    "@" ~ OCT
+}
+Pipe = {"|"}
+Red = {">"}
+RedCat = {">>"}
+RedPipe = {
+    Pipe ~ Argument |
+    Red ~ Argument |
+    RedCat ~ Argument 
+}
+
+Comment = {"#" ~ ANY*}
+EmptyLine = {""}
+HelpLine = {Command ~ "?"}
+CommandLine = {Command ~ Arguments? ~ Loc? ~ RedPipe?}
+
+Input = {
+    SOI ~ CommandLine ~ Comment? ~ EOI |
+    SOI ~ HelpLine ~ Comment? ~ EOI |
+    SOI ~ EmptyLine ~ EOI |
+    SOI ~ Comment ~ EOI
+    
+}
