@@ -1,16 +1,20 @@
 #[macro_use]
 extern crate clap;
+
 extern crate app_dirs;
 extern crate color_backtrace;
+extern crate rcmd;
 extern crate rio;
 extern crate rustyline;
 use app_dirs::*;
 use clap::{App, Arg};
 use color_backtrace::{install_with_settings, Settings};
+use rcmd::ParseTree;
 use rio::*;
 use rustyline::{error::ReadlineError, Editor};
 use std::num;
 use std::path::PathBuf;
+
 struct Core {
     io: RIO,
     rl: Editor<()>,
@@ -36,10 +40,12 @@ impl Core {
 }
 
 fn str_to_num(n: &str) -> Result<u64, num::ParseIntError> {
-    match &*n[0..2].to_lowercase() {
-        "0b" => return u64::from_str_radix(&n[2..], 2),
-        "0x" => return u64::from_str_radix(&n[2..], 16),
-        _ => (),
+    if n.len() >= 2 {
+        match &*n[0..2].to_lowercase() {
+            "0b" => return u64::from_str_radix(&n[2..], 2),
+            "0x" => return u64::from_str_radix(&n[2..], 16),
+            _ => (),
+        }
     }
     if n.chars().nth(0).unwrap() == '0' {
         return u64::from_str_radix(&n[1..], 8);
@@ -69,8 +75,8 @@ fn main() {
         perm = Default::default();
         for c in p.to_lowercase().chars() {
             match c {
-                'R' => perm |= IoMode::READ,
-                'W' => perm |= IoMode::WRITE,
+                'r' => perm |= IoMode::READ,
+                'w' => perm |= IoMode::WRITE,
                 _ => panic!("Unknown Permission: `{}`", c),
             }
         }
@@ -90,7 +96,12 @@ fn repl_inners(core: &mut Core) {
     match &input {
         Ok(line) => {
             core.rl.add_history_entry(line);
-            //print_eval_result(eval_str(e, &line));
+            let t = ParseTree::construct(line);
+            if let Ok(tree) = t {
+                println!("{:#?}", tree);
+            } else {
+                println!("{}", t.err().unwrap().to_string());
+            }
         }
         Err(ReadlineError::Interrupted) => {
             println!("CTRL-C");
