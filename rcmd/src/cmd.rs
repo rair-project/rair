@@ -22,9 +22,9 @@ use pest::iterators::Pair;
 #[derive(Debug, PartialEq)]
 pub enum RedPipe {
     None,
-    Redirect(Argument),
-    RedirectCat(Argument),
-    Pipe(Argument),
+    Redirect(Box<Argument>),
+    RedirectCat(Box<Argument>),
+    Pipe(Box<Argument>),
 }
 
 impl Default for RedPipe {
@@ -38,9 +38,9 @@ impl RedPipe {
         let type_identifier = pairs.next().unwrap();
         let arg = Argument::parse_argument(pairs.next().unwrap());
         return match type_identifier.as_rule() {
-            Rule::Pipe => RedPipe::Pipe(arg),
-            Rule::Red => RedPipe::Redirect(arg),
-            Rule::RedCat => RedPipe::RedirectCat(arg),
+            Rule::Pipe => RedPipe::Pipe(Box::new(arg)),
+            Rule::Red => RedPipe::Redirect(Box::new(arg)),
+            Rule::RedCat => RedPipe::RedirectCat(Box::new(arg)),
             _ => {
                 println!("{:#?}", type_identifier);
                 unimplemented!();
@@ -66,13 +66,13 @@ impl Argument {
     }
     fn parse_argument(root: Pair<Rule>) -> Self {
         let arg = root.as_str();
-        if arg.starts_with("`") && arg.ends_with("`") {
+        if arg.starts_with('`') && arg.ends_with('`') {
             let res = Cmd::parse_cmd(root.into_inner().next().unwrap());
             match res {
                 Ok(cmd) => return Argument::NonLiteral(cmd),
                 Err(e) => return Argument::Err(e),
             }
-        } else if arg.starts_with("\"") && arg.ends_with("\"") {
+        } else if arg.starts_with('"') && arg.ends_with('"') {
             return Argument::Literal(arg[1..arg.len() - 1].to_owned());
         } else {
             return Argument::Literal(arg.to_owned());
@@ -189,17 +189,17 @@ mod test_normal_cmd {
         let mut cmd = Cmd::parse_cmd(root).unwrap();
         let mut target: Cmd = Default::default();
         target.command = "aa".to_string();
-        target.red_pipe = Box::new(RedPipe::Pipe(Argument::Literal("/bin/ls".to_string())));
+        target.red_pipe = Box::new(RedPipe::Pipe(Box::new(Argument::Literal("/bin/ls".to_string()))));
         assert_eq!(cmd, target);
 
         root = CliParser::parse(Rule::CommandLine, "aa > outfile").unwrap().next().unwrap();
         cmd = Cmd::parse_cmd(root).unwrap();
-        target.red_pipe = Box::new(RedPipe::Redirect(Argument::Literal("outfile".to_string())));
+        target.red_pipe = Box::new(RedPipe::Redirect(Box::new(Argument::Literal("outfile".to_string()))));
         assert_eq!(cmd, target);
 
         root = CliParser::parse(Rule::CommandLine, "aa >>outfile").unwrap().next().unwrap();
         cmd = Cmd::parse_cmd(root).unwrap();
-        target.red_pipe = Box::new(RedPipe::RedirectCat(Argument::Literal("outfile".to_string())));
+        target.red_pipe = Box::new(RedPipe::RedirectCat(Box::new(Argument::Literal("outfile".to_string()))));
         assert_eq!(cmd, target);
     }
 }

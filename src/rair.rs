@@ -1,3 +1,6 @@
+#![warn(clippy::cargo)]
+#![allow(clippy::needless_return)]
+
 #[macro_use]
 extern crate clap;
 
