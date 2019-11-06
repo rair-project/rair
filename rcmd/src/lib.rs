@@ -22,9 +22,11 @@ extern crate pest_derive;
 extern crate err_derive;
 extern crate pest;
 
-mod parser;
+mod cmd;
+mod error;
 mod grammar;
 mod help;
-mod error;
-mod cmd;
+mod parser;
+pub use cmd::*;
+pub use help::*;
 pub use parser::*;
