@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use err_derive::Error;
-use std::num;
-use pest::error;
 use grammar::Rule;
-#[derive(Debug, Error)]
+use pest::error;
+use std::num;
+#[derive(Debug, Error, PartialEq)]
 pub enum ParserError {
     #[error(display = "{})", _0)]
     Num(num::ParseIntError),

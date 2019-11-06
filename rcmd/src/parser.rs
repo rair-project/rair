@@ -14,13 +14,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use pest::Parser;
-use help::HelpCmd;
-use grammar::*;
-use error::ParserError;
 use cmd::Cmd;
+use error::ParserError;
+use grammar::*;
+use help::HelpCmd;
+use pest::Parser;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ParseTree {
     Help(HelpCmd),
     Cmd(Cmd),
@@ -47,5 +47,24 @@ impl ParseTree {
             }
         }
         return Ok(ParseTree::Comment);
+    }
+}
+
+#[cfg(test)]
+mod test_parser {
+    use super::*;
+    #[test]
+    fn test_parser() {
+        let mut tree = ParseTree::construct("aa? #and a little comment").unwrap();
+        assert_eq!(tree, ParseTree::Help(HelpCmd { command: "aa".to_string() }));
+        assert!(ParseTree::construct("aa withargument? #and a little comment").is_err());
+        tree = ParseTree::construct("aa #and a little comment").unwrap();
+        let mut cmd: Cmd = Default::default();
+        cmd.command = "aa".to_string();
+        assert_eq!(tree, ParseTree::Cmd(cmd));
+        tree = ParseTree::construct("#and a little comment").unwrap();
+        assert_eq!(tree, ParseTree::Comment);
+        tree = ParseTree::construct("").unwrap();
+        assert_eq!(tree, ParseTree::NewLine);
     }
 }
