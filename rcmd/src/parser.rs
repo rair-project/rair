@@ -34,19 +34,17 @@ impl ParseTree {
         if pairs.is_err() {
             return Err(ParserError::Pest(pairs.err().unwrap()));
         }
-        for pair in pairs.unwrap().next().unwrap().into_inner() {
-            match pair.as_rule() {
-                Rule::HelpLine => return Ok(ParseTree::Help(HelpCmd::parse_help(pair))),
-                Rule::Comment => return Ok(ParseTree::Comment),
-                Rule::EmptyLine => return Ok(ParseTree::NewLine),
-                Rule::CommandLine => return Ok(ParseTree::Cmd(Cmd::parse_cmd(pair)?)),
-                _ => {
-                    println!("{:#?}", pair);
-                    unimplemented!();
-                }
+        let pair = pairs.unwrap().next().unwrap().into_inner().next().unwrap();
+        match pair.as_rule() {
+            Rule::HelpLine => return Ok(ParseTree::Help(HelpCmd::parse_help(pair))),
+            Rule::Comment => return Ok(ParseTree::Comment),
+            Rule::EmptyLine => return Ok(ParseTree::NewLine),
+            Rule::CommandLine => return Ok(ParseTree::Cmd(Cmd::parse_cmd(pair)?)),
+            _ => {
+                println!("{:#?}", pair);
+                unimplemented!();
             }
         }
-        return Ok(ParseTree::Comment);
     }
 }
 
