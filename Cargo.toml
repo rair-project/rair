@@ -6,8 +6,14 @@ members = [
 ]
 [package]
 name = "rair-core"
+description = "Reverse Engineering framework written in rust."
 version = "0.1.0"
 authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
+license = "LGPL"
+repository = "https://github.com/oddcoder/rair"
+readme = "README.md"
+keywords = ["Reverse Engineering", "Assembly", "Disassembly", "Malware", "Static Analysis"]
+categories = ["command-line-utilities", "Reverse-Engineering"]
 
 [[bin]]
 name = "rair"
