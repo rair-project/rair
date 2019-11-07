@@ -21,10 +21,9 @@ WHITESPACE = _{ " " | "\t" }
 CustomAlpha = _{ASCII_ALPHA | "_"}
 CustomAlphaNum = _{ASCII_ALPHANUMERIC | "_"}
 // Alpha Numerics with White space and some Symbols
-ANWS = {
-    WHITESPACE | ASCII_ALPHANUMERIC | "/" | "\\" | "~" | "!" | "@" | "#" | "$" |
-    "%" | "^" | "&" | "*" | "(" | ")" | "_" | "+" | "="
-}
+ANS = {ASCII_ALPHANUMERIC | "/" | "\\" | "~" | "!" | "@" | "#" | "$" |
+    "%" | "^" | "&" | "*" | "(" | ")" | "_" | "+" | "=" | "-"}
+ANWS = { WHITESPACE |ANS }
 
 //////////////////////////////////////////////////////////////////////////////////
 // Numeric Types
@@ -51,7 +50,7 @@ OCT = @{
 
 Command = @{CustomAlpha ~ CustomAlphaNum*}
 Argument = {
-    CustomAlphaNum+ |
+    ANS+ |
     "\"" ~ ANWS+ ~"\"" |
     "`" ~ CommandLine ~ "`"
 }
