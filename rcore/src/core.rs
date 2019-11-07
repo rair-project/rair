@@ -23,9 +23,10 @@ use std::io;
 use std::io::Write;
 use std::mem;
 use std::path::PathBuf;
+use loc::SEEKFUNCTON;
 pub struct CmdFunctions {
-    run: &'static fn(&mut Core, &Vec<String>),
-    help: &'static fn(),
+    pub run: fn(&mut Core, &Vec<String>),
+    pub help: fn(&mut Core),
 }
 
 pub enum Writer {
@@ -55,9 +56,14 @@ pub struct Core {
     pub rl: Editor<()>,
     loc: u64,
     app_info: AppInfo,
-    commands: SpellTree<CmdFunctions>,
+    commands: SpellTree<&'static CmdFunctions>,
 }
 impl Core {
+    fn load_commands(&mut self) {
+        self.add_command("s", &SEEKFUNCTON);
+        self.add_command("seek", &SEEKFUNCTON);
+
+    }
     pub fn new() -> Self {
         let mut core = Core {
             stdout: Writer::Write(Box::new(io::stdout())),
@@ -68,6 +74,7 @@ impl Core {
             app_info: AppInfo { name: "rair", author: "RairDevs" },
             commands: SpellTree::new(),
         };
+        core.load_commands();
         drop(core.rl.load_history(&core.hist_file()));
         return core;
     }
@@ -82,7 +89,7 @@ impl Core {
     pub fn get_loc(&self) -> u64 {
         self.loc
     }
-    pub fn add_command(&mut self, command_name: &'static str, functionality: CmdFunctions) {
+    pub fn add_command(&mut self, command_name: &'static str, functionality: &'static CmdFunctions) {
         // first check that command_name doesn't exist
         let command = command_name.to_string();
         let (exact, _) = self.commands.find(&command, 0);
@@ -105,7 +112,7 @@ impl Core {
                 writeln!(self.stderr, ".").unwrap();
             }
         } else {
-            (exact[1].run)(self, args)
+            (exact[0].run)(self, args)
         }
     }
     pub fn run_at(&mut self, command: &String, args: &Vec<String>, at: u64) {
@@ -126,7 +133,7 @@ impl Core {
                 writeln!(self.stderr, "").unwrap();
             }
         } else {
-            (exact[1].help)()
+            (exact[0].help)(self);
         }
     }
 }
