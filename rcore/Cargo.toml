@@ -1,0 +1,20 @@
+[package]
+name = "rcore"
+version = "0.1.0"
+authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
+license = "LGPL"
+repository = "https://github.com/oddcoder/rair"
+keywords = ["Rair", "Core"]
+description = "Core module for Rair"
+categories = ["CLI"]
+readme = "readme.md"
+
+
+
+[dependencies]
+app_dirs = "1.2.1"
+rustyline = "5.0.4"
+
+rio = {path = "../rio"}
+rtrees = {path = "../rtrees"}
+
