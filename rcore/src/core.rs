@@ -16,14 +16,18 @@
  */
 
 use app_dirs::*;
+use io::PRINTHEXFUNCTION;
+use loc::{MODEFUNCTION, SEEKFUNCTION};
 use rio::*;
 use rtrees::bktree::SpellTree;
 use rustyline::Editor;
+use std::fmt;
+use std::fmt::Display;
 use std::io;
 use std::io::Write;
 use std::mem;
 use std::path::PathBuf;
-use loc::SEEKFUNCTON;
+
 pub struct CmdFunctions {
     pub run: fn(&mut Core, &Vec<String>),
     pub help: fn(&mut Core),
@@ -49,23 +53,52 @@ impl Write for Writer {
     }
 }
 
+pub enum AddrMode {
+    Vir,
+    Phy,
+}
+impl Display for AddrMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            AddrMode::Phy => write!(f, "Phy"),
+            AddrMode::Vir => write!(f, "Vir"),
+        }
+    }
+}
 pub struct Core {
     pub stdout: Writer,
     pub stderr: Writer,
+    pub mode: AddrMode,
     pub io: RIO,
     pub rl: Editor<()>,
     loc: u64,
     app_info: AppInfo,
     commands: SpellTree<&'static CmdFunctions>,
+    pub color_palette: Vec<(u8, u8, u8)>,
 }
 impl Core {
     fn load_commands(&mut self) {
-        self.add_command("s", &SEEKFUNCTON);
-        self.add_command("seek", &SEEKFUNCTON);
-
+        self.add_command("mode", &MODEFUNCTION);
+        self.add_command("m", &MODEFUNCTION);
+        self.add_command("printHex", &PRINTHEXFUNCTION);
+        self.add_command("px", &PRINTHEXFUNCTION);
+        self.add_command("seek", &SEEKFUNCTION);
+        self.add_command("s", &SEEKFUNCTION);
+    }
+    fn init_colors(&mut self) {
+        self.color_palette.push((0x58, 0x68, 0x75));
+        self.color_palette.push((0xb5, 0x89, 0x00));
+        self.color_palette.push((0xcb, 0x4b, 0x16));
+        self.color_palette.push((0xdc, 0x32, 0x2f));
+        self.color_palette.push((0xd3, 0x36, 0x82));
+        self.color_palette.push((0x6c, 0x71, 0xc4));
+        self.color_palette.push((0x26, 0x8b, 0xd2));
+        self.color_palette.push((0x2a, 0xa1, 0x98));
+        self.color_palette.push((0x85, 0x99, 0x00));
     }
     pub fn new() -> Self {
         let mut core = Core {
+            mode: AddrMode::Phy,
             stdout: Writer::Write(Box::new(io::stdout())),
             stderr: Writer::Write(Box::new(io::stderr())),
             io: RIO::new(),
@@ -73,9 +106,11 @@ impl Core {
             rl: Editor::<()>::new(),
             app_info: AppInfo { name: "rair", author: "RairDevs" },
             commands: SpellTree::new(),
+            color_palette: Vec::new(),
         };
         core.load_commands();
         drop(core.rl.load_history(&core.hist_file()));
+        core.init_colors();
         return core;
     }
     pub fn hist_file(&self) -> PathBuf {

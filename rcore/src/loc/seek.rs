@@ -16,37 +16,26 @@
  */
 
 use core::*;
+use helper::*;
 use std::io::Write;
-use std::num;
-pub static SEEKFUNCTON : CmdFunctions = CmdFunctions {
-    run: seek_run,
-    help: seek_help,
-};
+pub static SEEKFUNCTION: CmdFunctions = CmdFunctions { run: seek_run, help: seek_help };
 
 fn seek_help(core: &mut Core) {
-    writeln!(core.stdout, "Seek Command: [seek | s]").unwrap();
-    writeln!(core.stdout, "Usage:").unwrap();
-    writeln!(core.stdout, "s +offset\t Increase current loc by offset.").unwrap();
-    writeln!(core.stdout, "s -offset\t Decrease current loc by offset.").unwrap();
-    writeln!(core.stdout, "s offset\t Set current location to offset.").unwrap();
-}
-fn str_to_num(n: &str) -> Result<u64, num::ParseIntError> {
-    if n.len() >= 2 {
-        match &*n[0..2].to_lowercase() {
-            "0b" => return u64::from_str_radix(&n[2..], 2),
-            "0x" => return u64::from_str_radix(&n[2..], 16),
-            _ => (),
-        }
-    }
-    if n.chars().nth(0).unwrap() == '0' {
-        return u64::from_str_radix(&n[1..], 8);
-    }
-    return u64::from_str_radix(n, 10);
+    help(
+        core,
+        &"seek",
+        &"s",
+        vec![
+            ("+[offset]", "Increase current loc by offset."),
+            ("-[offset]", "Decrease current loc by offset."),
+            ("[offset]", "Set current location to offset."),
+        ],
+    );
 }
 
 fn seek_run(core: &mut Core, args: &Vec<String>) {
     if args.len() != 1 {
-        writeln!(core.stderr, "Expected 1 argument found {}", args.len()).unwrap();
+        expect(core, args.len() as u64, 1);
         return;
     }
     if args[0].starts_with("+") {
