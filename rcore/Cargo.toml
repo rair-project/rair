@@ -14,6 +14,7 @@ readme = "readme.md"
 [dependencies]
 app_dirs = "1.2.1"
 rustyline = "5.0.4"
+yansi = "0.5.0"
 
 rio = {path = "../rio"}
 rtrees = {path = "../rtrees"}

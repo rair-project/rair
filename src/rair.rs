@@ -10,6 +10,7 @@ extern crate rcore;
 extern crate rio;
 extern crate rtrees;
 extern crate rustyline;
+extern crate yansi;
 
 use clap::{App, Arg};
 use color_backtrace::{install_with_settings, Settings};
@@ -20,6 +21,7 @@ use rustyline::error::ReadlineError;
 use std::fs::{File, OpenOptions};
 use std::process::{Child, Command, Stdio};
 use std::{io::prelude::*, io::Write, mem, num};
+use yansi::Paint;
 
 fn str_to_num(n: &str) -> Result<u64, num::ParseIntError> {
     if n.len() >= 2 {
@@ -74,7 +76,9 @@ fn main() {
 }
 
 fn repl_inners(core: &mut Core) {
-    let input = core.rl.readline(&format!("[0x{:08x}]> ", core.get_loc()));
+    let prelude = &format!("[0x{:08x}]({})> ", core.get_loc(), core.mode);
+    let (r, g, b) = core.color_palette[1];
+    let input = core.rl.readline(&format!("{}", Paint::rgb(r, g, b, prelude)));
     match &input {
         Ok(line) => {
             core.rl.add_history_entry(line);

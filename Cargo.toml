@@ -25,6 +25,7 @@ clap = "2.33.0"
 color-backtrace = "0.2.3"
 rustyline = "5.0.4"
 app_dirs = "1.2.1"
+yansi = "0.5.0"
 rtrees = {path = "rtrees"}
 rio = {path = "rio"}
 rcmd = {path = "rcmd"}
