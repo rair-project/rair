@@ -16,35 +16,18 @@
  */
 
 use app_dirs::*;
+use helper::*;
 use io::PRINTHEXFUNCTION;
 use loc::{MODEFUNCTION, SEEKFUNCTION};
 use rio::*;
 use rtrees::bktree::SpellTree;
 use rustyline::Editor;
-use std::fmt;
-use std::fmt::Display;
 use std::io;
 use std::io::Write;
 use std::mem;
 use std::path::PathBuf;
-pub use writer::Writer;
-pub struct CmdFunctions {
-    pub run: fn(&mut Core, &Vec<String>),
-    pub help: fn(&mut Core),
-}
+use writer::Writer;
 
-pub enum AddrMode {
-    Vir,
-    Phy,
-}
-impl Display for AddrMode {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            AddrMode::Phy => write!(f, "Phy"),
-            AddrMode::Vir => write!(f, "Vir"),
-        }
-    }
-}
 pub struct Core {
     pub stdout: Writer,
     pub stderr: Writer,
@@ -93,17 +76,21 @@ impl Core {
         core.init_colors();
         return core;
     }
+
     pub fn hist_file(&self) -> PathBuf {
         let mut history = app_dir(AppDataType::UserData, &self.app_info, "/").unwrap();
         history.push("history");
         return history;
     }
+
     pub fn set_loc(&mut self, loc: u64) {
         self.loc = loc;
     }
+
     pub fn get_loc(&self) -> u64 {
         self.loc
     }
+
     pub fn add_command(&mut self, command_name: &'static str, functionality: &'static CmdFunctions) {
         // first check that command_name doesn't exist
         let command = command_name.to_string();
@@ -114,6 +101,7 @@ impl Core {
             writeln!(self.stderr, "Command `{}` already existed", command_name).unwrap();
         }
     }
+
     pub fn run(&mut self, command: &String, args: &Vec<String>) {
         let (exact, similar) = self.commands.find(&command, 2);
         if exact.is_empty() {
@@ -130,11 +118,13 @@ impl Core {
             (exact[0].run)(self, args)
         }
     }
+
     pub fn run_at(&mut self, command: &String, args: &Vec<String>, at: u64) {
         let old_loc = mem::replace(&mut self.loc, at);
         self.run(command, args);
         self.loc = old_loc;
     }
+
     pub fn help(&mut self, command: &String) {
         let (exact, similar) = self.commands.find(&command, 2);
         if exact.is_empty() {

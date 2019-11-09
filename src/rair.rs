@@ -20,22 +20,9 @@ use rio::*;
 use rustyline::error::ReadlineError;
 use std::fs::{File, OpenOptions};
 use std::process::{Child, Command, Stdio};
-use std::{io::prelude::*, io::Write, mem, num};
+use std::{io::prelude::*, io::Write, mem};
 use yansi::Paint;
 
-fn str_to_num(n: &str) -> Result<u64, num::ParseIntError> {
-    if n.len() >= 2 {
-        match &*n[0..2].to_lowercase() {
-            "0b" => return u64::from_str_radix(&n[2..], 2),
-            "0x" => return u64::from_str_radix(&n[2..], 16),
-            _ => (),
-        }
-    }
-    if n.chars().nth(0).unwrap() == '0' {
-        return u64::from_str_radix(&n[1..], 8);
-    }
-    return u64::from_str_radix(n, 10);
-}
 fn main() {
     install_with_settings(Settings::new().message("Unrecoverable Error: "));
     let matches = App::new("rair")
