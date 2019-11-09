@@ -25,6 +25,8 @@ mod core;
 mod helper;
 mod io;
 mod loc;
+mod writer;
 pub use core::*;
 pub use helper::*;
 pub use io::*;
+pub use writer::*;

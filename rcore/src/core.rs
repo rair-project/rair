@@ -27,30 +27,10 @@ use std::io;
 use std::io::Write;
 use std::mem;
 use std::path::PathBuf;
-
+pub use writer::Writer;
 pub struct CmdFunctions {
     pub run: fn(&mut Core, &Vec<String>),
     pub help: fn(&mut Core),
-}
-
-pub enum Writer {
-    Write(Box<dyn Write>),
-    Bytes(Vec<u8>),
-}
-
-impl Write for Writer {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        match self {
-            Writer::Write(writer) => writer.write(buf),
-            Writer::Bytes(bytes) => bytes.write(buf),
-        }
-    }
-    fn flush(&mut self) -> io::Result<()> {
-        match self {
-            Writer::Write(writer) => writer.flush(),
-            Writer::Bytes(bytes) => bytes.flush(),
-        }
-    }
 }
 
 pub enum AddrMode {
@@ -99,8 +79,8 @@ impl Core {
     pub fn new() -> Self {
         let mut core = Core {
             mode: AddrMode::Phy,
-            stdout: Writer::Write(Box::new(io::stdout())),
-            stderr: Writer::Write(Box::new(io::stderr())),
+            stdout: Writer::new_write(Box::new(io::stdout())),
+            stderr: Writer::new_write(Box::new(io::stderr())),
             io: RIO::new(),
             loc: 0,
             rl: Editor::<()>::new(),
