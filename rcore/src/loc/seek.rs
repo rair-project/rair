@@ -33,17 +33,17 @@ fn seek_help(core: &mut Core) {
     );
 }
 
-fn seek_run(core: &mut Core, args: &Vec<String>) {
+fn seek_run(core: &mut Core, args: &[String]) {
     if args.len() != 1 {
         expect(core, args.len() as u64, 1);
         return;
     }
-    if args[0].starts_with("+") {
+    if args[0].starts_with('+') {
         match str_to_num(&args[0][1..]) {
             Ok(offset) => core.set_loc(core.get_loc() + offset),
             Err(e) => writeln!(core.stderr, "{}", e.to_string()).unwrap(),
         }
-    } else if args[0].starts_with("-") {
+    } else if args[0].starts_with('-') {
         match str_to_num(&args[0][1..]) {
             Ok(offset) => core.set_loc(core.get_loc() - offset),
             Err(e) => writeln!(core.stderr, "{}", e.to_string()).unwrap(),

@@ -27,7 +27,7 @@ fn px_help(core: &mut Core) {
     help(core, &"printHex", &"px", vec![("[size]", "View data of at current location in hex format")]);
 }
 
-fn px_run(core: &mut Core, args: &Vec<String>) {
+fn px_run(core: &mut Core, args: &[String]) {
     if args.len() != 1 {
         expect(core, args.len() as u64, 1);
         return;
