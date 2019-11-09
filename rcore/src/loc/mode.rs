@@ -28,7 +28,7 @@ fn mode_help(core: &mut Core) {
     );
 }
 
-fn mode_run(core: &mut Core, args: &Vec<String>) {
+fn mode_run(core: &mut Core, args: &[String]) {
     if args.len() != 1 {
         expect(core, args.len() as u64, 1);
         return;

@@ -39,6 +39,21 @@ pub struct Core {
     commands: SpellTree<&'static CmdFunctions>,
     pub color_palette: Vec<(u8, u8, u8)>,
 }
+impl Default for Core {
+    fn default() -> Self {
+        Core {
+            mode: AddrMode::Phy,
+            stdout: Writer::new_write(Box::new(io::stdout())),
+            stderr: Writer::new_write(Box::new(io::stderr())),
+            io: RIO::new(),
+            loc: 0,
+            rl: Editor::<()>::new(),
+            app_info: AppInfo { name: "rair", author: "RairDevs" },
+            commands: SpellTree::new(),
+            color_palette: Vec::new(),
+        }
+    }
+}
 impl Core {
     fn load_commands(&mut self) {
         self.add_command("mode", &MODEFUNCTION);
@@ -60,17 +75,7 @@ impl Core {
         self.color_palette.push((0x85, 0x99, 0x00));
     }
     pub fn new() -> Self {
-        let mut core = Core {
-            mode: AddrMode::Phy,
-            stdout: Writer::new_write(Box::new(io::stdout())),
-            stderr: Writer::new_write(Box::new(io::stderr())),
-            io: RIO::new(),
-            loc: 0,
-            rl: Editor::<()>::new(),
-            app_info: AppInfo { name: "rair", author: "RairDevs" },
-            commands: SpellTree::new(),
-            color_palette: Vec::new(),
-        };
+        let mut core: Core = Default::default();
         core.load_commands();
         drop(core.rl.load_history(&core.hist_file()));
         core.init_colors();
@@ -102,8 +107,8 @@ impl Core {
         }
     }
 
-    pub fn run(&mut self, command: &String, args: &Vec<String>) {
-        let (exact, similar) = self.commands.find(&command, 2);
+    pub fn run(&mut self, command: &str, args: &[String]) {
+        let (exact, similar) = self.commands.find(&command.to_string(), 2);
         if exact.is_empty() {
             writeln!(self.stderr, "Command `{}` is not found.", command).unwrap();
             let mut s = similar.iter();
@@ -119,14 +124,14 @@ impl Core {
         }
     }
 
-    pub fn run_at(&mut self, command: &String, args: &Vec<String>, at: u64) {
+    pub fn run_at(&mut self, command: &str, args: &[String], at: u64) {
         let old_loc = mem::replace(&mut self.loc, at);
         self.run(command, args);
         self.loc = old_loc;
     }
 
-    pub fn help(&mut self, command: &String) {
-        let (exact, similar) = self.commands.find(&command, 2);
+    pub fn help(&mut self, command: &str) {
+        let (exact, similar) = self.commands.find(&command.to_string(), 2);
         if exact.is_empty() {
             writeln!(self.stderr, "Command `{}` is not found", command).unwrap();
             let mut s = similar.iter();
@@ -135,7 +140,7 @@ impl Core {
                 for suggestion in s {
                     write!(self.stderr, ", {}", suggestion).unwrap();
                 }
-                writeln!(self.stderr, "").unwrap();
+                writeln!(self.stderr).unwrap();
             }
         } else {
             (exact[0].help)(self);

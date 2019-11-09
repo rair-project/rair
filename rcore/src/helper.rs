@@ -61,7 +61,7 @@ pub fn help(core: &mut Core, long: &str, short: &str, usage: Vec<(&str, &str)>) 
 }
 
 pub struct CmdFunctions {
-    pub run: fn(&mut Core, &Vec<String>),
+    pub run: fn(&mut Core, &[String]),
     pub help: fn(&mut Core),
 }
 
