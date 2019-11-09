@@ -20,10 +20,10 @@
 WHITESPACE = _{ " " | "\t" }
 CustomAlpha = _{ASCII_ALPHA | "_"}
 CustomAlphaNum = _{ASCII_ALPHANUMERIC | "_"}
-// Alpha Numerics with White space and some Symbols
-ANS = {ASCII_ALPHANUMERIC | "/" | "\\" | "~" | "!" | "@" | "#" | "$" |
+// Alpha Numerics with White space and some Symbols except "@ or #"
+ANS = {ASCII_ALPHANUMERIC | "/" | "\\" | "~" | "!" | "$" |
     "%" | "^" | "&" | "*" | "(" | ")" | "_" | "+" | "=" | "-"}
-ANWS = { WHITESPACE |ANS }
+ANWS = { WHITESPACE |ANS | "@" | "#"}
 
 //////////////////////////////////////////////////////////////////////////////////
 // Numeric Types
