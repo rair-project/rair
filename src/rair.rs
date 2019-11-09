@@ -160,23 +160,21 @@ fn run_cmd(core: &mut Core, cmd: Cmd) {
     }
     //if we have a pipe feed into the pipe ..
     if let Some(process) = child {
-        if let Writer::Bytes(b) = &mut core.stdout {
-            let mut s = String::new();
-            process.stdin.unwrap().write_all(&b).unwrap();
-            process.stdout.unwrap().read_to_string(&mut s).unwrap();
-            writeln!(stdout.as_mut().unwrap(), "{}", s).unwrap();
-        }
+        let mut s = String::new();
+        process.stdin.unwrap().write_all(core.stdout.bytes_ref().unwrap()).unwrap();
+        process.stdout.unwrap().read_to_string(&mut s).unwrap();
+        writeln!(stdout.as_mut().unwrap(), "{}", s).unwrap();
     }
     // if we have a temporary stdout restore it
     if let Some(outstream) = stdout {
-        mem::replace(&mut core.stdout, outstream);
+        core.stdout = outstream;
     }
 }
 
 fn create_redirect(core: &mut Core, arg: Argument) -> Result<Writer, String> {
     let file_name = eval_arg(core, arg)?;
     match File::create(file_name) {
-        Ok(f) => return Ok(Writer::Write(Box::new(f))),
+        Ok(f) => return Ok(Writer::new_write(Box::new(f))),
         Err(e) => return Err(e.to_string()),
     }
 }
@@ -184,7 +182,7 @@ fn create_redirect(core: &mut Core, arg: Argument) -> Result<Writer, String> {
 fn create_redirect_cat(core: &mut Core, arg: Argument) -> Result<Writer, String> {
     let file_name = eval_arg(core, arg)?;
     match OpenOptions::new().write(true).append(true).open(file_name) {
-        Ok(f) => return Ok(Writer::Write(Box::new(f))),
+        Ok(f) => return Ok(Writer::new_write(Box::new(f))),
         Err(e) => return Err(e.to_string()),
     }
 }
@@ -193,7 +191,7 @@ fn create_pipe(core: &mut Core, arg: Argument) -> Result<(Child, Writer), String
     let process_name = eval_arg(core, arg)?;
     match Command::new(process_name).stdin(Stdio::piped()).stdout(Stdio::piped()).spawn() {
         Err(why) => return Err(why.to_string()),
-        Ok(process) => return Ok((process, Writer::Bytes(Vec::new()))),
+        Ok(process) => return Ok((process, Writer::new_buf())),
     };
 }
 
@@ -206,8 +204,8 @@ fn eval_arg(core: &mut Core, arg: Argument) -> Result<String, String> {
 }
 fn eval_non_literal_arg(core: &mut Core, cmd: Cmd) -> Result<String, String> {
     // change stderr and stdout
-    let mut stderr = Writer::Bytes(Vec::new());
-    let mut stdout = Writer::Bytes(Vec::new());
+    let mut stderr = Writer::new_buf();
+    let mut stdout = Writer::new_buf();
     mem::swap(&mut core.stderr, &mut stderr);
     mem::swap(&mut core.stdout, &mut stdout);
     // run command
@@ -216,17 +214,11 @@ fn eval_non_literal_arg(core: &mut Core, cmd: Cmd) -> Result<String, String> {
     mem::swap(&mut core.stderr, &mut stderr);
     mem::swap(&mut core.stdout, &mut stdout);
 
-    if let Writer::Bytes(err) = stderr {
-        if err.is_empty() {
-            return Err(String::from_utf8(err).unwrap());
-        } else {
-            if let Writer::Bytes(out) = stdout {
-                return Ok(String::from_utf8(out).unwrap());
-            } else {
-                return Err("BUG: Expected Bytes based Writerin STDOUT".to_string());
-            }
-        }
+    let err = stderr.utf8_string().unwrap();
+    if err.is_empty() {
+        return Err(err);
     } else {
-        return Err("BUG: Expected Bytes based Writer in STDERR".to_string());
+        let out = stdout.utf8_string().unwrap();
+        return Ok(out);
     }
 }

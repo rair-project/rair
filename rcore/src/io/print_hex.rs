@@ -58,8 +58,8 @@ fn px_run(core: &mut Core, args: &Vec<String>) {
     .unwrap();
     for i in (0..size).step_by(16) {
         write!(core.stdout, "{} ", Paint::rgb(banner.0, banner.1, banner.2, format!("0x{:08x}", core.get_loc() + i))).unwrap();
-        let mut ascii = Writer::Bytes(Vec::new());
-        let mut hex = Writer::Bytes(Vec::new());
+        let mut ascii = Writer::new_buf();
+        let mut hex = Writer::new_buf();
         for j in i..cmp::min(i + 16, size) {
             let c = data[j as usize];
             match j % 2 {
@@ -73,10 +73,6 @@ fn px_run(core: &mut Core, args: &Vec<String>) {
                 write!(ascii, "{}", Paint::rgb(na.0, na.1, na.2, ".")).unwrap();
             }
         }
-        if let Writer::Bytes(bytes) = ascii {
-            if let Writer::Bytes(h) = hex {
-                writeln!(core.stdout, "{: <40} {}", String::from_utf8(h).unwrap(), String::from_utf8(bytes).unwrap()).unwrap();
-            }
-        }
+        writeln!(core.stdout, "{: <40} {}", hex.utf8_string().unwrap(), ascii.utf8_string().unwrap()).unwrap();
     }
 }
