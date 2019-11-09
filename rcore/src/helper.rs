@@ -16,6 +16,8 @@
  */
 
 use core::*;
+use std::fmt;
+use std::fmt::Display;
 use std::io::Write;
 use std::num;
 use yansi::Paint;
@@ -55,5 +57,23 @@ pub fn help(core: &mut Core, long: &str, short: &str, usage: Vec<(&str, &str)>) 
     writeln!(core.stdout, "Usage:").unwrap();
     for (args, description) in usage {
         writeln!(core.stdout, "{} {}\t{}", Paint::rgb(r1, g1, b1, short), Paint::rgb(r2, g2, b2, args), description,).unwrap()
+    }
+}
+
+pub struct CmdFunctions {
+    pub run: fn(&mut Core, &Vec<String>),
+    pub help: fn(&mut Core),
+}
+
+pub enum AddrMode {
+    Vir,
+    Phy,
+}
+impl Display for AddrMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            AddrMode::Phy => write!(f, "Phy"),
+            AddrMode::Vir => write!(f, "Vir"),
+        }
     }
 }

@@ -19,6 +19,7 @@ use core::*;
 use helper::*;
 use std::cmp;
 use std::io::Write;
+use writer::*;
 use yansi::Paint;
 pub static PRINTHEXFUNCTION: CmdFunctions = CmdFunctions { run: px_run, help: px_help };
 
