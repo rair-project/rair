@@ -5,7 +5,6 @@
 #[macro_use]
 extern crate clap;
 extern crate app_dirs;
-extern crate color_backtrace;
 extern crate rcmd;
 extern crate rcore;
 extern crate rio;
@@ -14,7 +13,6 @@ extern crate rustyline;
 extern crate yansi;
 
 use clap::{App, Arg};
-use color_backtrace::{install_with_settings, Settings};
 use rcmd::*;
 use rcore::*;
 use rio::*;
@@ -25,7 +23,6 @@ use std::{io::prelude::*, io::Write, mem};
 use yansi::Paint;
 
 fn main() {
-    install_with_settings(Settings::new().message("Unrecoverable Error: "));
     let matches = App::new("rair")
         .version(crate_version!())
         .version_short("v")
