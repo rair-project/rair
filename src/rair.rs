@@ -1,4 +1,5 @@
 #![warn(clippy::cargo)]
+#![allow(clippy::multiple_crate_versions)]
 #![allow(clippy::needless_return)]
 
 #[macro_use]
