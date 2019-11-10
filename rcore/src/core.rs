@@ -17,7 +17,7 @@
 
 use app_dirs::*;
 use helper::*;
-use io::PRINTHEXFUNCTION;
+use io::{LISTMAPFUNCTION, MAPFUNCTION, PRINTHEXFUNCTION, UNMAPFUNCTION};
 use loc::{MODEFUNCTION, SEEKFUNCTION};
 use rio::*;
 use rtrees::bktree::SpellTree;
@@ -57,12 +57,17 @@ impl Default for Core {
 }
 impl Core {
     fn load_commands(&mut self) {
+        self.add_command("map", &MAPFUNCTION);
+        self.add_command("maps", &LISTMAPFUNCTION);
         self.add_command("mode", &MODEFUNCTION);
         self.add_command("m", &MODEFUNCTION);
         self.add_command("printHex", &PRINTHEXFUNCTION);
         self.add_command("px", &PRINTHEXFUNCTION);
         self.add_command("seek", &SEEKFUNCTION);
         self.add_command("s", &SEEKFUNCTION);
+        self.add_command("unmap", &UNMAPFUNCTION);
+        self.add_command("um", &UNMAPFUNCTION);
+        
     }
     fn init_colors(&mut self) {
         self.color_palette.push((0x58, 0x68, 0x75));
