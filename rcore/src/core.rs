@@ -104,7 +104,7 @@ impl Core {
         if exact.is_empty() {
             self.commands.insert(command, functionality);
         } else {
-            let msg = format!("Command {} already existed", Paint::default(command_name).bold());
+            let msg = format!("Command {} already existed.", Paint::default(command_name).bold());
             error_msg(self, "Cannot add this command.", &msg);
         }
     }
@@ -145,5 +145,50 @@ impl Core {
         } else {
             (exact[0].help)(self);
         }
+    }
+}
+
+#[cfg(test)]
+mod test_core {
+    use super::*;
+    #[test]
+    fn test_loc() {
+        let mut core = Core::new();
+        core.set_loc(0x500);
+        assert_eq!(core.get_loc(), 0x500);
+    }
+    #[test]
+    fn test_add_command() {
+        Paint::disable();
+        let mut core = Core::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.add_command("a_non_existing_command", &SEEKFUNCTION);
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.add_command("s", &SEEKFUNCTION);
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Cannot add this command.\nCommand s already existed.\n");
+    }
+    #[test]
+    fn test_help() {
+        Paint::disable();
+        let mut core = Core::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.help("seeker");
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Execution failed\nCommand seeker is not found.\nSimilar command: seek.\n");
+    }
+    #[test]
+    fn test_run_at() {
+        Paint::disable();
+        let mut core = Core::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.run_at("seeker", &[], 0x500);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Execution failed\nCommand seeker is not found.\nSimilar command: seek.\n");
     }
 }
