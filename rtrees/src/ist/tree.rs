@@ -21,6 +21,7 @@
  *  https://www.cs.princeton.edu/~rs/talks/LLRB/LLRB.pdf
  */
 use super::interval::Interval;
+use super::iter::ISTIterator;
 use super::rb_helpers::{AugData, ISTHelpers};
 use rbtree::{Augment, RBTree};
 
@@ -31,7 +32,7 @@ use rbtree::{Augment, RBTree};
 /// IST support handling overlapping intervals, non-overlapping intervals,
 /// as well as keeping track of multiple insertions into same interval.
 pub struct IST<K: Ord + Copy, V> {
-    root: RBTree<Interval<K>, AugData<K>, Vec<V>>,
+    pub(super) root: RBTree<Interval<K>, AugData<K>, Vec<V>>,
 }
 
 impl<K: Ord + Copy, V> Default for IST<K, V> {
@@ -448,6 +449,14 @@ impl<K: Ord + Copy, V> IST<K, V> {
     }
 }
 
+impl<K: Ord + Copy, V> IntoIterator for IST<K, V> {
+    type Item = V;
+    type IntoIter = ISTIterator<K, V>;
+    fn into_iter(self) -> ISTIterator<K, V> {
+        ISTIterator::new(self)
+    }
+}
+
 #[cfg(test)]
 mod ist_tests {
     use super::*;
@@ -661,5 +670,23 @@ mod ist_tests {
         let mut ist = get_a_good_tree();
         ist.insert(50, 60, "Attempt2");
         assert_eq!(ist.size(), 10)
+    }
+    #[test]
+    fn test_iter() {
+        let mut ist = get_a_good_tree();
+        ist.insert(50, 60, "Attempt2");
+        let mut iter = ist.into_iter();
+        assert_eq!(iter.next().unwrap(), "[10, 100]");
+        assert_eq!(iter.next().unwrap(), "[20, 30]");
+        assert_eq!(iter.next().unwrap(), "[25, 35]");
+        assert_eq!(iter.next().unwrap(), "[30, 40]");
+        assert_eq!(iter.next().unwrap(), "[50, 60]");
+        assert_eq!(iter.next().unwrap(), "Attempt2");
+        assert_eq!(iter.next().unwrap(), "[65, 70]");
+        assert_eq!(iter.next().unwrap(), "[66, 200]");
+        assert_eq!(iter.next().unwrap(), "[80, 90]");
+        assert_eq!(iter.next().unwrap(), "[85, 95]");
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.next(), None);
     }
 }

@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 mod interval;
+mod iter;
 mod rb_helpers;
 mod tree;
 pub use self::tree::*;

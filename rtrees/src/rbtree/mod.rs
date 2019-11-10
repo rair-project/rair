@@ -19,4 +19,6 @@ mod iter;
 mod iter_ref;
 mod node;
 mod rbtree_wrapper;
+pub(crate) use self::iter::TreeIterator;
+pub(crate) use self::iter_ref::TreeRefIterator;
 pub use self::rbtree_wrapper::*;
