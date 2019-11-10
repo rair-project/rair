@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use super::color::COLOR;
+use super::iter::TreeIterator;
 use super::node::*;
 use std::cmp::Ordering;
 use std::mem;
@@ -510,6 +511,17 @@ where
         return (self, deleted_value);
     }
 }
+
+impl<K: Ord + Copy, A: Copy, V> IntoIterator for RBTree<K, A, V>
+where
+    RBTree<K, A, V>: Augment<A>,
+{
+    type Item = (K, V);
+    type IntoIter = TreeIterator<K, A, V>;
+    fn into_iter(self) -> TreeIterator<K, A, V> {
+        TreeIterator::new(self)
+    }
+}
 #[cfg(test)]
 mod rbtree_tests {
     use super::{Augment, RBTree};
@@ -617,5 +629,17 @@ mod rbtree_tests {
             assert_eq!(rbtree.delete_min().unwrap(), i);
         }
         assert_eq!(rbtree.delete_min(), None);
+    }
+
+    #[test]
+    fn test_iter() {
+        let mut rbtree = RBTree::new();
+        for i in 0..2000 {
+            rbtree.insert(i, PlaceHolder(), i);
+        }
+        let mut iter = rbtree.into_iter();
+        for i in 0..2000 {
+            assert_eq!(i, iter.next().unwrap().0)
+        }
     }
 }

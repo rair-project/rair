@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 mod color;
+mod iter;
 mod node;
 mod rbtree_wrapper;
 pub use self::rbtree_wrapper::*;
