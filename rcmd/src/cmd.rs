@@ -152,6 +152,16 @@ mod test_normal_cmd {
         }));
         assert_eq!(cmd, target);
     }
+    #[test]
+    fn test_cmd_argument_bug() {
+        let root = CliParser::parse(Rule::CommandLine, "aa bb cc").unwrap().next().unwrap();
+        let cmd = Cmd::parse_cmd(root).unwrap();
+        let mut target: Cmd = Default::default();
+        target.command = "aa".to_string();
+        target.args.push(Argument::Literal("bb".to_string()));
+        target.args.push(Argument::Literal("cc".to_string()));
+        assert_eq!(cmd, target);
+    }
 
     #[test]
     fn test_cmd_loc() {

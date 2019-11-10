@@ -20,9 +20,10 @@
 WHITESPACE = _{ " " | "\t" }
 CustomAlpha = _{ASCII_ALPHA | "_"}
 CustomAlphaNum = _{ASCII_ALPHANUMERIC | "_"}
-// Alpha Numerics with White space and some Symbols except "@ or #"
+// Alpha Numerics with some Symbols except "@ or #"
 ANS = {ASCII_ALPHANUMERIC | "/" | "\\" | "~" | "!" | "$" |
     "%" | "^" | "&" | "*" | "(" | ")" | "_" | "+" | "=" | "-"}
+// Alpha Numerics with White space and Symbols
 ANWS = { WHITESPACE |ANS | "@" | "#"}
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -49,8 +50,9 @@ OCT = @{
 // Command Line Interface grammar
 
 Command = @{CustomAlpha ~ CustomAlphaNum*}
+ArgumentLiteral = ${ANS+}
 Argument = {
-    ANS+ |
+    ArgumentLiteral |
     "\"" ~ ANWS+ ~"\"" |
     "`" ~ CommandLine ~ "`"
 }
