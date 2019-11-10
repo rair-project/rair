@@ -16,6 +16,7 @@
  */
 use super::color::COLOR;
 use super::iter::TreeIterator;
+use super::iter_ref::TreeRefIterator;
 use super::node::*;
 use std::cmp::Ordering;
 use std::mem;
@@ -522,6 +523,18 @@ where
         TreeIterator::new(self)
     }
 }
+
+impl<'a, K: Ord + Copy, A: Copy, V> IntoIterator for &'a RBTree<K, A, V>
+where
+    RBTree<K, A, V>: Augment<A>,
+{
+    type Item = (K, &'a V);
+    type IntoIter = TreeRefIterator<'a, K, A, V>;
+    fn into_iter(self) -> TreeRefIterator<'a, K, A, V> {
+        TreeRefIterator::new(self)
+    }
+}
+
 #[cfg(test)]
 mod rbtree_tests {
     use super::{Augment, RBTree};
@@ -638,6 +651,17 @@ mod rbtree_tests {
             rbtree.insert(i, PlaceHolder(), i);
         }
         let mut iter = rbtree.into_iter();
+        for i in 0..2000 {
+            assert_eq!(i, iter.next().unwrap().0)
+        }
+    }
+    #[test]
+    fn test_iter_ref() {
+        let mut rbtree = RBTree::new();
+        for i in 0..2000 {
+            rbtree.insert(i, PlaceHolder(), i);
+        }
+        let mut iter = (&rbtree).into_iter();
         for i in 0..2000 {
             assert_eq!(i, iter.next().unwrap().0)
         }
