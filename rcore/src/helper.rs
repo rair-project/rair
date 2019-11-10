@@ -53,10 +53,17 @@ pub fn error_msg(core: &mut Core, title: &str, msg: &str) {
 pub fn help(core: &mut Core, long: &str, short: &str, usage: Vec<(&str, &str)>) {
     let (r1, g1, b1) = core.color_palette[5];
     let (r2, g2, b2) = core.color_palette[6];
-    writeln!(core.stdout, "Commands: [{} | {}]\n", Paint::rgb(r1, g1, b1, long), Paint::rgb(r1, g1, b1, short)).unwrap();
+    let used;
+    if short.is_empty() {
+        writeln!(core.stdout, "Command: [{}]\n", Paint::rgb(r1, g1, b1, long)).unwrap();
+        used = long;
+    } else {
+        writeln!(core.stdout, "Commands: [{} | {}]\n", Paint::rgb(r1, g1, b1, long), Paint::rgb(r1, g1, b1, short)).unwrap();
+        used = short;
+    }
     writeln!(core.stdout, "Usage:").unwrap();
     for (args, description) in usage {
-        writeln!(core.stdout, "{} {}\t{}", Paint::rgb(r1, g1, b1, short), Paint::rgb(r2, g2, b2, args), description,).unwrap()
+        writeln!(core.stdout, "{} {}\t{}", Paint::rgb(r1, g1, b1, used), Paint::rgb(r2, g2, b2, args), description,).unwrap()
     }
 }
 
@@ -112,12 +119,20 @@ mod test_helper {
         assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Error Title\nSomething might have failed.\n");
     }
     #[test]
-    fn test_help() {
+    fn test_help_short() {
         let mut core = Core::new();
         core.stdout = Writer::new_buf();
         Paint::disable();
         help(&mut core, "Test", "t", vec![("t1", "test 1"), ("t2", "test 2")]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "Commands: [Test | t]\n\nUsage:\nt t1\ttest 1\nt t2\ttest 2\n");
+    }
+    #[test]
+    fn test_help_long() {
+        let mut core = Core::new();
+        core.stdout = Writer::new_buf();
+        Paint::disable();
+        help(&mut core, "Test", "", vec![("t1", "test 1"), ("t2", "test 2")]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "Command: [Test]\n\nUsage:\nTest t1\ttest 1\nTest t2\ttest 2\n");
     }
     #[test]
     fn test_addr_mode() {
