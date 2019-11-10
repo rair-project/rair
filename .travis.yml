@@ -6,7 +6,9 @@ env:
 matrix:
   include:
     - os: linux
+      rust: nightly
       env: COV=true
+    - os: linux
     - os: osx
     - os: windows
     - os: linux
