@@ -27,6 +27,7 @@ use std::io::Write;
 use std::mem;
 use std::path::PathBuf;
 use writer::Writer;
+use yansi::Paint;
 
 pub struct Core {
     pub stdout: Writer,
@@ -103,22 +104,29 @@ impl Core {
         if exact.is_empty() {
             self.commands.insert(command, functionality);
         } else {
-            writeln!(self.stderr, "Command `{}` already existed", command_name).unwrap();
+            let msg = format!("Command {} already existed", Paint::default(command_name).bold());
+            error_msg(self, "Cannot add this command.", &msg);
+        }
+    }
+    fn command_not_found(&mut self, command: &str) {
+        let msg = format!("Command {} is not found.", Paint::default(command).bold());
+        error_msg(self, "Execution failed", &msg);
+        let (_, similar) = self.commands.find(&command.to_string(), 2);
+        let mut s = similar.iter();
+        if let Some(suggestion) = s.next() {
+            let (r, g, b) = self.color_palette[5];
+            write!(self.stderr, "Similar command: {}", Paint::rgb(r, g, b, suggestion)).unwrap();
+            for suggestion in s {
+                write!(self.stderr, ", {}", Paint::rgb(r, g, b, suggestion)).unwrap();
+            }
+            writeln!(self.stderr, ".").unwrap();
         }
     }
 
     pub fn run(&mut self, command: &str, args: &[String]) {
-        let (exact, similar) = self.commands.find(&command.to_string(), 2);
+        let (exact, _) = self.commands.find(&command.to_string(), 2);
         if exact.is_empty() {
-            writeln!(self.stderr, "Command `{}` is not found.", command).unwrap();
-            let mut s = similar.iter();
-            if let Some(suggestion) = s.next() {
-                write!(self.stderr, "Similar command: {}", suggestion).unwrap();
-                for suggestion in s {
-                    write!(self.stderr, ", {}", suggestion).unwrap();
-                }
-                writeln!(self.stderr, ".").unwrap();
-            }
+            self.command_not_found(command);
         } else {
             (exact[0].run)(self, args)
         }
@@ -131,17 +139,9 @@ impl Core {
     }
 
     pub fn help(&mut self, command: &str) {
-        let (exact, similar) = self.commands.find(&command.to_string(), 2);
+        let (exact, _) = self.commands.find(&command.to_string(), 2);
         if exact.is_empty() {
-            writeln!(self.stderr, "Command `{}` is not found", command).unwrap();
-            let mut s = similar.iter();
-            if let Some(suggestion) = s.next() {
-                write!(self.stderr, "Similar command: {}", suggestion).unwrap();
-                for suggestion in s {
-                    write!(self.stderr, ", {}", suggestion).unwrap();
-                }
-                writeln!(self.stderr).unwrap();
-            }
+            self.command_not_found(command);
         } else {
             (exact[0].help)(self);
         }
