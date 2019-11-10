@@ -22,6 +22,7 @@
  */
 use super::interval::Interval;
 use super::iter::ISTIterator;
+use super::iter_ref::ISTRefIterator;
 use super::rb_helpers::{AugData, ISTHelpers};
 use rbtree::{Augment, RBTree};
 
@@ -457,6 +458,14 @@ impl<K: Ord + Copy, V> IntoIterator for IST<K, V> {
     }
 }
 
+impl<'a, K: Ord + Copy, V> IntoIterator for &'a IST<K, V> {
+    type Item = &'a V;
+    type IntoIter = ISTRefIterator<'a, K, V>;
+    fn into_iter(self) -> ISTRefIterator<'a, K, V> {
+        ISTRefIterator::new(self)
+    }
+}
+
 #[cfg(test)]
 mod ist_tests {
     use super::*;
@@ -686,6 +695,38 @@ mod ist_tests {
         assert_eq!(iter.next().unwrap(), "[66, 200]");
         assert_eq!(iter.next().unwrap(), "[80, 90]");
         assert_eq!(iter.next().unwrap(), "[85, 95]");
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn test_iter_ref() {
+        let mut ist = get_a_good_tree();
+        ist.insert(50, 60, "Attempt2");
+        let mut iter = (&ist).into_iter();
+        assert_eq!(iter.next().unwrap(), &"[10, 100]");
+        assert_eq!(iter.next().unwrap(), &"[20, 30]");
+        assert_eq!(iter.next().unwrap(), &"[25, 35]");
+        assert_eq!(iter.next().unwrap(), &"[30, 40]");
+        assert_eq!(iter.next().unwrap(), &"[50, 60]");
+        assert_eq!(iter.next().unwrap(), &"Attempt2");
+        assert_eq!(iter.next().unwrap(), &"[65, 70]");
+        assert_eq!(iter.next().unwrap(), &"[66, 200]");
+        assert_eq!(iter.next().unwrap(), &"[80, 90]");
+        assert_eq!(iter.next().unwrap(), &"[85, 95]");
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.next(), None);
+        iter = (&ist).into_iter();
+        assert_eq!(iter.next().unwrap(), &"[10, 100]");
+        assert_eq!(iter.next().unwrap(), &"[20, 30]");
+        assert_eq!(iter.next().unwrap(), &"[25, 35]");
+        assert_eq!(iter.next().unwrap(), &"[30, 40]");
+        assert_eq!(iter.next().unwrap(), &"[50, 60]");
+        assert_eq!(iter.next().unwrap(), &"Attempt2");
+        assert_eq!(iter.next().unwrap(), &"[65, 70]");
+        assert_eq!(iter.next().unwrap(), &"[66, 200]");
+        assert_eq!(iter.next().unwrap(), &"[80, 90]");
+        assert_eq!(iter.next().unwrap(), &"[85, 95]");
         assert_eq!(iter.next(), None);
         assert_eq!(iter.next(), None);
     }

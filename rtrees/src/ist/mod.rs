@@ -16,6 +16,7 @@
  */
 mod interval;
 mod iter;
+mod iter_ref;
 mod rb_helpers;
 mod tree;
 pub use self::tree::*;
