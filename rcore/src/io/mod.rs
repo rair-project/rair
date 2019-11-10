@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+mod map;
 mod print_hex;
-
+pub use self::map::*;
 pub use self::print_hex::*;
