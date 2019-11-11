@@ -666,4 +666,27 @@ mod rbtree_tests {
             assert_eq!(i, iter.next().unwrap().0)
         }
     }
+
+    #[test]
+    fn test_iter_empty() {
+        // I am fully aware that the assers will never be evaluated.
+        // The point here is that at some point in time, iterating over
+        // empty tree, triggered a bug that crashed.
+        let rbtree: RBTree<u64, PlaceHolder, u64> = RBTree::new();
+        for (key, value) in rbtree.into_iter() {
+            assert_eq!(key, 5);
+            assert_eq!(value, 5);
+        }
+    }
+    #[test]
+    fn test_iter_ref_empty() {
+        // I am fully aware that the assers will never be evaluated.
+        // The point here is that at some point in time, iterating over
+        // empty tree, triggered a bug that crashed.
+        let rbtree: RBTree<u64, PlaceHolder, u64> = RBTree::new();
+        for (key, value) in (&rbtree).into_iter() {
+            assert_eq!(key, 5);
+            assert_eq!(*value, 5);
+        }
+    }
 }
