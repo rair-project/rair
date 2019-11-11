@@ -67,7 +67,6 @@ impl Core {
         self.add_command("s", &SEEKFUNCTION);
         self.add_command("unmap", &UNMAPFUNCTION);
         self.add_command("um", &UNMAPFUNCTION);
-        
     }
     fn init_colors(&mut self) {
         self.color_palette.push((0x58, 0x68, 0x75));

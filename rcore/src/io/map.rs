@@ -73,7 +73,7 @@ fn unmap_help(core: &mut Core) {
 }
 
 fn unmap_run(core: &mut Core, args: &[String]) {
-        if args.len() != 2 {
+    if args.len() != 2 {
         expect(core, args.len() as u64, 2);
         return;
     }
