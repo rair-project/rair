@@ -23,7 +23,7 @@ use std::mem;
 use utils::{IoError, IoMode};
 
 #[derive(Default)]
-pub struct RIODescQuery {
+pub(crate) struct RIODescQuery {
     hndl_to_descs: Vec<Option<RIODesc>>,  // key = hndl, value = RIODesc Should it exist
     paddr_to_hndls: IST<u64, u64>,        // key = closed range, value = hndl
     next_hndl: u64,                       // nxt handle to be used
@@ -31,7 +31,7 @@ pub struct RIODescQuery {
 }
 
 impl RIODescQuery {
-    pub fn new() -> RIODescQuery {
+    pub(crate) fn new() -> RIODescQuery {
         Default::default()
     }
     // under the assumption that we will always have a free handle! I mean who can open 2^64 files!
@@ -64,12 +64,12 @@ impl RIODescQuery {
         self.free_hndls.push(Reverse(hndl));
         return Ok(ret);
     }
-    pub fn close(&mut self, hndl: u64) -> Result<RIODesc, IoError> {
+    pub(crate) fn close(&mut self, hndl: u64) -> Result<RIODesc, IoError> {
         let desc = self.deregister_hndl(hndl)?;
         self.paddr_to_hndls.delete_envelop(desc.paddr, desc.paddr + desc.size - 1);
         return Ok(desc);
     }
-    pub fn register_open(&mut self, plugin: &mut dyn RIOPlugin, uri: &str, flags: IoMode) -> Result<u64, IoError> {
+    pub(crate) fn register_open(&mut self, plugin: &mut dyn RIOPlugin, uri: &str, flags: IoMode) -> Result<u64, IoError> {
         let hndl = self.register_handle(plugin, uri, flags)?;
         let mut lo = 0;
         let size = self.hndl_to_descs[hndl as usize].as_ref().unwrap().size;
@@ -86,7 +86,7 @@ impl RIODescQuery {
         self.paddr_to_hndls.insert(lo, lo + size - 1, hndl);
         return Ok(hndl);
     }
-    pub fn register_open_at(&mut self, plugin: &mut dyn RIOPlugin, uri: &str, flags: IoMode, at: u64) -> Result<u64, IoError> {
+    pub(crate) fn register_open_at(&mut self, plugin: &mut dyn RIOPlugin, uri: &str, flags: IoMode, at: u64) -> Result<u64, IoError> {
         let hndl = self.register_handle(plugin, uri, flags)?;
         let lo = at;
         let hi = at + self.hndl_to_descs[hndl as usize].as_ref().unwrap().size - 1;
@@ -98,19 +98,19 @@ impl RIODescQuery {
         self.paddr_to_hndls.insert(lo, hi, hndl);
         return Ok(hndl);
     }
-    pub fn hndl_to_desc(&self, hndl: u64) -> Option<&RIODesc> {
+    pub(crate) fn hndl_to_desc(&self, hndl: u64) -> Option<&RIODesc> {
         if hndl >= self.hndl_to_descs.len() as u64 {
             return None;
         }
         return self.hndl_to_descs[hndl as usize].as_ref();
     }
-    pub fn hndl_to_mut_desc(&mut self, hndl: u64) -> Option<&mut RIODesc> {
+    pub(crate) fn hndl_to_mut_desc(&mut self, hndl: u64) -> Option<&mut RIODesc> {
         if hndl >= self.hndl_to_descs.len() as u64 {
             return None;
         }
         return self.hndl_to_descs[hndl as usize].as_mut();
     }
-    pub fn paddr_range_to_hndl(&self, paddr: u64, size: u64) -> Option<Vec<(u64, u64, u64)>> {
+    pub(crate) fn paddr_range_to_hndl(&self, paddr: u64, size: u64) -> Option<Vec<(u64, u64, u64)>> {
         let hndls: Vec<u64> = self.paddr_to_hndls.overlap(paddr, paddr + size - 1).iter().map(|x| **x).collect();
         if hndls.is_empty() {
             return None;

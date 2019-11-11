@@ -26,12 +26,6 @@ bitflags! {
     }
 }
 
-pub enum Whence {
-    SeekSet,
-    SeekEnd,
-    SeekCur,
-}
-
 #[derive(Debug)]
 pub enum IoError {
     AddressNotFound,
