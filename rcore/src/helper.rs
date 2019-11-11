@@ -53,14 +53,13 @@ pub fn error_msg(core: &mut Core, title: &str, msg: &str) {
 pub fn help(core: &mut Core, long: &str, short: &str, usage: Vec<(&str, &str)>) {
     let (r1, g1, b1) = core.color_palette[5];
     let (r2, g2, b2) = core.color_palette[6];
-    let used;
-    if short.is_empty() {
+    let used = if short.is_empty() {
         writeln!(core.stdout, "Command: [{}]\n", Paint::rgb(r1, g1, b1, long)).unwrap();
-        used = long;
+        long
     } else {
         writeln!(core.stdout, "Commands: [{} | {}]\n", Paint::rgb(r1, g1, b1, long), Paint::rgb(r1, g1, b1, short)).unwrap();
-        used = short;
-    }
+        short
+    };
     writeln!(core.stdout, "Usage:").unwrap();
     for (args, description) in usage {
         writeln!(core.stdout, "{} {}\t{}", Paint::rgb(r1, g1, b1, used), Paint::rgb(r2, g2, b2, args), description,).unwrap()
