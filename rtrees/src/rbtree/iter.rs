@@ -46,7 +46,7 @@ where
                 break;
             }
         }
-        self.current = Some(node);
+        self.current = if node.is_node() { Some(node) } else { None };
     }
 }
 impl<K: Ord + Copy, A: Copy, V> Iterator for TreeIterator<K, A, V>
