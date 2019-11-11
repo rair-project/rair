@@ -21,7 +21,6 @@ use std::cmp::{min, Reverse};
 use std::collections::BinaryHeap;
 use std::mem;
 use utils::{IoError, IoMode};
-
 #[derive(Default)]
 pub(crate) struct RIODescQuery {
     hndl_to_descs: Vec<Option<RIODesc>>,  // key = hndl, value = RIODesc Should it exist
@@ -132,6 +131,14 @@ impl RIODescQuery {
             return None;
         }
         return Some(ranged_hndl);
+    }
+}
+
+impl<'a> IntoIterator for &'a RIODescQuery {
+    type Item = &'a RIODesc;
+    type IntoIter = Box<dyn Iterator<Item = &'a RIODesc> + 'a>;
+    fn into_iter(self) -> Box<dyn Iterator<Item = &'a RIODesc> + 'a> {
+        return Box::new(self.hndl_to_descs.iter().filter_map(|desc| desc.as_ref()));
     }
 }
 
@@ -290,5 +297,24 @@ mod desc_query_tests {
     #[test]
     fn test_paddr_range_to_hndl() {
         operate_on_files(&paddr_range_to_hndl_cb, &[DATA, DATA, DATA, DATA]);
+    }
+
+    fn iter_cb(paths: &[&Path]) {
+        let mut p = plugin();
+        let mut descs = RIODescQuery::new();
+        for path in paths {
+            descs.register_open(&mut *p, &path.to_string_lossy(), IoMode::READ).unwrap();
+        }
+        let mut paddr = 0;
+        for desc in descs.into_iter() {
+            assert_eq!(paddr, desc.paddr_base());
+            assert_eq!(DATA.len() as u64, desc.size());
+            assert_eq!(IoMode::READ, desc.perm());
+            paddr += desc.size();
+        }
+    }
+    #[test]
+    fn test_iter() {
+        operate_on_files(&iter_cb, &[DATA, DATA, DATA, DATA]);
     }
 }

@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use defaultplugin;
+use desc::RIODesc;
 use descquery::RIODescQuery;
 use mapsquery::{RIOMap, RIOMapQuery};
 use plugin::*;
@@ -252,6 +253,11 @@ impl RIO {
     /// convert virtual address to physical address
     pub fn vir_to_phy(&self, vaddr: u64, size: u64) -> Option<Vec<RIOMap>> {
         self.maps.split_vaddr_range(vaddr, size)
+    }
+
+    /// Iterate over open URIs
+    pub fn uri_iter<'a>(&'a self) -> Box<dyn Iterator<Item = &'a RIODesc> + 'a> {
+        self.descs.into_iter()
     }
 }
 
@@ -502,5 +508,23 @@ mod rio_tests {
     #[test]
     fn test_vwrite() {
         operate_on_files(&test_vwrite_cb, &[DATA, DATA, DATA]);
+    }
+
+    fn iter_cb(paths: &[&Path]) {
+        let mut io = RIO::new();
+        for path in paths {
+            io.open(&path.to_string_lossy(), IoMode::READ).unwrap();
+        }
+        let mut paddr = 0;
+        for desc in io.uri_iter() {
+            assert_eq!(paddr, desc.paddr_base());
+            assert_eq!(DATA.len() as u64, desc.size());
+            assert_eq!(IoMode::READ, desc.perm());
+            paddr += desc.size();
+        }
+    }
+    #[test]
+    fn test_iter() {
+        operate_on_files(&iter_cb, &[DATA, DATA, DATA, DATA]);
     }
 }

@@ -18,17 +18,17 @@ use plugin::*;
 use utils::*;
 
 pub struct RIODesc {
-    pub name: String,
-    pub perm: IoMode,
-    pub hndl: u64,
-    pub paddr: u64, //padd is simulated physical address
-    pub size: u64,
+    pub(crate) name: String,
+    pub(crate) perm: IoMode,
+    pub(crate) hndl: u64,
+    pub(crate) paddr: u64, //padd is simulated physical address
+    pub(crate) size: u64,
     raddr: u64, // raddr is the IO descriptor address, general rule of interaction paddr is high level lie, while raddr is the real thing.
     plugin_operations: Box<dyn RIOPluginOperations>,
 }
 
 impl RIODesc {
-    pub fn open(plugin: &mut dyn RIOPlugin, uri: &str, flags: IoMode) -> Result<RIODesc, IoError> {
+    pub(crate) fn open(plugin: &mut dyn RIOPlugin, uri: &str, flags: IoMode) -> Result<RIODesc, IoError> {
         let plugin_desc = plugin.open(uri, flags)?;
         let desc = RIODesc {
             hndl: 0,
@@ -41,14 +41,31 @@ impl RIODesc {
         };
         return Ok(desc);
     }
+    pub(crate) fn read(&mut self, paddr: usize, buffer: &mut [u8]) -> Result<(), IoError> {
+        return self.plugin_operations.read(paddr - self.paddr as usize + self.raddr as usize as usize, buffer);
+    }
+    pub(crate) fn write(&mut self, paddr: usize, buffer: &[u8]) -> Result<(), IoError> {
+        return self.plugin_operations.write(paddr - self.paddr as usize + self.raddr as usize, buffer);
+    }
+    /// Returns URI of current file descriptor.
+    pub fn name(&self) -> &str {
+        return &self.name;
+    }
+    /// Returns *true* if paddr exists in this file descriptor and *false* otherwise.
     pub fn has_paddr(&self, paddr: u64) -> bool {
         return paddr >= self.paddr && paddr < self.paddr + self.size as u64;
     }
-    pub fn read(&mut self, paddr: usize, buffer: &mut [u8]) -> Result<(), IoError> {
-        return self.plugin_operations.read(paddr - self.paddr as usize + self.raddr as usize as usize, buffer);
+    /// Returns the base physical address of this file.
+    pub fn paddr_base(&self) -> u64 {
+        return self.paddr;
     }
-    pub fn write(&mut self, paddr: usize, buffer: &[u8]) -> Result<(), IoError> {
-        return self.plugin_operations.write(paddr - self.paddr as usize + self.raddr as usize, buffer);
+    /// Returns size of file on disk.
+    pub fn size(&self) -> u64 {
+        return self.size;
+    }
+    /// Returns the permissions which the file was opened with.
+    pub fn perm(&self) -> IoMode {
+        return self.perm;
     }
 }
 
