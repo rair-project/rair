@@ -63,6 +63,18 @@ impl RIOMap {
     }
 }
 
+impl PartialEq<RIOMap> for Rc<RIOMap> {
+    fn eq(&self, other: &RIOMap) -> bool {
+        return &**self == other;
+    }
+}
+
+impl PartialEq<Rc<RIOMap>> for RIOMap {
+    fn eq(&self, other: &Rc<RIOMap>) -> bool {
+        return self == &**other;
+    }
+}
+
 #[derive(Default)]
 pub(super) struct RIOMapQuery {
     maps: IST<u64, Rc<RIOMap>>,     //key = virtual address
@@ -144,6 +156,14 @@ impl RIOMapQuery {
     }
 }
 
+impl<'a> IntoIterator for &'a RIOMapQuery {
+    type Item = Rc<RIOMap>;
+    type IntoIter = Box<dyn Iterator<Item = Rc<RIOMap>> + 'a>;
+    fn into_iter(self) -> Box<dyn Iterator<Item = Rc<RIOMap>> + 'a> {
+        return Box::new((&self.maps).into_iter().cloned());
+    }
+}
+
 #[cfg(test)]
 mod maps_query_test {
     use super::*;
@@ -202,5 +222,20 @@ mod maps_query_test {
         assert_eq!(map_query.split_vaddr_range(0x3000, 0x3000), None);
         e = map_query.unmap(0x3500, 0x500).err();
         assert_eq!(e.unwrap(), IoError::AddressNotFound);
+    }
+
+    #[test]
+    fn test_map_iter() {
+        let mut map_query = RIOMapQuery::new();
+        map_query.map(0, 0x4000, 0x100).unwrap();
+        map_query.map(0x100, 0x5000, 0x100).unwrap();
+        map_query.map(0x200, 0x2000, 0x100).unwrap();
+        map_query.map(0x300, 0x3000, 0x100).unwrap();
+        let mut iter = map_query.into_iter();
+        assert_eq!(RIOMap{paddr: 0x200, vaddr: 0x2000, size: 0x100}, iter.next().unwrap());
+        assert_eq!(RIOMap{paddr: 0x300, vaddr: 0x3000, size: 0x100}, iter.next().unwrap());
+        assert_eq!(RIOMap{paddr: 0, vaddr: 0x4000, size: 0x100}, iter.next().unwrap());
+        assert_eq!(RIOMap{paddr: 0x100, vaddr: 0x5000, size: 0x100}, iter.next().unwrap());
+        assert_eq!(iter.next(), None);
     }
 }

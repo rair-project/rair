@@ -20,7 +20,7 @@ use descquery::RIODescQuery;
 use mapsquery::{RIOMap, RIOMapQuery};
 use plugin::*;
 use utils::*;
-
+use std::rc::Rc;
 #[derive(Default)]
 pub struct RIO {
     descs: RIODescQuery,
@@ -258,6 +258,11 @@ impl RIO {
     /// Iterate over open URIs
     pub fn uri_iter<'a>(&'a self) -> Box<dyn Iterator<Item = &'a RIODesc> + 'a> {
         self.descs.into_iter()
+    }
+    
+    /// Iterate over memory maps
+    pub fn map_iter<'a>(&'a self)-> Box<dyn Iterator<Item = Rc<RIOMap>> + 'a> {
+        self.maps.into_iter()
     }
 }
 
@@ -510,7 +515,7 @@ mod rio_tests {
         operate_on_files(&test_vwrite_cb, &[DATA, DATA, DATA]);
     }
 
-    fn iter_cb(paths: &[&Path]) {
+    fn uri_iter_cb(paths: &[&Path]) {
         let mut io = RIO::new();
         for path in paths {
             io.open(&path.to_string_lossy(), IoMode::READ).unwrap();
@@ -524,7 +529,30 @@ mod rio_tests {
         }
     }
     #[test]
-    fn test_iter() {
-        operate_on_files(&iter_cb, &[DATA, DATA, DATA, DATA]);
+    fn test_uri_iter() {
+        operate_on_files(&uri_iter_cb, &[DATA, DATA, DATA, DATA]);
+    }
+
+    fn map_iter_cb(paths: &[&Path]) {
+        let mut io = RIO::new();
+        let size = DATA.len() as u64;
+        io.open_at(&paths[0].to_string_lossy(), IoMode::READ, 0).unwrap();
+        io.open_at(&paths[1].to_string_lossy(), IoMode::READ, 0x100).unwrap();
+        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, 0x200).unwrap();
+        io.open_at(&paths[3].to_string_lossy(), IoMode::READ, 0x300).unwrap();
+        io.map(0, 0x4000, DATA.len() as u64).unwrap();
+        io.map(0x100, 0x5000, size).unwrap();
+        io.map(0x200, 0x2000, size).unwrap();
+        io.map(0x300, 0x3000, size).unwrap();
+        let mut iter = io.map_iter();
+        assert_eq!(iter.next().unwrap(), RIOMap{paddr: 0x200, vaddr: 0x2000, size});
+        assert_eq!(iter.next().unwrap(), RIOMap{paddr: 0x300, vaddr: 0x3000, size});
+        assert_eq!(iter.next().unwrap(), RIOMap{paddr: 0, vaddr: 0x4000, size});
+        assert_eq!(iter.next().unwrap(), RIOMap{paddr: 0x100, vaddr: 0x5000, size});
+        assert_eq!(iter.next(), None);
+    }
+    #[test]
+    fn test_map_iter() {
+        operate_on_files(&map_iter_cb, &[DATA, DATA, DATA, DATA]);
     }
 }
