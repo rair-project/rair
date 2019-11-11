@@ -30,7 +30,7 @@ pub fn str_to_num(n: &str) -> Result<u64, num::ParseIntError> {
             _ => (),
         }
     }
-    if n.chars().nth(0).unwrap() == '0' {
+    if n.chars().nth(0).unwrap() == '0' && n.len() > 1 {
         return u64::from_str_radix(&n[1..], 8);
     }
     return u64::from_str_radix(n, 10);
@@ -97,6 +97,7 @@ mod test_helper {
         assert_eq!(str_to_num("0b101001").unwrap(), 0b101001);
         assert_eq!(str_to_num("0x12345").unwrap(), 0x12345);
         assert_eq!(str_to_num("0X1F2f345").unwrap(), 0x1f2f345);
+        assert_eq!(str_to_num("0").unwrap(), 0);
         assert!(str_to_num("0x12345123451234512").is_err());
     }
 
