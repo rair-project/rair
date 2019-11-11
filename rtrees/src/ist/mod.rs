@@ -20,3 +20,5 @@ mod iter_ref;
 mod rb_helpers;
 mod tree;
 pub use self::tree::*;
+pub use self::iter::ISTIterator;
+pub use self::iter_ref::ISTRefIterator;

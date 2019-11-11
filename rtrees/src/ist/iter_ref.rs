@@ -29,7 +29,7 @@ impl<'a, K: Ord + Copy, V> ISTRefIterator<'a, K, V> {
     pub(crate) fn new(root: &'a IST<K, V>) -> ISTRefIterator<K, V> {
         ISTRefIterator {
             tree_iter: (&root.root).into_iter(),
-            current_iter: [].into_iter(),
+            current_iter: [].iter(),
         }
     }
 }
@@ -41,7 +41,7 @@ impl<'a, K: Ord + Copy, V> Iterator for ISTRefIterator<'a, K, V> {
             return Some(data);
         }
         match self.tree_iter.next() {
-            Some((_, v)) => self.current_iter = v.into_iter(),
+            Some((_, v)) => self.current_iter = v.iter(),
             None => return None,
         }
         return self.current_iter.next();
