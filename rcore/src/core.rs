@@ -16,30 +16,33 @@
  */
 
 use app_dirs::*;
+use commands::Commands;
 use helper::*;
 use io::{LISTMAPFUNCTION, MAPFUNCTION, PRINTHEXFUNCTION, UNMAPFUNCTION};
+use lineformatter::LineFormatter;
 use loc::{MODEFUNCTION, SEEKFUNCTION};
 use rio::*;
-use rtrees::bktree::SpellTree;
-use rustyline::Editor;
+use rustyline::{CompletionType, Config, EditMode, Editor, OutputStreamType};
+use std::cell::RefCell;
 use std::io;
 use std::io::Write;
 use std::mem;
 use std::path::PathBuf;
+use std::rc::Rc;
 use writer::Writer;
 use yansi::Paint;
-
 pub struct Core {
     pub stdout: Writer,
     pub stderr: Writer,
     pub mode: AddrMode,
     pub io: RIO,
-    pub rl: Editor<()>,
+    pub rl: Editor<LineFormatter>,
     loc: u64,
     app_info: AppInfo,
-    commands: SpellTree<&'static CmdFunctions>,
+    commands: Rc<RefCell<Commands>>,
     pub color_palette: Vec<(u8, u8, u8)>,
 }
+
 impl Default for Core {
     fn default() -> Self {
         Core {
@@ -48,9 +51,9 @@ impl Default for Core {
             stderr: Writer::new_write(Box::new(io::stderr())),
             io: RIO::new(),
             loc: 0,
-            rl: Editor::<()>::new(),
+            rl: Editor::<LineFormatter>::new(),
             app_info: AppInfo { name: "rair", author: "RairDevs" },
-            commands: SpellTree::new(),
+            commands: Default::default(),
             color_palette: Vec::new(),
         }
     }
@@ -81,6 +84,13 @@ impl Core {
     }
     pub fn new() -> Self {
         let mut core: Core = Default::default();
+        let config = Config::builder()
+            .completion_type(CompletionType::List)
+            .edit_mode(EditMode::Emacs)
+            .output_stream(OutputStreamType::Stdout)
+            .build();
+        core.rl = Editor::with_config(config);
+        core.rl.set_helper(Some(LineFormatter::new(core.commands.clone())));
         core.load_commands();
         drop(core.rl.load_history(&core.hist_file()));
         core.init_colors();
@@ -103,11 +113,7 @@ impl Core {
 
     pub fn add_command(&mut self, command_name: &'static str, functionality: &'static CmdFunctions) {
         // first check that command_name doesn't exist
-        let command = command_name.to_string();
-        let (exact, _) = self.commands.find(&command, 0);
-        if exact.is_empty() {
-            self.commands.insert(command, functionality);
-        } else {
+        if !self.commands.borrow_mut().add_command(command_name, functionality) {
             let msg = format!("Command {} already existed.", Paint::default(command_name).bold());
             error_msg(self, "Cannot add this command.", &msg);
         }
@@ -115,7 +121,8 @@ impl Core {
     fn command_not_found(&mut self, command: &str) {
         let msg = format!("Command {} is not found.", Paint::default(command).bold());
         error_msg(self, "Execution failed", &msg);
-        let (_, similar) = self.commands.find(&command.to_string(), 2);
+        let commands = self.commands.borrow();
+        let similar = commands.suggest(&command.to_string(), 2);
         let mut s = similar.iter();
         if let Some(suggestion) = s.next() {
             let (r, g, b) = self.color_palette[5];
@@ -128,11 +135,13 @@ impl Core {
     }
 
     pub fn run(&mut self, command: &str, args: &[String]) {
-        let (exact, _) = self.commands.find(&command.to_string(), 2);
-        if exact.is_empty() {
-            self.command_not_found(command);
-        } else {
-            (exact[0].run)(self, args)
+        let run = match self.commands.borrow().find(&command.to_string()) {
+            Some(funcs) => Some(funcs.run),
+            None => None,
+        };
+        match run {
+            Some(run) => run(self, args),
+            None => self.command_not_found(command),
         }
     }
 
@@ -143,11 +152,13 @@ impl Core {
     }
 
     pub fn help(&mut self, command: &str) {
-        let (exact, _) = self.commands.find(&command.to_string(), 2);
-        if exact.is_empty() {
-            self.command_not_found(command);
-        } else {
-            (exact[0].help)(self);
+        let help = match self.commands.borrow().find(&command.to_string()) {
+            Some(funcs) => Some(funcs.help),
+            None => None,
+        };
+        match help {
+            Some(help) => help(self),
+            None => self.command_not_found(command),
         }
     }
 }
