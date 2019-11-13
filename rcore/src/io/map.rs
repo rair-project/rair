@@ -108,7 +108,7 @@ fn lm_help(core: &mut Core) {
 }
 
 fn lm_run(core: &mut Core, args: &[String]) {
-    if args.len() != 0 {
+    if !args.is_empty() {
         expect(core, args.len() as u64, 0);
         return;
     }
