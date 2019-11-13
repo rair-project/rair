@@ -18,9 +18,9 @@
 use app_dirs::*;
 use commands::Commands;
 use helper::*;
-use io::{LISTMAPFUNCTION, MAPFUNCTION, PRINTHEXFUNCTION, UNMAPFUNCTION};
+use io::*;
 use lineformatter::LineFormatter;
-use loc::{MODEFUNCTION, SEEKFUNCTION};
+use loc::*;
 use rio::*;
 use rustyline::{CompletionType, Config, EditMode, Editor, OutputStreamType};
 use std::cell::RefCell;
@@ -29,6 +29,7 @@ use std::io::Write;
 use std::mem;
 use std::path::PathBuf;
 use std::rc::Rc;
+use utils::*;
 use writer::Writer;
 use yansi::Paint;
 pub struct Core {
@@ -70,6 +71,8 @@ impl Core {
         self.add_command("s", &SEEKFUNCTION);
         self.add_command("unmap", &UNMAPFUNCTION);
         self.add_command("um", &UNMAPFUNCTION);
+        self.add_command("quit", &QUITFUNCTION);
+        self.add_command("q", &QUITFUNCTION);
     }
     fn init_colors(&mut self) {
         self.color_palette.push((0x58, 0x68, 0x75));
