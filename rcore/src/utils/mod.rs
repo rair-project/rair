@@ -1,8 +1,5 @@
-#![warn(clippy::cargo)]
-#![allow(clippy::multiple_crate_versions)]
-#![allow(clippy::needless_return)]
 /*
- * rcore: rair core library
+ * utils: Utility commands.
  * Copyright (C) 2019  Oddcoder
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,23 +14,5 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-extern crate app_dirs;
-extern crate rcmd;
-extern crate rio;
-extern crate rtrees;
-extern crate rustyline;
-extern crate rustyline_derive;
-extern crate yansi;
-mod commands;
-mod core;
-mod helper;
-mod io;
-mod lineformatter;
-mod loc;
-mod utils;
-mod writer;
-
-pub use core::*;
-pub use helper::*;
-pub use io::*;
-pub use writer::*;
+mod quit;
+pub use self::quit::*;

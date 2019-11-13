@@ -1,8 +1,5 @@
-#![warn(clippy::cargo)]
-#![allow(clippy::multiple_crate_versions)]
-#![allow(clippy::needless_return)]
 /*
- * rcore: rair core library
+ * quit.rs: Quit the current project.
  * Copyright (C) 2019  Oddcoder
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,23 +14,15 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-extern crate app_dirs;
-extern crate rcmd;
-extern crate rio;
-extern crate rtrees;
-extern crate rustyline;
-extern crate rustyline_derive;
-extern crate yansi;
-mod commands;
-mod core;
-mod helper;
-mod io;
-mod lineformatter;
-mod loc;
-mod utils;
-mod writer;
+use core::*;
+use helper::*;
+use std::process;
+pub static QUITFUNCTION: CmdFunctions = CmdFunctions { run: quit_run, help: quit_help };
 
-pub use core::*;
-pub use helper::*;
-pub use io::*;
-pub use writer::*;
+fn quit_help(core: &mut Core) {
+    help(core, &"quit", &"q", vec![("", "Quit Current session.")]);
+}
+
+fn quit_run(_core: &mut Core, _args: &[String]) {
+    process::exit(0);
+}
