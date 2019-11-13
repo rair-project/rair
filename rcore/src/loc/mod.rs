@@ -16,5 +16,13 @@
  */
 mod mode;
 mod seek;
-pub use self::mode::*;
-pub use self::seek::*;
+use self::mode::*;
+use self::seek::*;
+use core::Core;
+
+pub fn register_loc(core: &mut Core) {
+    core.add_command("mode", Box::new(Mode::new()));
+    core.add_command("m", Box::new(Mode::new()));
+    core.add_command("seek", Box::new(Seek::new()));
+    core.add_command("s", Box::new(Seek::new()));
+}

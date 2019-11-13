@@ -18,9 +18,9 @@
 use app_dirs::*;
 use commands::Commands;
 use helper::*;
-use io::*;
 use lineformatter::LineFormatter;
 use loc::*;
+use io::*;
 use rio::*;
 use rustyline::{CompletionType, Config, EditMode, Editor, OutputStreamType};
 use std::cell::RefCell;
@@ -29,7 +29,7 @@ use std::io::Write;
 use std::mem;
 use std::path::PathBuf;
 use std::rc::Rc;
-use utils::*;
+use utils::register_utils;
 use writer::Writer;
 use yansi::Paint;
 pub struct Core {
@@ -61,18 +61,9 @@ impl Default for Core {
 }
 impl Core {
     fn load_commands(&mut self) {
-        self.add_command("map", &MAPFUNCTION);
-        self.add_command("maps", &LISTMAPFUNCTION);
-        self.add_command("mode", &MODEFUNCTION);
-        self.add_command("m", &MODEFUNCTION);
-        self.add_command("printHex", &PRINTHEXFUNCTION);
-        self.add_command("px", &PRINTHEXFUNCTION);
-        self.add_command("seek", &SEEKFUNCTION);
-        self.add_command("s", &SEEKFUNCTION);
-        self.add_command("unmap", &UNMAPFUNCTION);
-        self.add_command("um", &UNMAPFUNCTION);
-        self.add_command("quit", &QUITFUNCTION);
-        self.add_command("q", &QUITFUNCTION);
+        register_io(self);
+        register_loc(self);
+        register_utils(self);
     }
     fn init_colors(&mut self) {
         self.color_palette.push((0x58, 0x68, 0x75));
@@ -114,7 +105,7 @@ impl Core {
         self.loc
     }
 
-    pub fn add_command(&mut self, command_name: &'static str, functionality: &'static CmdFunctions) {
+    pub fn add_command(&mut self, command_name: &'static str, functionality: Box<dyn Cmd>) {
         // first check that command_name doesn't exist
         if !self.commands.borrow_mut().add_command(command_name, functionality) {
             let msg = format!("Command {} already existed.", Paint::default(command_name).bold());
@@ -138,13 +129,15 @@ impl Core {
     }
 
     pub fn run(&mut self, command: &str, args: &[String]) {
-        let run = match self.commands.borrow().find(&command.to_string()) {
-            Some(funcs) => Some(funcs.run),
-            None => None,
-        };
-        match run {
-            Some(run) => run(self, args),
-            None => self.command_not_found(command),
+        let cmds = self.commands.clone();
+        let mut cmds_ref = cmds.borrow_mut();
+        let cmd = cmds_ref.find_mut(&command.to_string());
+        match cmd {
+            Some(cmd) => cmd.run(self, args),
+            None => {
+                drop(cmds_ref);
+                self.command_not_found(command)
+            },
         }
     }
 
@@ -155,13 +148,15 @@ impl Core {
     }
 
     pub fn help(&mut self, command: &str) {
-        let help = match self.commands.borrow().find(&command.to_string()) {
-            Some(funcs) => Some(funcs.help),
-            None => None,
-        };
-        match help {
-            Some(help) => help(self),
-            None => self.command_not_found(command),
+        let cmds = self.commands.clone();
+        let cmds_ref = cmds.borrow();
+        let cmd = cmds_ref.find(&command.to_string());
+        match cmd {
+            Some(cmd) => cmd.help(self),
+            None => {
+                drop(cmds_ref);
+                self.command_not_found(command);
+            },
         }
     }
 }
@@ -169,6 +164,7 @@ impl Core {
 #[cfg(test)]
 mod test_core {
     use super::*;
+    use utils::Quit;
     #[test]
     fn test_loc() {
         let mut core = Core::new();
@@ -181,12 +177,12 @@ mod test_core {
         let mut core = Core::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.add_command("a_non_existing_command", &SEEKFUNCTION);
+        core.add_command("a_non_existing_command", Box::new(Quit::new()));
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.add_command("s", &SEEKFUNCTION);
+        core.add_command("s", Box::new(Quit::new()));
         assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Cannot add this command.\nCommand s already existed.\n");
     }
     #[test]

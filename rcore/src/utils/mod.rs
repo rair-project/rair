@@ -15,4 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 mod quit;
-pub use self::quit::*;
+
+pub use self::quit::Quit;
+use core::Core;
+
+pub fn register_utils(core: &mut Core) {
+    core.add_command("quit", Box::new(Quit::new()));
+    core.add_command("q", Box::new(Quit::new()));
+}

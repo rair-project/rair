@@ -17,12 +17,21 @@
 use core::*;
 use helper::*;
 use std::process;
-pub static QUITFUNCTION: CmdFunctions = CmdFunctions { run: quit_run, help: quit_help };
 
-fn quit_help(core: &mut Core) {
-    help(core, &"quit", &"q", vec![("", "Quit Current session.")]);
+#[derive(Default)]
+pub struct Quit {}
+
+impl Quit {
+    pub fn new() -> Self {
+        Default::default()
+    }
 }
 
-fn quit_run(_core: &mut Core, _args: &[String]) {
-    process::exit(0);
+impl Cmd for Quit {
+    fn run(&mut self, _core: &mut Core, _args: &[String]) {
+        process::exit(0);
+    }
+    fn help(&self, core: &mut Core) {
+        help(core, &"quit", &"q", vec![("", "Quit Current session.")]);
+    }
 }

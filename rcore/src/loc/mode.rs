@@ -17,33 +17,42 @@
 use core::*;
 use helper::*;
 use yansi::Paint;
-pub static MODEFUNCTION: CmdFunctions = CmdFunctions { run: mode_run, help: mode_help };
 
-fn mode_help(core: &mut Core) {
-    help(
-        core,
-        &"mode",
-        &"m",
-        vec![("vir", "Set view mode to virtual address space."), ("phy", "Set view mode to phyisical address space.")],
-    );
+#[derive(Default)]
+pub struct Mode {}
+
+impl Mode {
+    pub fn new() -> Self {
+        Default::default()
+    }
 }
 
-fn mode_run(core: &mut Core, args: &[String]) {
-    if args.len() != 1 {
-        expect(core, args.len() as u64, 1);
-        return;
-    }
-    match &*args[0] {
-        "vir" => core.mode = AddrMode::Vir,
-        "phy" => core.mode = AddrMode::Phy,
-        _ => {
-            let msg = format!(
-                "Expected {} or {}, but found {}",
-                Paint::default("vir").italic().bold(),
-                Paint::default("phy").italic().bold(),
-                Paint::default(&args[0]).italic().bold(),
-            );
-            error_msg(core, "Invalid Mode", &msg);
+impl Cmd for Mode {
+    fn run(&mut self, core: &mut Core, args: &[String]) {
+        if args.len() != 1 {
+            expect(core, args.len() as u64, 1);
+            return;
         }
+        match &*args[0] {
+            "vir" => core.mode = AddrMode::Vir,
+            "phy" => core.mode = AddrMode::Phy,
+            _ => {
+                let msg = format!(
+                    "Expected {} or {}, but found {}",
+                    Paint::default("vir").italic().bold(),
+                    Paint::default("phy").italic().bold(),
+                    Paint::default(&args[0]).italic().bold(),
+                );
+                error_msg(core, "Invalid Mode", &msg);
+            }
+        }
+    }
+    fn help(&self, core: &mut Core) {
+        help(
+            core,
+            &"mode",
+            &"m",
+            vec![("vir", "Set view mode to virtual address space."), ("phy", "Set view mode to phyisical address space.")],
+        );
     }
 }
