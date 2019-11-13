@@ -18,40 +18,49 @@
 use core::*;
 use helper::*;
 use std::io::Write;
-pub static SEEKFUNCTION: CmdFunctions = CmdFunctions { run: seek_run, help: seek_help };
 
-fn seek_help(core: &mut Core) {
-    help(
-        core,
-        &"seek",
-        &"s",
-        vec![
-            ("+[offset]", "Increase current loc by offset."),
-            ("-[offset]", "Decrease current loc by offset."),
-            ("[offset]", "Set current location to offset."),
-        ],
-    );
+#[derive(Default)]
+pub struct Seek {}
+
+impl Seek {
+    pub fn new() -> Self {
+        Default::default()
+    }
 }
 
-fn seek_run(core: &mut Core, args: &[String]) {
-    if args.len() != 1 {
-        expect(core, args.len() as u64, 1);
-        return;
+impl Cmd for Seek {
+    fn run(&mut self, core: &mut Core, args: &[String]) {
+        if args.len() != 1 {
+            expect(core, args.len() as u64, 1);
+            return;
+        }
+        if args[0].starts_with('+') {
+            match str_to_num(&args[0][1..]) {
+                Ok(offset) => core.set_loc(core.get_loc() + offset),
+                Err(e) => writeln!(core.stderr, "{}", e.to_string()).unwrap(),
+            }
+        } else if args[0].starts_with('-') {
+            match str_to_num(&args[0][1..]) {
+                Ok(offset) => core.set_loc(core.get_loc() - offset),
+                Err(e) => writeln!(core.stderr, "{}", e.to_string()).unwrap(),
+            }
+        } else {
+            match str_to_num(&args[0]) {
+                Ok(offset) => core.set_loc(offset),
+                Err(e) => writeln!(core.stderr, "{}", e.to_string()).unwrap(),
+            }
+        }
     }
-    if args[0].starts_with('+') {
-        match str_to_num(&args[0][1..]) {
-            Ok(offset) => core.set_loc(core.get_loc() + offset),
-            Err(e) => writeln!(core.stderr, "{}", e.to_string()).unwrap(),
-        }
-    } else if args[0].starts_with('-') {
-        match str_to_num(&args[0][1..]) {
-            Ok(offset) => core.set_loc(core.get_loc() - offset),
-            Err(e) => writeln!(core.stderr, "{}", e.to_string()).unwrap(),
-        }
-    } else {
-        match str_to_num(&args[0]) {
-            Ok(offset) => core.set_loc(offset),
-            Err(e) => writeln!(core.stderr, "{}", e.to_string()).unwrap(),
-        }
+    fn help(&self, core: &mut Core) {
+        help(
+            core,
+            &"seek",
+            &"s",
+            vec![
+                ("+[offset]", "Increase current loc by offset."),
+                ("-[offset]", "Decrease current loc by offset."),
+                ("[offset]", "Set current location to offset."),
+            ],
+        );
     }
 }

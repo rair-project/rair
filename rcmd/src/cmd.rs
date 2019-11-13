@@ -225,11 +225,7 @@ mod test_normal_cmd {
 
         root = CliParser::parse(Rule::CommandLine, "aa | ls -lah").unwrap().next().unwrap();
         cmd = Cmd::parse_cmd(root).unwrap();
-        target.red_pipe = Box::new(RedPipe::Pipe(vec![
-            Argument::Literal("ls".to_string()),
-            Argument::Literal("-lah".to_string()),
-        ]));
+        target.red_pipe = Box::new(RedPipe::Pipe(vec![Argument::Literal("ls".to_string()), Argument::Literal("-lah".to_string())]));
         assert_eq!(cmd, target);
-
     }
 }

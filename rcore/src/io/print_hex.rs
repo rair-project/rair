@@ -21,59 +21,68 @@ use std::cmp;
 use std::io::Write;
 use writer::*;
 use yansi::Paint;
-pub static PRINTHEXFUNCTION: CmdFunctions = CmdFunctions { run: px_run, help: px_help };
 
-fn px_help(core: &mut Core) {
-    help(core, &"printHex", &"px", vec![("[size]", "View data of at current location in hex format")]);
+#[derive(Default)]
+pub struct PrintHex {}
+
+impl PrintHex {
+    pub fn new() -> Self{
+        Default::default()
+    }
 }
 
-fn px_run(core: &mut Core, args: &[String]) {
-    if args.len() != 1 {
-        expect(core, args.len() as u64, 1);
-        return;
-    }
-    let size;
-    match str_to_num(&args[0]) {
-        Ok(s) => size = s,
-        Err(e) => {
-            error_msg(
-                core,
-                &e.to_string(),
-                &format!("Expect Hex, binary, Octal or Decimal value but found {} instead", Paint::default(&args[0]).italic()),
-            );
+impl Cmd for PrintHex {
+    fn run(&mut self, core: &mut Core, args: &[String]) {
+        if args.len() != 1 {
+            expect(core, args.len() as u64, 1);
             return;
         }
-    }
-    let mut data = vec![0; size as usize];
-    match core.mode {
-        AddrMode::Phy => core.io.pread(core.get_loc(), &mut data).unwrap(),
-        AddrMode::Vir => core.io.vread(core.get_loc(), &mut data).unwrap(),
-    }
-    let banner = core.color_palette[5];
-    let na = core.color_palette[4];
-    writeln!(
-        core.stdout,
-        "{}",
-        Paint::rgb(banner.0, banner.1, banner.2, "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF")
-    )
-    .unwrap();
-    for i in (0..size).step_by(16) {
-        write!(core.stdout, "{} ", Paint::rgb(banner.0, banner.1, banner.2, format!("0x{:08x}", core.get_loc() + i))).unwrap();
-        let mut ascii = Writer::new_buf();
-        let mut hex = Writer::new_buf();
-        for j in i..cmp::min(i + 16, size) {
-            let c = data[j as usize];
-            match j % 2 {
-                0 => write!(hex, "{:02x}", c).unwrap(),
-                1 => write!(hex, "{:02x} ", c).unwrap(),
-                _ => (),
-            }
-            if c >= 0x21 && c <= 0x7E {
-                write!(ascii, "{}", c as char).unwrap()
-            } else {
-                write!(ascii, "{}", Paint::rgb(na.0, na.1, na.2, ".")).unwrap();
+        let size;
+        match str_to_num(&args[0]) {
+            Ok(s) => size = s,
+            Err(e) => {
+                error_msg(
+                    core,
+                    &e.to_string(),
+                    &format!("Expect Hex, binary, Octal or Decimal value but found {} instead", Paint::default(&args[0]).italic()),
+                );
+                return;
             }
         }
-        writeln!(core.stdout, "{: <40} {}", hex.utf8_string().unwrap(), ascii.utf8_string().unwrap()).unwrap();
+        let mut data = vec![0; size as usize];
+        match core.mode {
+            AddrMode::Phy => core.io.pread(core.get_loc(), &mut data).unwrap(),
+            AddrMode::Vir => core.io.vread(core.get_loc(), &mut data).unwrap(),
+        }
+        let banner = core.color_palette[5];
+        let na = core.color_palette[4];
+        writeln!(
+            core.stdout,
+            "{}",
+            Paint::rgb(banner.0, banner.1, banner.2, "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF")
+        )
+        .unwrap();
+        for i in (0..size).step_by(16) {
+            write!(core.stdout, "{} ", Paint::rgb(banner.0, banner.1, banner.2, format!("0x{:08x}", core.get_loc() + i))).unwrap();
+            let mut ascii = Writer::new_buf();
+            let mut hex = Writer::new_buf();
+            for j in i..cmp::min(i + 16, size) {
+                let c = data[j as usize];
+                match j % 2 {
+                    0 => write!(hex, "{:02x}", c).unwrap(),
+                    1 => write!(hex, "{:02x} ", c).unwrap(),
+                    _ => (),
+                }
+                if c >= 0x21 && c <= 0x7E {
+                    write!(ascii, "{}", c as char).unwrap()
+                } else {
+                    write!(ascii, "{}", Paint::rgb(na.0, na.1, na.2, ".")).unwrap();
+                }
+            }
+            writeln!(core.stdout, "{: <40} {}", hex.utf8_string().unwrap(), ascii.utf8_string().unwrap()).unwrap();
+        }
+    }
+    fn help(&self, core: &mut Core) {
+        help(core, &"printHex", &"px", vec![("[size]", "View data of at current location in hex format")]);
     }
 }

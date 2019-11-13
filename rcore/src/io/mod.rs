@@ -16,5 +16,15 @@
  */
 mod map;
 mod print_hex;
-pub use self::map::*;
-pub use self::print_hex::*;
+use self::map::*;
+use self::print_hex::*;
+use core::Core;
+
+pub fn register_io(core: &mut Core) {
+    core.add_command("map", Box::new(Map::new()));
+    core.add_command("maps", Box::new(ListMap::new()));
+    core.add_command("printHex", Box::new(PrintHex::new()));
+    core.add_command("px", Box::new(PrintHex::new()));
+    core.add_command("unmap", Box::new(UnMap::new()));
+    core.add_command("um", Box::new(UnMap::new()));
+}

@@ -73,6 +73,11 @@ pub struct CmdFunctions {
     pub help: fn(&mut Core),
 }
 
+pub trait Cmd {
+    fn run(&mut self, &mut Core, &[String]);
+    fn help(&self, &mut Core);
+}
+
 pub enum AddrMode {
     Vir,
     Phy,
