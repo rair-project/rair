@@ -70,9 +70,9 @@ Pipe = {"|"}
 Red = {">"}
 RedCat = {">>"}
 RedPipe = {
-    Pipe ~ Argument |
+    Pipe ~ Argument+ |
     Red ~ Argument |
-    RedCat ~ Argument 
+    RedCat ~ Argument
 }
 
 Comment = {"#" ~ ANY*}

@@ -126,7 +126,7 @@ fn run_cmd(core: &mut Core, cmd: Cmd) {
                 return;
             }
         },
-        RedPipe::Pipe(arg) => match create_pipe(core, *arg) {
+        RedPipe::Pipe(arg) => match create_pipe(core, arg) {
             Ok((process, writer)) => {
                 child = Some(process);
                 stdout = Some(mem::replace(&mut core.stdout, writer));
@@ -172,9 +172,12 @@ fn create_redirect_cat(core: &mut Core, arg: Argument) -> Result<Writer, String>
     }
 }
 
-fn create_pipe(core: &mut Core, arg: Argument) -> Result<(Child, Writer), String> {
-    let process_name = eval_arg(core, arg)?;
-    match Command::new(process_name).stdin(Stdio::piped()).stdout(Stdio::piped()).spawn() {
+fn create_pipe(core: &mut Core, unprocessed_args: Vec<Argument>) -> Result<(Child, Writer), String> {
+    let mut args = Vec::with_capacity(unprocessed_args.len());
+    for arg in unprocessed_args {
+        args.push(eval_arg(core, arg)?);
+    }
+    match Command::new(&args[0]).args(&args[1..]).stdin(Stdio::piped()).stdout(Stdio::piped()).spawn() {
         Err(why) => return Err(why.to_string()),
         Ok(process) => return Ok((process, Writer::new_buf())),
     };

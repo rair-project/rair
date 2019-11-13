@@ -24,7 +24,7 @@ pub enum RedPipe {
     None,
     Redirect(Box<Argument>),
     RedirectCat(Box<Argument>),
-    Pipe(Box<Argument>),
+    Pipe(Vec<Argument>),
 }
 
 impl Default for RedPipe {
@@ -36,11 +36,22 @@ impl RedPipe {
     fn parse_pipe(root: Pair<Rule>) -> Self {
         let mut pairs = root.into_inner();
         let type_identifier = pairs.next().unwrap();
-        let arg = Argument::parse_argument(pairs.next().unwrap());
-        return match type_identifier.as_rule() {
-            Rule::Pipe => RedPipe::Pipe(Box::new(arg)),
-            Rule::Red => RedPipe::Redirect(Box::new(arg)),
-            Rule::RedCat => RedPipe::RedirectCat(Box::new(arg)),
+        match type_identifier.as_rule() {
+            Rule::Pipe => {
+                let mut ret = Vec::new();
+                for pair in pairs {
+                    ret.push(Argument::parse_argument(pair));
+                }
+                return RedPipe::Pipe(ret);
+            }
+            Rule::Red => {
+                let arg = Argument::parse_argument(pairs.next().unwrap());
+                return RedPipe::Redirect(Box::new(arg));
+            }
+            Rule::RedCat => {
+                let arg = Argument::parse_argument(pairs.next().unwrap());
+                return RedPipe::RedirectCat(Box::new(arg));
+            }
             _ => {
                 println!("{:#?}", type_identifier);
                 unimplemented!();
@@ -199,7 +210,7 @@ mod test_normal_cmd {
         let mut cmd = Cmd::parse_cmd(root).unwrap();
         let mut target: Cmd = Default::default();
         target.command = "aa".to_string();
-        target.red_pipe = Box::new(RedPipe::Pipe(Box::new(Argument::Literal("/bin/ls".to_string()))));
+        target.red_pipe = Box::new(RedPipe::Pipe(vec![Argument::Literal("/bin/ls".to_string())]));
         assert_eq!(cmd, target);
 
         root = CliParser::parse(Rule::CommandLine, "aa > outfile").unwrap().next().unwrap();
@@ -211,5 +222,14 @@ mod test_normal_cmd {
         cmd = Cmd::parse_cmd(root).unwrap();
         target.red_pipe = Box::new(RedPipe::RedirectCat(Box::new(Argument::Literal("outfile".to_string()))));
         assert_eq!(cmd, target);
+
+        root = CliParser::parse(Rule::CommandLine, "aa | ls -lah").unwrap().next().unwrap();
+        cmd = Cmd::parse_cmd(root).unwrap();
+        target.red_pipe = Box::new(RedPipe::Pipe(vec![
+            Argument::Literal("ls".to_string()),
+            Argument::Literal("-lah".to_string()),
+        ]));
+        assert_eq!(cmd, target);
+
     }
 }
