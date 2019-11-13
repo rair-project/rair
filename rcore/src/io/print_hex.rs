@@ -47,7 +47,7 @@ fn px_run(core: &mut Core, args: &[String]) {
     let mut data = vec![0; size as usize];
     match core.mode {
         AddrMode::Phy => core.io.pread(core.get_loc(), &mut data).unwrap(),
-        AddrMode::Vir => core.io.pread(core.get_loc(), &mut data).unwrap(),
+        AddrMode::Vir => core.io.vread(core.get_loc(), &mut data).unwrap(),
     }
     let banner = core.color_palette[5];
     let na = core.color_palette[4];
