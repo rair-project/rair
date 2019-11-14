@@ -79,7 +79,7 @@ impl Core {
     pub fn new() -> Self {
         let mut core: Core = Default::default();
         let config = Config::builder()
-            .completion_type(CompletionType::List)
+            .completion_type(CompletionType::Circular)
             .edit_mode(EditMode::Emacs)
             .output_stream(OutputStreamType::Stdout)
             .build();
