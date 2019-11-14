@@ -17,10 +17,12 @@
 
 use core::*;
 use helper::*;
-use std::io::Write;
 
 #[derive(Default)]
-pub struct Seek {}
+pub struct Seek {
+    back: Vec<(AddrMode, u64)>,
+    front: Vec<(AddrMode, u64)>,
+}
 
 impl Seek {
     pub fn new() -> Self {
@@ -34,20 +36,52 @@ impl Cmd for Seek {
             expect(core, args.len() as u64, 1);
             return;
         }
-        if args[0].starts_with('+') {
+        if args[0] == "-" {
+            match self.back.pop() {
+                Some((mode, addr)) => {
+                    self.front.push((core.mode, core.get_loc()));
+                    core.mode = mode;
+                    core.set_loc(addr);
+                }
+                None => error_msg(core, "Seek Error", "History is empty."),
+            }
+        } else if args[0] == "+" {
+            match self.front.pop() {
+                Some((mode, addr)) => {
+                    self.back.push((core.mode, core.get_loc()));
+                    core.mode = mode;
+                    core.set_loc(addr);
+                }
+                None => error_msg(core, "Seek Error", "History is empty."),
+            }
+        } else if args[0].starts_with('+') {
             match str_to_num(&args[0][1..]) {
-                Ok(offset) => core.set_loc(core.get_loc() + offset),
-                Err(e) => writeln!(core.stderr, "{}", e.to_string()).unwrap(),
+                Ok(offset) => {
+                    let loc = core.get_loc();
+                    self.back.push((core.mode, loc));
+                    self.front = Vec::new();
+                    core.set_loc(loc + offset);
+                }
+                Err(e) => error_msg(core, "Seek Error", &e.to_string()),
             }
         } else if args[0].starts_with('-') {
             match str_to_num(&args[0][1..]) {
-                Ok(offset) => core.set_loc(core.get_loc() - offset),
-                Err(e) => writeln!(core.stderr, "{}", e.to_string()).unwrap(),
+                Ok(offset) => {
+                    let loc = core.get_loc();
+                    self.back.push((core.mode, loc));
+                    self.front = Vec::new();
+                    core.set_loc(loc - offset);
+                }
+                Err(e) => error_msg(core, "Seek Error", &e.to_string()),
             }
         } else {
             match str_to_num(&args[0]) {
-                Ok(offset) => core.set_loc(offset),
-                Err(e) => writeln!(core.stderr, "{}", e.to_string()).unwrap(),
+                Ok(offset) => {
+                    self.back.push((core.mode, core.get_loc()));
+                    self.front = Vec::new();
+                    core.set_loc(offset);
+                }
+                Err(e) => error_msg(core, "Seek Error", &e.to_string()),
             }
         }
     }
@@ -57,6 +91,8 @@ impl Cmd for Seek {
             &"seek",
             &"s",
             vec![
+                ("+", "\tRedo Seek."),
+                ("-", "\tUndo Seek."),
                 ("+[offset]", "Increase current loc by offset."),
                 ("-[offset]", "Decrease current loc by offset."),
                 ("[offset]", "Set current location to offset."),

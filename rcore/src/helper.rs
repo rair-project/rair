@@ -32,7 +32,7 @@ pub fn str_to_num(n: &str) -> Result<u64, num::ParseIntError> {
             _ => (),
         }
     }
-    if n.chars().nth(0).unwrap() == '0' && n.len() > 1 {
+    if n.len() > 1 && n.chars().nth(0).unwrap() == '0' {
         return u64::from_str_radix(&n[1..], 8);
     }
     return u64::from_str_radix(n, 10);
@@ -77,7 +77,7 @@ pub trait Cmd {
     fn run(&mut self, &mut Core, &[String]);
     fn help(&self, &mut Core);
 }
-
+#[derive(Copy, Clone)]
 pub enum AddrMode {
     Vir,
     Phy,
