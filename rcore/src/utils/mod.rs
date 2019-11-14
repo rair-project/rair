@@ -18,8 +18,9 @@ mod quit;
 
 pub use self::quit::Quit;
 use core::Core;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 pub fn register_utils(core: &mut Core) {
-    core.add_command("quit", Box::new(Quit::new()));
-    core.add_command("q", Box::new(Quit::new()));
+    core.add_command("quit", "q", Rc::new(RefCell::new(Quit::new())));
 }

@@ -16,11 +16,11 @@
  */
 
 use app_dirs::*;
-use commands::Commands;
+use commands::{Commands, MRc};
 use helper::*;
+use io::*;
 use lineformatter::LineFormatter;
 use loc::*;
-use io::*;
 use rio::*;
 use rustyline::{CompletionType, Config, EditMode, Editor, OutputStreamType};
 use std::cell::RefCell;
@@ -105,10 +105,14 @@ impl Core {
         self.loc
     }
 
-    pub fn add_command(&mut self, command_name: &'static str, functionality: Box<dyn Cmd>) {
-        // first check that command_name doesn't exist
-        if !self.commands.borrow_mut().add_command(command_name, functionality) {
-            let msg = format!("Command {} already existed.", Paint::default(command_name).bold());
+    pub fn add_command(&mut self, long: &'static str, short: &'static str, funcs: MRc<dyn Cmd>) {
+        if !long.is_empty() && !self.commands.borrow_mut().add_command(long, funcs.clone()) {
+            let msg = format!("Command {} already existed.", Paint::default(long).bold());
+            error_msg(self, "Cannot add this command.", &msg);
+        }
+
+        if !short.is_empty() && !self.commands.borrow_mut().add_command(short, funcs) {
+            let msg = format!("Command {} already existed.", Paint::default(short).bold());
             error_msg(self, "Cannot add this command.", &msg);
         }
     }
@@ -130,14 +134,14 @@ impl Core {
 
     pub fn run(&mut self, command: &str, args: &[String]) {
         let cmds = self.commands.clone();
-        let mut cmds_ref = cmds.borrow_mut();
-        let cmd = cmds_ref.find_mut(&command.to_string());
+        let cmds_ref = cmds.borrow_mut();
+        let cmd = cmds_ref.find(&command.to_string());
         match cmd {
-            Some(cmd) => cmd.run(self, args),
+            Some(cmd) => cmd.borrow_mut().run(self, args),
             None => {
                 drop(cmds_ref);
                 self.command_not_found(command)
-            },
+            }
         }
     }
 
@@ -152,11 +156,11 @@ impl Core {
         let cmds_ref = cmds.borrow();
         let cmd = cmds_ref.find(&command.to_string());
         match cmd {
-            Some(cmd) => cmd.help(self),
+            Some(cmd) => cmd.borrow().help(self),
             None => {
                 drop(cmds_ref);
                 self.command_not_found(command);
-            },
+            }
         }
     }
 }
@@ -177,12 +181,12 @@ mod test_core {
         let mut core = Core::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.add_command("a_non_existing_command", Box::new(Quit::new()));
+        core.add_command("a_non_existing_command", "a", Rc::new(RefCell::new(Quit::new())));
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.add_command("s", Box::new(Quit::new()));
+        core.add_command("test_command", "s", Rc::new(RefCell::new(Quit::new())));
         assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Cannot add this command.\nCommand s already existed.\n");
     }
     #[test]

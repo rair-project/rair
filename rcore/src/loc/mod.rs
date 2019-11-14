@@ -19,10 +19,10 @@ mod seek;
 use self::mode::*;
 use self::seek::*;
 use core::Core;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 pub fn register_loc(core: &mut Core) {
-    core.add_command("mode", Box::new(Mode::new()));
-    core.add_command("m", Box::new(Mode::new()));
-    core.add_command("seek", Box::new(Seek::new()));
-    core.add_command("s", Box::new(Seek::new()));
+    core.add_command("mode", "m", Rc::new(RefCell::new(Mode::new())));
+    core.add_command("seek", "s", Rc::new(RefCell::new(Seek::new())));
 }

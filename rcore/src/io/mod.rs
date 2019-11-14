@@ -19,12 +19,12 @@ mod print_hex;
 use self::map::*;
 use self::print_hex::*;
 use core::Core;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 pub fn register_io(core: &mut Core) {
-    core.add_command("map", Box::new(Map::new()));
-    core.add_command("maps", Box::new(ListMap::new()));
-    core.add_command("printHex", Box::new(PrintHex::new()));
-    core.add_command("px", Box::new(PrintHex::new()));
-    core.add_command("unmap", Box::new(UnMap::new()));
-    core.add_command("um", Box::new(UnMap::new()));
+    core.add_command("map", "", Rc::new(RefCell::new(Map::new())));
+    core.add_command("maps", "", Rc::new(RefCell::new(ListMap::new())));
+    core.add_command("printHex", "px", Rc::new(RefCell::new(PrintHex::new())));
+    core.add_command("unmap", "um", Rc::new(RefCell::new(UnMap::new())));
 }

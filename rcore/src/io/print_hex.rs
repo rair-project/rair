@@ -26,7 +26,7 @@ use yansi::Paint;
 pub struct PrintHex {}
 
 impl PrintHex {
-    pub fn new() -> Self{
+    pub fn new() -> Self {
         Default::default()
     }
 }

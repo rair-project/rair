@@ -24,7 +24,7 @@ use yansi::Paint;
 pub struct Map {}
 
 impl Map {
-    pub fn new() -> Self{
+    pub fn new() -> Self {
         Default::default()
     }
 }
@@ -78,7 +78,7 @@ impl Cmd for Map {
 pub struct UnMap {}
 
 impl UnMap {
-    pub fn new() -> Self{
+    pub fn new() -> Self {
         Default::default()
     }
 }
@@ -122,7 +122,7 @@ impl Cmd for UnMap {
 pub struct ListMap {}
 
 impl ListMap {
-    pub fn new() -> Self{
+    pub fn new() -> Self {
         Default::default()
     }
 }

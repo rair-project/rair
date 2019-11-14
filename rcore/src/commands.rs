@@ -17,17 +17,21 @@
 
 use helper::*;
 use rtrees::bktree::SpellTree;
+use std::cell::RefCell;
 use std::collections::BTreeMap; // for suffex search
+use std::rc::Rc;
+
+pub type MRc<T> = Rc<RefCell<T>>; //mutable refcounter
 
 #[derive(Default)]
 pub struct Commands {
     suggestions: SpellTree<()>,
-    search: BTreeMap<&'static str, Box<dyn Cmd>>,
+    search: BTreeMap<&'static str, MRc<dyn Cmd>>,
 }
 
 impl Commands {
     // Returns false if the command with the same name exists
-    pub fn add_command(&mut self, command_name: &'static str, functionality: Box<dyn Cmd>) -> bool {
+    pub fn add_command(&mut self, command_name: &'static str, functionality: MRc<dyn Cmd>) -> bool {
         // first check that command_name doesn't exist
         if self.search.contains_key(command_name) {
             return false;
@@ -38,11 +42,8 @@ impl Commands {
         }
     }
 
-    pub fn find(&self, command: &str) -> Option<&dyn Cmd> {
-        return self.search.get(command).map(|cmd| &**cmd);
-    }
-    pub fn find_mut(&mut self, command: &str) -> Option<&mut dyn Cmd> {
-        return self.search.get_mut(command).map(|cmd| &mut **cmd as &mut dyn Cmd);
+    pub fn find(&self, command: &str) -> Option<MRc<dyn Cmd>> {
+        return self.search.get(command).cloned();
     }
     pub fn suggest(&self, command: &str, tolerance: u64) -> Vec<&String> {
         return self.suggestions.find(&command.to_string(), tolerance).1;
