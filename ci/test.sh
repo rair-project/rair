@@ -1,15 +1,14 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 if [ $COV ]; then
   set +e # cargo install might fail because package already exist in cache
-  cargo install grcov
+  cargo install cargo-tarpaulin
   set -e
-  export CARGO_INCREMENTAL=0
-  export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
-  cargo test --all $CARGO_OPTIONS # testing
-  grcov --llvm target/debug -t lcov  > coverage.info
-  bash <(curl -s https://codecov.io/bash) -f coverage.info
+  cargo test --all --doc # testing doc tests
+  cargo tarpaulin --ignore-tests -l --all --out Xml # testing and code coveage
+  curl -s https://codecov.io/bash | bash
+else
   cargo test --all
 fi
 
