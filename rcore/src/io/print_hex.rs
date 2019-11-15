@@ -37,6 +37,7 @@ impl Cmd for PrintHex {
             expect(core, args.len() as u64, 1);
             return;
         }
+        let loc = core.get_loc();
         let size;
         match str_to_num(&args[0]) {
             Ok(s) => size = s,
@@ -49,10 +50,17 @@ impl Cmd for PrintHex {
                 return;
             }
         }
-        let mut data = vec![0; size as usize];
-        match core.mode {
-            AddrMode::Phy => core.io.pread(core.get_loc(), &mut data).unwrap(),
-            AddrMode::Vir => core.io.vread(core.get_loc(), &mut data).unwrap(),
+        let data_or_no_data = match core.mode {
+            AddrMode::Phy => core.io.pread_sparce(loc, size),
+            AddrMode::Vir => core.io.vread_sparce(loc, size),
+        };
+        let data;
+        match data_or_no_data {
+            Ok(d) => data = d,
+            Err(e) => {
+                error_msg(core, "Read Failed", &e.to_string());
+                return;
+            }
         }
         let banner = core.color_palette[5];
         let na = core.color_palette[4];
@@ -63,20 +71,31 @@ impl Cmd for PrintHex {
         )
         .unwrap();
         for i in (0..size).step_by(16) {
-            write!(core.stdout, "{} ", Paint::rgb(banner.0, banner.1, banner.2, format!("0x{:08x}", core.get_loc() + i))).unwrap();
+            write!(core.stdout, "{} ", Paint::rgb(banner.0, banner.1, banner.2, format!("0x{:08x}", loc + i))).unwrap();
             let mut ascii = Writer::new_buf();
             let mut hex = Writer::new_buf();
             for j in i..cmp::min(i + 16, size) {
-                let c = data[j as usize];
-                match j % 2 {
-                    0 => write!(hex, "{:02x}", c).unwrap(),
-                    1 => write!(hex, "{:02x} ", c).unwrap(),
-                    _ => (),
-                }
-                if c >= 0x21 && c <= 0x7E {
-                    write!(ascii, "{}", c as char).unwrap()
-                } else {
-                    write!(ascii, "{}", Paint::rgb(na.0, na.1, na.2, ".")).unwrap();
+                match data.get(&(j + loc)) {
+                    Some(c) => {
+                        match j % 2 {
+                            0 => write!(hex, "{:02x}", c).unwrap(),
+                            1 => write!(hex, "{:02x} ", c).unwrap(),
+                            _ => (),
+                        }
+                        if *c >= 0x21 && *c <= 0x7E {
+                            write!(ascii, "{}", *c as char).unwrap()
+                        } else {
+                            write!(ascii, "{}", Paint::rgb(na.0, na.1, na.2, ".")).unwrap();
+                        }
+                    }
+                    None => {
+                        match j % 2 {
+                            0 => write!(hex, "**").unwrap(),
+                            1 => write!(hex, "** ").unwrap(),
+                            _ => (),
+                        }
+                        write!(ascii, "{}", Paint::rgb(na.0, na.1, na.2, "*")).unwrap();
+                    }
                 }
             }
             writeln!(core.stdout, "{: <40} {}", hex.utf8_string().unwrap(), ascii.utf8_string().unwrap()).unwrap();
