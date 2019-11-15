@@ -109,6 +109,7 @@ impl RIODescQuery {
         }
         return self.hndl_to_descs[hndl as usize].as_mut();
     }
+    // Returns Option<Vec<hndl, start, size>>
     pub(crate) fn paddr_range_to_hndl(&self, paddr: u64, size: u64) -> Option<Vec<(u64, u64, u64)>> {
         let hndls: Vec<u64> = self.paddr_to_hndls.overlap(paddr, paddr + size - 1).iter().map(|x| **x).collect();
         if hndls.is_empty() {
@@ -131,6 +132,28 @@ impl RIODescQuery {
             return None;
         }
         return Some(ranged_hndl);
+    }
+
+    pub(crate) fn paddr_sparce_range_to_hndl(&self, paddr: u64, size: u64) -> Vec<(u64, u64, u64)> {
+        let hndls: Vec<u64> = self.paddr_to_hndls.overlap(paddr, paddr + size - 1).iter().map(|x| **x).collect();
+        if hndls.is_empty() {
+            return Vec::new();
+        }
+        let mut ranged_hndl = Vec::with_capacity(hndls.len());
+        let mut start = paddr;
+        let mut remaining = size;
+        for hndl in hndls {
+            let desc = self.hndl_to_desc(hndl).unwrap();
+            if start < desc.paddr {
+                remaining -= desc.paddr - start;
+                start = desc.paddr;
+            }
+            let delta = min(remaining, desc.size - (start - desc.paddr));
+            ranged_hndl.push((hndl, start, delta));
+            start += delta;
+            remaining -= delta;
+        }
+        return ranged_hndl;
     }
 }
 
@@ -316,5 +339,26 @@ mod desc_query_tests {
     #[test]
     fn test_iter() {
         operate_on_files(&iter_cb, &[DATA, DATA, DATA, DATA]);
+    }
+    fn paddr_sparce_range_to_hndl_cb(paths: &[&Path]) {
+        let mut p = plugin();
+        let mut descs = RIODescQuery::new();
+        let mut start = 0;
+        for i in 0..3 {
+            descs.register_open_at(&mut *p, &paths[i].to_string_lossy(), IoMode::READ, start).unwrap();
+            start += DATA.len() as u64 + 0x10;
+        }
+        let len = DATA.len() as u64;
+        assert_eq!(descs.paddr_sparce_range_to_hndl(len, 0x10), Vec::new());
+        assert_eq!(descs.paddr_sparce_range_to_hndl(0, len + 0x10), vec![(0u64, 0u64, len)]);
+        assert_eq!(
+            descs.paddr_sparce_range_to_hndl(0, len * 3),
+            vec![(0u64, 0u64, len), (1, len + 0x10, len), (2, (len + 0x10) * 2, len - 0x20)]
+        );
+    }
+
+    #[test]
+    fn test_paddr_sparce_range_to_hndl() {
+        operate_on_files(&paddr_sparce_range_to_hndl_cb, &[DATA, DATA, DATA, DATA]);
     }
 }
