@@ -125,6 +125,31 @@ impl RIOMapQuery {
         }
         return Some(ranged_hndl);
     }
+    pub fn split_vaddr_sparce_range(&self, vaddr: u64, size: u64) -> Vec<RIOMap> {
+        let maps: Vec<Rc<RIOMap>> = self.maps.overlap(vaddr, vaddr + size - 1).iter().map(|&x| x.clone()).collect();
+        if maps.is_empty() {
+            return Vec::new();
+        }
+        let mut ranged_hndl = Vec::with_capacity(maps.len());
+        let mut start = vaddr;
+        let mut remaining = size;
+        for map in maps {
+            if start < map.vaddr {
+                remaining -= map.vaddr - start;
+                start = map.vaddr;
+            }
+            let delta = min(remaining, map.size - (start - map.vaddr));
+            let frag = RIOMap {
+                paddr: map.paddr + (start - map.vaddr),
+                vaddr: start,
+                size: delta,
+            };
+            ranged_hndl.push(frag);
+            start += delta;
+            remaining -= delta;
+        }
+        return ranged_hndl;
+    }
     pub fn unmap(&mut self, vaddr: u64, size: u64) -> Result<(), IoError> {
         let fragments = self.split_vaddr_range(vaddr, size);
         if fragments.is_none() {
@@ -232,10 +257,65 @@ mod maps_query_test {
         map_query.map(0x200, 0x2000, 0x100).unwrap();
         map_query.map(0x300, 0x3000, 0x100).unwrap();
         let mut iter = map_query.into_iter();
-        assert_eq!(RIOMap{paddr: 0x200, vaddr: 0x2000, size: 0x100}, iter.next().unwrap());
-        assert_eq!(RIOMap{paddr: 0x300, vaddr: 0x3000, size: 0x100}, iter.next().unwrap());
-        assert_eq!(RIOMap{paddr: 0, vaddr: 0x4000, size: 0x100}, iter.next().unwrap());
-        assert_eq!(RIOMap{paddr: 0x100, vaddr: 0x5000, size: 0x100}, iter.next().unwrap());
+        assert_eq!(
+            RIOMap {
+                paddr: 0x200,
+                vaddr: 0x2000,
+                size: 0x100
+            },
+            iter.next().unwrap()
+        );
+        assert_eq!(
+            RIOMap {
+                paddr: 0x300,
+                vaddr: 0x3000,
+                size: 0x100
+            },
+            iter.next().unwrap()
+        );
+        assert_eq!(RIOMap { paddr: 0, vaddr: 0x4000, size: 0x100 }, iter.next().unwrap());
+        assert_eq!(
+            RIOMap {
+                paddr: 0x100,
+                vaddr: 0x5000,
+                size: 0x100
+            },
+            iter.next().unwrap()
+        );
         assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn test_split_vaddr_sparce_range() {
+        let mut map_query = RIOMapQuery::new();
+        map_query.map(0, 0x4000, 0x90).unwrap();
+        map_query.map(0x100, 0x5000, 0x90).unwrap();
+        map_query.map(0x200, 0x2000, 0x90).unwrap();
+        map_query.map(0x300, 0x3000, 0x90).unwrap();
+        assert_eq!(
+            map_query.split_vaddr_sparce_range(0x1000, 0x5000),
+            vec![
+                RIOMap {
+                    paddr: 0x200,
+                    vaddr: 0x2000,
+                    size: 0x90
+                },
+                RIOMap {
+                    paddr: 0x300,
+                    vaddr: 0x3000,
+                    size: 0x90
+                },
+                RIOMap {
+                    paddr: 0x0,
+                    vaddr: 0x4000,
+                    size: 0x90
+                },
+                RIOMap {
+                    paddr: 0x100,
+                    vaddr: 0x5000,
+                    size: 0x90
+                }
+            ]
+        );
     }
 }
