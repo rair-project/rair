@@ -19,8 +19,9 @@ use desc::RIODesc;
 use descquery::RIODescQuery;
 use mapsquery::{RIOMap, RIOMapQuery};
 use plugin::*;
-use utils::*;
+use std::collections::BTreeMap;
 use std::rc::Rc;
+use utils::*;
 #[derive(Default)]
 pub struct RIO {
     descs: RIODescQuery,
@@ -175,7 +176,31 @@ impl RIO {
             None => return Err(IoError::AddressNotFound),
         }
     }
-
+    /// Read from the physical address space of current [RIO] object. Data is stored in a sparce
+    /// vector represented by [BTreeMap]. Error is returned only in case of internal IO errors.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use rio::RIO;
+    /// use rio::IoMode;
+    /// let mut io = RIO::new();
+    /// io.open_at("foo.txt", IoMode::READ, 0x20);
+    /// let data = io.pread_sparce(0x20, 0x50); //reads at most 0x50 bytes from foo.txt
+    ///```  
+    pub fn pread_sparce(&mut self, paddr: u64, size: u64) -> Result<BTreeMap<u64, u8>, IoError> {
+        let mut result = BTreeMap::new();
+        let ranges = self.descs.paddr_sparce_range_to_hndl(paddr, size);
+        for (hndl, paddr, size) in ranges {
+            let desc = self.descs.hndl_to_mut_desc(hndl).unwrap();
+            let mut buffer = vec![0; size as usize];
+            desc.read(paddr as usize, &mut buffer)?;
+            for (i, v) in buffer.iter().enumerate() {
+                result.insert(paddr + i as u64, *v);
+            }
+        }
+        return Ok(result);
+    }
     /// Write into the physical address space of current [RIO] object. If there is no enough
     /// space to accomodate *buf* an error is returned.
     ///
@@ -259,9 +284,9 @@ impl RIO {
     pub fn uri_iter<'a>(&'a self) -> Box<dyn Iterator<Item = &'a RIODesc> + 'a> {
         self.descs.into_iter()
     }
-    
+
     /// Iterate over memory maps
-    pub fn map_iter<'a>(&'a self)-> Box<dyn Iterator<Item = Rc<RIOMap>> + 'a> {
+    pub fn map_iter<'a>(&'a self) -> Box<dyn Iterator<Item = Rc<RIOMap>> + 'a> {
         self.maps.into_iter()
     }
 }
@@ -545,14 +570,42 @@ mod rio_tests {
         io.map(0x200, 0x2000, size).unwrap();
         io.map(0x300, 0x3000, size).unwrap();
         let mut iter = io.map_iter();
-        assert_eq!(iter.next().unwrap(), RIOMap{paddr: 0x200, vaddr: 0x2000, size});
-        assert_eq!(iter.next().unwrap(), RIOMap{paddr: 0x300, vaddr: 0x3000, size});
-        assert_eq!(iter.next().unwrap(), RIOMap{paddr: 0, vaddr: 0x4000, size});
-        assert_eq!(iter.next().unwrap(), RIOMap{paddr: 0x100, vaddr: 0x5000, size});
+        assert_eq!(iter.next().unwrap(), RIOMap { paddr: 0x200, vaddr: 0x2000, size });
+        assert_eq!(iter.next().unwrap(), RIOMap { paddr: 0x300, vaddr: 0x3000, size });
+        assert_eq!(iter.next().unwrap(), RIOMap { paddr: 0, vaddr: 0x4000, size });
+        assert_eq!(iter.next().unwrap(), RIOMap { paddr: 0x100, vaddr: 0x5000, size });
         assert_eq!(iter.next(), None);
     }
     #[test]
     fn test_map_iter() {
         operate_on_files(&map_iter_cb, &[DATA, DATA, DATA, DATA]);
+    }
+
+    fn pread_sparce_cb(paths: &[&Path]) {
+        let mut io = RIO::new();
+        let mut start = 0;
+        for i in 0..3 {
+            io.open_at(&paths[i].to_string_lossy(), IoMode::READ, start).unwrap();
+            start += DATA.len() as u64 + 0x10;
+        }
+        let len = DATA.len() as u64;
+        let mut data: BTreeMap<u64, u8> = BTreeMap::new();
+        assert_eq!(io.pread_sparce(len, 0x10).unwrap(), data);
+        for i in 0..len {
+            data.insert(i, DATA[i as usize]);
+        }
+        assert_eq!(io.pread_sparce(0, len + 0x10).unwrap(), data);
+        for i in 0..len {
+            data.insert(len + 0x10 + i, DATA[i as usize]);
+        }
+        for i in 0..len - 0x20 {
+            data.insert((len + 0x10) * 2 + i, DATA[i as usize]);
+        }
+        assert_eq!(io.pread_sparce(0, len * 3).unwrap(), data);
+    }
+
+    #[test]
+    fn test_pread_sparce() {
+        operate_on_files(&pread_sparce_cb, &[DATA, DATA, DATA, DATA]);
     }
 }
