@@ -23,6 +23,7 @@ use std::io::Write;
 use std::num;
 use std::rc::Rc;
 use yansi::Paint;
+use std::process::exit;
 
 pub fn str_to_num(n: &str) -> Result<u64, num::ParseIntError> {
     if n.len() >= 2 {
@@ -50,6 +51,16 @@ pub fn error_msg(core: &mut Core, title: &str, msg: &str) {
     let (r, g, b) = core.color_palette[3];
     writeln!(core.stderr, "{}: {}", Paint::rgb(r, g, b, "Error").bold(), Paint::rgb(r, g, b, title)).unwrap();
     writeln!(core.stderr, "{}", msg).unwrap();
+}
+
+pub fn panic_msg(core: &mut Core, title: &str, msg: &str) -> !{
+    let (r, g, b) = core.color_palette[3];
+    writeln!(core.stderr, "{}: {}", Paint::rgb(r, g, b, "Unrecoverable Error").bold(), Paint::rgb(r, g, b, title)).unwrap();
+    if !msg.is_empty(){
+        writeln!(core.stderr, "{}", msg).unwrap();
+    }
+    writeln!(core.stderr, "{}", Paint::rgb(r, g, b, "Exiting!").bold()).unwrap();
+    exit(-1);
 }
 
 pub fn help(core: &mut Core, long: &str, short: &str, usage: Vec<(&str, &str)>) {

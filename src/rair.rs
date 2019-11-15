@@ -14,7 +14,7 @@ extern crate yansi;
 
 use clap::{App, Arg};
 use rcmd::*;
-use rcore::{str_to_num, Core, Writer};
+use rcore::{str_to_num, Core, Writer, panic_msg};
 use rio::*;
 use rustyline::error::ReadlineError;
 use std::fs::{File, OpenOptions};
@@ -46,14 +46,14 @@ fn main() {
             match c {
                 'r' => perm |= IoMode::READ,
                 'w' => perm |= IoMode::WRITE,
-                _ => panic!("Unknown Permission: `{}`", c),
+                _ => panic_msg(&mut core, &format!("Unknown Permission: `{}`", c), ""),
             }
         }
     }
     if let Some(addr) = matches.value_of("Paddr") {
-        paddr = str_to_num(addr).unwrap_or_else(|e| panic!(e.to_string()));
+        paddr = str_to_num(addr).unwrap_or_else(|e| panic_msg(&mut core, &e.to_string(), ""));
     }
-    core.io.open_at(uri, perm, paddr).unwrap_or_else(|e| panic!(e.to_string()));
+    core.io.open_at(uri, perm, paddr).unwrap_or_else(|e| panic_msg(&mut core, &e.to_string(), ""));
     core.set_loc(paddr);
     loop {
         repl_inners(&mut core);
