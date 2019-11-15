@@ -242,7 +242,8 @@ impl RIO {
         self.maps.unmap(vaddr, size)
     }
 
-    /// read memory from virtual address space
+    /// read memory from virtual address space. If there is no enough
+    /// data to fill *buf* an error is returned.
     pub fn vread(&mut self, vaddr: u64, buf: &mut [u8]) -> Result<(), IoError> {
         let result = self.maps.split_vaddr_range(vaddr, buf.len() as u64);
         match result {
