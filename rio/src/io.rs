@@ -258,7 +258,21 @@ impl RIO {
             None => return Err(IoError::AddressNotFound),
         }
     }
-
+    /// read memory from virtual address space. Data is stored in a sparce
+    /// vector represented by [BTreeMap]. Error is returned only in case of
+    /// internal IO errors.
+    pub fn vread_sparce(&mut self, vaddr: u64, size: u64) -> Result<BTreeMap<u64, u8>, IoError> {
+        let mut result = BTreeMap::new();
+        let maps = self.maps.split_vaddr_sparce_range(vaddr, size);
+        for map in maps {
+            let mut buf = vec![0; map.size as usize];
+            self.pread(map.paddr, &mut buf)?;
+            for (i, v) in buf.iter().enumerate() {
+                result.insert(map.vaddr + i as u64, *v);
+            }
+        }
+        return Ok(result);
+    }
     /// write memory into virtual address space
     pub fn vwrite(&mut self, vaddr: u64, buf: &[u8]) -> Result<(), IoError> {
         let result = self.maps.split_vaddr_range(vaddr, buf.len() as u64);
@@ -608,5 +622,32 @@ mod rio_tests {
     #[test]
     fn test_pread_sparce() {
         operate_on_files(&pread_sparce_cb, &[DATA, DATA, DATA, DATA]);
+    }
+    fn vread_sparce_cb(paths: &[&Path]) {
+        let mut io = RIO::new();
+        let len = DATA.len() as u64;
+        io.open_at(&paths[0].to_string_lossy(), IoMode::READ, 0x1000).unwrap();
+        io.open_at(&paths[1].to_string_lossy(), IoMode::READ, 0x2000).unwrap();
+        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, 0x3000).unwrap();
+        io.map(0x1000, 0x400, len).unwrap();
+        io.map(0x2000, 0x400 + len + 0x10, len).unwrap();
+        io.map(0x3000, 0x400 + (len + 0x10) * 2, len).unwrap();
+        let mut data: BTreeMap<u64, u8> = BTreeMap::new();
+        assert_eq!(io.vread_sparce(0x400 + len, 0x10).unwrap(), data);
+        for i in 0..len {
+            data.insert(0x400 + i, DATA[i as usize]);
+        }
+        assert_eq!(io.vread_sparce(0x400, len + 0x10).unwrap(), data);
+        for i in 0..len {
+            data.insert(0x400 + len + 0x10 + i, DATA[i as usize]);
+        }
+        for i in 0..len - 0x20 {
+            data.insert(0x400 + (len + 0x10) * 2 + i, DATA[i as usize]);
+        }
+        assert_eq!(io.vread_sparce(0x400, len * 3).unwrap(), data);
+    }
+    #[test]
+    fn test_vread_sparce() {
+        operate_on_files(&vread_sparce_cb, &[DATA, DATA, DATA]);
     }
 }
