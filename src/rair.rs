@@ -14,7 +14,7 @@ extern crate yansi;
 
 use clap::{App, Arg};
 use rcmd::*;
-use rcore::{str_to_num, Core, Writer, panic_msg};
+use rcore::{panic_msg, str_to_num, Core, Writer};
 use rio::*;
 use rustyline::error::ReadlineError;
 use std::fs::{File, OpenOptions};
