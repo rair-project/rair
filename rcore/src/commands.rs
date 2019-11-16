@@ -17,11 +17,7 @@
 
 use helper::*;
 use rtrees::bktree::SpellTree;
-use std::cell::RefCell;
 use std::collections::BTreeMap; // for suffex search
-use std::rc::Rc;
-
-pub type MRc<T> = Rc<RefCell<T>>; //mutable refcounter
 
 #[derive(Default)]
 pub struct Commands {

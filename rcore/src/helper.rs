@@ -25,6 +25,8 @@ use std::process::exit;
 use std::rc::Rc;
 use yansi::Paint;
 
+pub type MRc<T> = Rc<RefCell<T>>; //mutable refcounter
+
 pub fn str_to_num(n: &str) -> Result<u64, num::ParseIntError> {
     if n.len() >= 2 {
         match &*n[0..2].to_lowercase() {
@@ -92,7 +94,7 @@ pub trait Cmd {
     fn run(&mut self, &mut Core, &[String]);
     fn help(&self, &mut Core);
 }
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum AddrMode {
     Vir,
     Phy,

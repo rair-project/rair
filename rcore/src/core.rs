@@ -16,7 +16,7 @@
  */
 
 use app_dirs::*;
-use commands::{Commands, MRc};
+use commands::Commands;
 use helper::*;
 use io::*;
 use lineformatter::LineFormatter;

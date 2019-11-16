@@ -14,15 +14,17 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+mod history;
 mod mode;
 mod seek;
+use self::history::History;
 use self::mode::*;
 use self::seek::*;
 use core::Core;
 use std::cell::RefCell;
 use std::rc::Rc;
-
 pub fn register_loc(core: &mut Core) {
-    core.add_command("mode", "m", Rc::new(RefCell::new(Mode::new())));
-    core.add_command("seek", "s", Rc::new(RefCell::new(Seek::new())));
+    let history = Rc::new(RefCell::new(History::new()));
+    core.add_command("mode", "m", Rc::new(RefCell::new(Mode::with_history(history.clone()))));
+    core.add_command("seek", "s", Rc::new(RefCell::new(Seek::with_history(history))));
 }
