@@ -14,16 +14,22 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+use super::history::History;
 use core::*;
 use helper::*;
 use yansi::Paint;
 
 #[derive(Default)]
-pub struct Mode {}
+pub struct Mode {
+    history: MRc<History>,
+}
 
 impl Mode {
     pub fn new() -> Self {
         Default::default()
+    }
+    pub(super) fn with_history(history: MRc<History>) -> Self {
+        Mode { history }
     }
 }
 
@@ -34,8 +40,14 @@ impl Cmd for Mode {
             return;
         }
         match &*args[0] {
-            "vir" => core.mode = AddrMode::Vir,
-            "phy" => core.mode = AddrMode::Phy,
+            "vir" => {
+                self.history.borrow_mut().add(core);
+                core.mode = AddrMode::Vir;
+            }
+            "phy" => {
+                self.history.borrow_mut().add(core);
+                core.mode = AddrMode::Phy
+            }
             _ => {
                 let msg = format!(
                     "Expected {} or {}, but found {}",

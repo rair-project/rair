@@ -15,18 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+use super::history::History;
 use core::*;
 use helper::*;
 
 #[derive(Default)]
 pub struct Seek {
-    back: Vec<(AddrMode, u64)>,
-    front: Vec<(AddrMode, u64)>,
+    history: MRc<History>,
 }
 
 impl Seek {
     pub fn new() -> Self {
         Default::default()
+    }
+    pub(super) fn with_history(history: MRc<History>) -> Self {
+        Seek { history }
     }
 }
 
@@ -37,18 +40,16 @@ impl Cmd for Seek {
             return;
         }
         if args[0] == "-" {
-            match self.back.pop() {
+            match self.history.borrow_mut().backward(core) {
                 Some((mode, addr)) => {
-                    self.front.push((core.mode, core.get_loc()));
                     core.mode = mode;
                     core.set_loc(addr);
                 }
                 None => error_msg(core, "Seek Error", "History is empty."),
             }
         } else if args[0] == "+" {
-            match self.front.pop() {
+            match self.history.borrow_mut().forward(core) {
                 Some((mode, addr)) => {
-                    self.back.push((core.mode, core.get_loc()));
                     core.mode = mode;
                     core.set_loc(addr);
                 }
@@ -57,28 +58,23 @@ impl Cmd for Seek {
         } else if args[0].starts_with('+') {
             match str_to_num(&args[0][1..]) {
                 Ok(offset) => {
-                    let loc = core.get_loc();
-                    self.back.push((core.mode, loc));
-                    self.front = Vec::new();
-                    core.set_loc(loc + offset);
+                    self.history.borrow_mut().add(core);
+                    core.set_loc(core.get_loc() + offset);
                 }
                 Err(e) => error_msg(core, "Seek Error", &e.to_string()),
             }
         } else if args[0].starts_with('-') {
             match str_to_num(&args[0][1..]) {
                 Ok(offset) => {
-                    let loc = core.get_loc();
-                    self.back.push((core.mode, loc));
-                    self.front = Vec::new();
-                    core.set_loc(loc - offset);
+                    self.history.borrow_mut().add(core);
+                    core.set_loc(core.get_loc() - offset);
                 }
                 Err(e) => error_msg(core, "Seek Error", &e.to_string()),
             }
         } else {
             match str_to_num(&args[0]) {
                 Ok(offset) => {
-                    self.back.push((core.mode, core.get_loc()));
-                    self.front = Vec::new();
+                    self.history.borrow_mut().add(core);
                     core.set_loc(offset);
                 }
                 Err(e) => error_msg(core, "Seek Error", &e.to_string()),
