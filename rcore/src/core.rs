@@ -136,12 +136,11 @@ impl Core {
         let cmds = self.commands.clone();
         let cmds_ref = cmds.borrow_mut();
         let cmd = cmds_ref.find(&command.to_string());
-        match cmd {
-            Some(cmd) => cmd.borrow_mut().run(self, args),
-            None => {
-                drop(cmds_ref);
-                self.command_not_found(command)
-            }
+        if let Some(cmd) = cmd {
+            cmd.borrow_mut().run(self, args);
+        } else {
+            drop(cmds_ref);
+            self.command_not_found(command)
         }
     }
 
@@ -155,12 +154,11 @@ impl Core {
         let cmds = self.commands.clone();
         let cmds_ref = cmds.borrow();
         let cmd = cmds_ref.find(&command.to_string());
-        match cmd {
-            Some(cmd) => cmd.borrow().help(self),
-            None => {
-                drop(cmds_ref);
-                self.command_not_found(command);
-            }
+        if let Some(cmd) = cmd {
+            cmd.borrow().help(self);
+        } else {
+            drop(cmds_ref);
+            self.command_not_found(command);
         }
     }
 }

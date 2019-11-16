@@ -75,27 +75,24 @@ impl Cmd for PrintHex {
             let mut ascii = Writer::new_buf();
             let mut hex = Writer::new_buf();
             for j in i..cmp::min(i + 16, size) {
-                match data.get(&(j + loc)) {
-                    Some(c) => {
-                        match j % 2 {
-                            0 => write!(hex, "{:02x}", c).unwrap(),
-                            1 => write!(hex, "{:02x} ", c).unwrap(),
-                            _ => (),
-                        }
-                        if *c >= 0x21 && *c <= 0x7E {
-                            write!(ascii, "{}", *c as char).unwrap()
-                        } else {
-                            write!(ascii, "{}", Paint::rgb(na.0, na.1, na.2, ".")).unwrap();
-                        }
+                if let Some(c) = data.get(&(j + loc)) {
+                    if j % 2 == 0 {
+                        write!(hex, "{:02x}", c).unwrap();
+                    } else {
+                        write!(hex, "{:02x} ", c).unwrap();
                     }
-                    None => {
-                        match j % 2 {
-                            0 => write!(hex, "**").unwrap(),
-                            1 => write!(hex, "** ").unwrap(),
-                            _ => (),
-                        }
-                        write!(ascii, "{}", Paint::rgb(na.0, na.1, na.2, "*")).unwrap();
+                    if *c >= 0x21 && *c <= 0x7E {
+                        write!(ascii, "{}", *c as char).unwrap()
+                    } else {
+                        write!(ascii, "{}", Paint::rgb(na.0, na.1, na.2, ".")).unwrap();
                     }
+                } else {
+                    if j % 2 == 0 {
+                        write!(hex, "**").unwrap();
+                    } else {
+                        write!(hex, "** ").unwrap();
+                    }
+                    write!(ascii, "{}", Paint::rgb(na.0, na.1, na.2, "*")).unwrap();
                 }
             }
             writeln!(core.stdout, "{: <40} {}", hex.utf8_string().unwrap(), ascii.utf8_string().unwrap()).unwrap();

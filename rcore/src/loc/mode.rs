@@ -36,35 +36,31 @@ impl Cmd for Mode {
             expect(core, args.len() as u64, 1);
             return;
         }
-        match &*args[0] {
-            "vir" => {
-                self.history.borrow_mut().add(core);
-                if core.mode == AddrMode::Phy {
-                    let vir = core.io.phy_to_vir(core.get_loc());
-                    if !vir.is_empty() {
-                        core.set_loc(vir[0]);
-                    }
+        if args[0] == "vir" {
+            self.history.borrow_mut().add(core);
+            if core.mode == AddrMode::Phy {
+                let vir = core.io.phy_to_vir(core.get_loc());
+                if !vir.is_empty() {
+                    core.set_loc(vir[0]);
                 }
-                core.mode = AddrMode::Vir;
             }
-            "phy" => {
-                self.history.borrow_mut().add(core);
-                if core.mode == AddrMode::Vir {
-                    if let Some(vir) = core.io.vir_to_phy(core.get_loc(), 1) {
-                        core.set_loc(vir[0].paddr);
-                    }
+            core.mode = AddrMode::Vir;
+        } else if args[0] == "phy" {
+            self.history.borrow_mut().add(core);
+            if core.mode == AddrMode::Vir {
+                if let Some(vir) = core.io.vir_to_phy(core.get_loc(), 1) {
+                    core.set_loc(vir[0].paddr);
                 }
-                core.mode = AddrMode::Phy
             }
-            _ => {
-                let msg = format!(
-                    "Expected {} or {}, but found {}.",
-                    Paint::default("vir").italic().bold(),
-                    Paint::default("phy").italic().bold(),
-                    Paint::default(&args[0]).italic().bold(),
-                );
-                error_msg(core, "Invalid Mode", &msg);
-            }
+            core.mode = AddrMode::Phy
+        } else {
+            let msg = format!(
+                "Expected {} or {}, but found {}.",
+                Paint::default("vir").italic().bold(),
+                Paint::default("phy").italic().bold(),
+                Paint::default(&args[0]).italic().bold(),
+            );
+            error_msg(core, "Invalid Mode", &msg);
         }
     }
     fn help(&self, core: &mut Core) {
