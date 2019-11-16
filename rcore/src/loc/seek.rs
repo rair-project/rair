@@ -28,6 +28,41 @@ impl Seek {
     pub(super) fn with_history(history: MRc<History>) -> Self {
         Seek { history }
     }
+    fn backward(&mut self, core: &mut Core) {
+        match self.history.borrow_mut().backward(core) {
+            Some((mode, addr)) => {
+                core.mode = mode;
+                core.set_loc(addr);
+            }
+            None => error_msg(core, "Seek Error", "History is empty."),
+        }
+    }
+    fn forward(&mut self, core: &mut Core) {
+        match self.history.borrow_mut().forward(core) {
+            Some((mode, addr)) => {
+                core.mode = mode;
+                core.set_loc(addr);
+            }
+            None => error_msg(core, "Seek Error", "History is empty."),
+        }
+    }
+    fn add_loc(&mut self, core: &mut Core, offset: u64) {
+        match core.get_loc().checked_add(offset) {
+            Some(loc) => self.set_loc(core, loc),
+            None => error_msg(core, "Seek Error", "Attempt to add with overflow."),
+        }
+    }
+    fn sub_loc(&mut self, core: &mut Core, offset: u64) {
+        match core.get_loc().checked_sub(offset) {
+            Some(loc) => self.set_loc(core, loc),
+            None => error_msg(core, "Seek Error", "Attempt to subtract with overflow."),
+        }
+    }
+    #[inline]
+    fn set_loc(&mut self, core: &mut Core, offset: u64) {
+        self.history.borrow_mut().add(core);
+        core.set_loc(offset);
+    }
 }
 
 impl Cmd for Seek {
@@ -37,43 +72,22 @@ impl Cmd for Seek {
             return;
         }
         if args[0] == "-" {
-            match self.history.borrow_mut().backward(core) {
-                Some((mode, addr)) => {
-                    core.mode = mode;
-                    core.set_loc(addr);
-                }
-                None => error_msg(core, "Seek Error", "History is empty."),
-            }
+            self.backward(core);
         } else if args[0] == "+" {
-            match self.history.borrow_mut().forward(core) {
-                Some((mode, addr)) => {
-                    core.mode = mode;
-                    core.set_loc(addr);
-                }
-                None => error_msg(core, "Seek Error", "History is empty."),
-            }
+            self.forward(core)
         } else if args[0].starts_with('+') {
             match str_to_num(&args[0][1..]) {
-                Ok(offset) => {
-                    self.history.borrow_mut().add(core);
-                    core.set_loc(core.get_loc() + offset);
-                }
+                Ok(offset) => self.add_loc(core, offset),
                 Err(e) => error_msg(core, "Seek Error", &e.to_string()),
             }
         } else if args[0].starts_with('-') {
             match str_to_num(&args[0][1..]) {
-                Ok(offset) => {
-                    self.history.borrow_mut().add(core);
-                    core.set_loc(core.get_loc() - offset);
-                }
+                Ok(offset) => self.sub_loc(core, offset),
                 Err(e) => error_msg(core, "Seek Error", &e.to_string()),
             }
         } else {
             match str_to_num(&args[0]) {
-                Ok(offset) => {
-                    self.history.borrow_mut().add(core);
-                    core.set_loc(offset);
-                }
+                Ok(offset) => self.set_loc(core, offset),
                 Err(e) => error_msg(core, "Seek Error", &e.to_string()),
             }
         }
@@ -198,5 +212,36 @@ mod test_seek {
         seek.run(&mut core, &["-".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Seek Error\nHistory is empty.\n");
+    }
+    #[test]
+    fn test_seek_overflow() {
+        Paint::disable();
+        let mut core = Core::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let mut seek: Seek = Default::default();
+        assert_eq!(core.mode, AddrMode::Phy);
+        assert_eq!(core.get_loc(), 0x0);
+        seek.run(&mut core, &["-0x5".to_string()]);
+        assert_eq!(core.mode, AddrMode::Phy);
+        assert_eq!(core.get_loc(), 0x0);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Seek Error\nAttempt to subtract with overflow.\n");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+
+        seek.run(&mut core, &["0xffffffffffffffff".to_string()]);
+        assert_eq!(core.mode, AddrMode::Phy);
+        assert_eq!(core.get_loc(), 0xffffffffffffffff);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+
+        seek.run(&mut core, &["+1".to_string()]);
+        assert_eq!(core.mode, AddrMode::Phy);
+        assert_eq!(core.get_loc(), 0xffffffffffffffff);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Seek Error\nAttempt to add with overflow.\n");
     }
 }
