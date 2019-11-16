@@ -18,12 +18,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#[macro_use] extern crate bitflags;
+#[macro_use]
+extern crate bitflags;
 extern crate either_n;
 extern crate memmap;
 extern crate rtrees;
-#[cfg(test)] extern crate test_file;
-
+#[cfg(test)]
+extern crate test_file;
 
 mod defaultplugin;
 mod desc;

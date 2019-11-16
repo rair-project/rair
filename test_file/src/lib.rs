@@ -28,7 +28,6 @@ pub const DATA: &[u8] = &[
     0x80, 0x41, 0xc1, 0x02, 0xc3, 0xc5, 0x88, 0x4d, 0xd5,
 ];
 
-
 pub fn operate_on_file(test_function: &dyn Fn(&Path), data: &[u8]) {
     let mut file = NamedTempFile::new().unwrap();
     file.write_all(data).unwrap();

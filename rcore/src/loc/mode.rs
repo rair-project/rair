@@ -80,11 +80,11 @@ impl Cmd for Mode {
 #[cfg(test)]
 mod test_mode {
     use super::*;
+    use rio::*;
+    use std::path::Path;
+    use test_file::*;
     use writer::Writer;
     use yansi::Paint;
-    use test_file::*;
-    use std::path::Path;
-    use rio::*;
 
     #[test]
     fn test_docs() {
@@ -127,8 +127,6 @@ mod test_mode {
         mode.run(&mut core, &["phy".to_string()]);
         assert_eq!(core.get_loc(), len + 10);
         assert_eq!(core.mode, AddrMode::Phy);
-        
-        
     }
     #[test]
     fn test_mode() {
@@ -151,6 +149,5 @@ mod test_mode {
         mode.run(&mut core, &["not_real_arg".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Invalid Mode\nExpected vir or phy, but found not_real_arg.\n");
-
     }
 }
