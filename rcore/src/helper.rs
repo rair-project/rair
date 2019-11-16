@@ -94,7 +94,7 @@ pub trait Cmd {
     fn run(&mut self, &mut Core, &[String]);
     fn help(&self, &mut Core);
 }
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum AddrMode {
     Vir,
     Phy,
