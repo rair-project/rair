@@ -188,6 +188,10 @@ mod test_core {
         core.stdout = Writer::new_buf();
         core.add_command("test_command", "s", Rc::new(RefCell::new(Quit::new())));
         assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Cannot add this command.\nCommand s already existed.\n");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.add_command("seek", "test_stuff", Rc::new(RefCell::new(Quit::new())));
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Cannot add this command.\nCommand seek already existed.\n");
     }
     #[test]
     fn test_help() {
@@ -205,8 +209,11 @@ mod test_core {
         let mut core = Core::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.run_at("seeker", &[], 0x500);
+        core.run_at("mep", &[], 0x500);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Execution failed\nCommand seeker is not found.\nSimilar command: seek.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Execution failed\nCommand mep is not found.\nSimilar command: map, maps, m.\n"
+        );
     }
 }
