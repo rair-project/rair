@@ -25,9 +25,6 @@ pub struct Seek {
 }
 
 impl Seek {
-    pub fn new() -> Self {
-        Default::default()
-    }
     pub(super) fn with_history(history: MRc<History>) -> Self {
         Seek { history }
     }
@@ -94,5 +91,112 @@ impl Cmd for Seek {
                 ("[offset]", "Set current location to offset."),
             ],
         );
+    }
+}
+
+#[cfg(test)]
+
+mod test_seek {
+    use super::*;
+    use writer::Writer;
+    use yansi::Paint;
+    #[test]
+    fn test_docs() {
+        Paint::disable();
+        let mut core = Core::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let seek: Seek = Default::default();
+        seek.help(&mut core);
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "Commands: [seek | s]\n\
+             \n\
+             Usage:\n\
+             s +\t\tRedo Seek.\n\
+             s -\t\tUndo Seek.\n\
+             s +[offset]\tIncrease current loc by offset.\n\
+             s -[offset]\tDecrease current loc by offset.\n\
+             s [offset]\tSet current location to offset.\n\
+             "
+        );
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+    }
+    #[test]
+    fn test_seek() {
+        Paint::disable();
+        let mut core = Core::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let mut seek: Seek = Default::default();
+        assert_eq!(core.mode, AddrMode::Phy);
+        assert_eq!(core.get_loc(), 0x0);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        seek.run(&mut core, &["+0x5".to_string()]);
+        assert_eq!(core.mode, AddrMode::Phy);
+        assert_eq!(core.get_loc(), 0x5);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        seek.run(&mut core, &["+0x17".to_string()]);
+        assert_eq!(core.mode, AddrMode::Phy);
+        assert_eq!(core.get_loc(), 0x1c);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        seek.run(&mut core, &["-12".to_string()]);
+        assert_eq!(core.mode, AddrMode::Phy);
+        assert_eq!(core.get_loc(), 0x10);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        seek.run(&mut core, &["0b101011".to_string()]);
+        assert_eq!(core.mode, AddrMode::Phy);
+        assert_eq!(core.get_loc(), 0b101011);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+
+        seek.run(&mut core, &["-".to_string()]);
+        assert_eq!(core.mode, AddrMode::Phy);
+        assert_eq!(core.get_loc(), 0x10);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        seek.run(&mut core, &["+".to_string()]);
+        assert_eq!(core.mode, AddrMode::Phy);
+        assert_eq!(core.get_loc(), 0b101011);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+
+        seek.run(&mut core, &["+".to_string()]);
+        assert_eq!(core.mode, AddrMode::Phy);
+        assert_eq!(core.get_loc(), 0b101011);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Seek Error\nHistory is empty.\n");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        for _ in 0..4 {
+            seek.run(&mut core, &["-".to_string()]);
+        }
+        assert_eq!(core.mode, AddrMode::Phy);
+        assert_eq!(core.get_loc(), 0b0);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        seek.run(&mut core, &["-".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Seek Error\nHistory is empty.\n");
     }
 }
