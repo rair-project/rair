@@ -1,0 +1,15 @@
+[package]
+name = "test_file"
+version = "0.1.0"
+authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
+license = "LGPL"
+repository = "https://github.com/oddcoder/rair"
+keywords = ["Temp File", "Unit testing", "Address Space"]
+description = "IO subsystem for RAIR"
+categories = ["Testing"]
+readme = "readme.md"
+
+
+
+[dependencies]
+tempfile = "3.1.0"

@@ -318,7 +318,7 @@ mod rio_tests {
     use super::*;
     use std::io;
     use std::path::Path;
-    use test_aids::*;
+    use test_file::*;
     fn test_failing_open_cb(path: &[&Path]) {
         let mut io = RIO::new();
         let mut bad_path = "badformat://".to_owned();

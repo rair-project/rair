@@ -75,7 +75,7 @@ mod default_plugin_tests {
     use defaultplugin;
     use std::io;
     use std::path::Path;
-    use test_aids::*;
+    use test_file::*;
     fn test_desc_read_cb(path: &Path) {
         let mut plugin = defaultplugin::plugin();
         let mut desc = RIODesc::open(&mut *plugin, &path.to_string_lossy(), IoMode::READ).unwrap();
