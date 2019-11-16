@@ -58,7 +58,7 @@ impl Cmd for Mode {
             }
             _ => {
                 let msg = format!(
-                    "Expected {} or {}, but found {}",
+                    "Expected {} or {}, but found {}.",
                     Paint::default("vir").italic().bold(),
                     Paint::default("phy").italic().bold(),
                     Paint::default(&args[0]).italic().bold(),
@@ -82,6 +82,9 @@ mod test_mode {
     use super::*;
     use writer::Writer;
     use yansi::Paint;
+    use test_file::*;
+    use std::path::Path;
+    use rio::*;
 
     #[test]
     fn test_docs() {
@@ -103,6 +106,51 @@ mod test_mode {
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
 
+    fn test_mode_cb(path: &Path) {
+        let mut core = Core::new();
+        let len = DATA.len() as u64;
+        let mut mode: Mode = Default::default();
+        core.io.open(&path.to_string_lossy(), IoMode::READ).unwrap();
+        core.io.map(0x0, 0x5000, len).unwrap();
+        assert_eq!(core.get_loc(), 0x0);
+        mode.run(&mut core, &["vir".to_string()]);
+        assert_eq!(core.get_loc(), 0x5000);
+        assert_eq!(core.mode, AddrMode::Vir);
+        core.set_loc(0x5001);
+        mode.run(&mut core, &["phy".to_string()]);
+        assert_eq!(core.get_loc(), 1);
+        assert_eq!(core.mode, AddrMode::Phy);
+        core.set_loc(len + 10);
+        mode.run(&mut core, &["vir".to_string()]);
+        assert_eq!(core.get_loc(), len + 10);
+        assert_eq!(core.mode, AddrMode::Vir);
+        mode.run(&mut core, &["phy".to_string()]);
+        assert_eq!(core.get_loc(), len + 10);
+        assert_eq!(core.mode, AddrMode::Phy);
+        
+        
+    }
     #[test]
-    fn test_mode() {}
+    fn test_mode() {
+        operate_on_file(&test_mode_cb, DATA);
+    }
+
+    #[test]
+    fn test_mode_errors() {
+        Paint::disable();
+        let mut core = Core::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let mut mode: Mode = Default::default();
+        mode.run(&mut core, &[]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 1 argument(s), found 0.\n");
+
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        mode.run(&mut core, &["not_real_arg".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Invalid Mode\nExpected vir or phy, but found not_real_arg.\n");
+
+    }
 }
