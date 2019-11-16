@@ -29,33 +29,33 @@ impl Seek {
         Seek { history }
     }
     fn backward(&mut self, core: &mut Core) {
-        match self.history.borrow_mut().backward(core) {
-            Some((mode, addr)) => {
-                core.mode = mode;
-                core.set_loc(addr);
-            }
-            None => error_msg(core, "Seek Error", "History is empty."),
+        if let Some((mode, addr)) = self.history.borrow_mut().backward(core) {
+            core.mode = mode;
+            core.set_loc(addr);
+        } else {
+            error_msg(core, "Seek Error", "History is empty.");
         }
     }
     fn forward(&mut self, core: &mut Core) {
-        match self.history.borrow_mut().forward(core) {
-            Some((mode, addr)) => {
-                core.mode = mode;
-                core.set_loc(addr);
-            }
-            None => error_msg(core, "Seek Error", "History is empty."),
+        if let Some((mode, addr)) = self.history.borrow_mut().forward(core) {
+            core.mode = mode;
+            core.set_loc(addr);
+        } else {
+            error_msg(core, "Seek Error", "History is empty.");
         }
     }
     fn add_loc(&mut self, core: &mut Core, offset: u64) {
-        match core.get_loc().checked_add(offset) {
-            Some(loc) => self.set_loc(core, loc),
-            None => error_msg(core, "Seek Error", "Attempt to add with overflow."),
+        if let Some(loc) = core.get_loc().checked_add(offset) {
+            self.set_loc(core, loc);
+        } else {
+            error_msg(core, "Seek Error", "Attempt to add with overflow.");
         }
     }
     fn sub_loc(&mut self, core: &mut Core, offset: u64) {
-        match core.get_loc().checked_sub(offset) {
-            Some(loc) => self.set_loc(core, loc),
-            None => error_msg(core, "Seek Error", "Attempt to subtract with overflow."),
+        if let Some(loc) = core.get_loc().checked_sub(offset) {
+            self.set_loc(core, loc);
+        } else {
+            error_msg(core, "Seek Error", "Attempt to subtract with overflow.");
         }
     }
     #[inline]
