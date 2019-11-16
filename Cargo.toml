@@ -4,6 +4,7 @@ members = [
   "rcore",
   "rio",
   "rtrees",
+  "test_file",
 ]
 [package]
 name = "rair-core"

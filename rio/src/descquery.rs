@@ -170,7 +170,7 @@ mod desc_query_tests {
     use super::*;
     use defaultplugin::plugin;
     use std::path::Path;
-    use test_aids::*;
+    use test_file::*;
     fn test_open_close_cb(path: &[&Path]) {
         let mut p = plugin();
         let mut descs = RIODescQuery::new();

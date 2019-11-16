@@ -1,5 +1,5 @@
 /*
- * test_aids.rs: helping function for unit testing.
+ * file_test.rs: Library for aiding unit testing Rair IO.
  * Copyright (C) 2019  Oddcoder
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -14,6 +14,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+extern crate tempfile;
+
 use std::io::Write;
 use std::path::Path;
 use tempfile::NamedTempFile;
@@ -25,9 +28,10 @@ pub const DATA: &[u8] = &[
     0x80, 0x41, 0xc1, 0x02, 0xc3, 0xc5, 0x88, 0x4d, 0xd5,
 ];
 
+
 pub fn operate_on_file(test_function: &dyn Fn(&Path), data: &[u8]) {
     let mut file = NamedTempFile::new().unwrap();
-    file.write(data).unwrap();
+    file.write_all(data).unwrap();
     test_function(file.path());
 }
 
@@ -37,24 +41,10 @@ pub fn operate_on_files(test_function: &dyn Fn(&[&Path]), files_data: &[&[u8]]) 
     // This suck! the 2 loops thing, but rust compiler didn't let me do otherwise.
     for i in 0..files_data.len() {
         files.push(NamedTempFile::new().unwrap());
-        files[i].write(files_data[i]).unwrap();
+        files[i].write_all(files_data[i]).unwrap();
     }
     for file in &files {
         paths.push(file.path());
     }
     test_function(&paths);
 }
-
-/*pub fn operate_on_files(test_function: &dyn Fn(&[&Path]), files_data: &[&[u8]]) {
-    let mut files: Vec<NamedTempFile> = Vec::with_capacity(files_data.len());
-    let mut paths: Vec<&Path> = Vec::with_capacity(files_data.len());
-    for data in files_data {
-        let mut file = NamedTempFile::new().unwrap();
-        file.write(data).unwrap();
-
-        paths.push(file.path());
-        files.push(file);
-    }
-    test_function(&paths);
-}
-*/

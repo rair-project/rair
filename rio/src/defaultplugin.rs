@@ -125,7 +125,7 @@ pub fn plugin() -> Box<dyn RIOPlugin> {
 #[cfg(test)]
 mod default_plugin_tests {
     use super::*;
-    use test_aids::*;
+    use test_file::*;
     #[test]
     fn test_plugin() {
         let plugin = plugin();

@@ -16,5 +16,6 @@ rtrees = {path = "../rtrees"}
 bitflags = "1.2.0"
 memmap = "0.7.0"
 either_n = "0.2.0"
+
 [dev-dependencies]
-tempfile = "3.1.0"
+test_file = {path = "../test_file"}
