@@ -103,7 +103,7 @@ impl RIOMapQuery {
         if maps.is_empty() {
             return None;
         }
-        let mut ranged_hndl = Vec::with_capacity(maps.len());
+        let mut ranges = Vec::with_capacity(maps.len());
         let mut start = vaddr;
         let mut remaining = size;
         for map in maps {
@@ -116,14 +116,21 @@ impl RIOMapQuery {
                 vaddr: start,
                 size: delta,
             };
-            ranged_hndl.push(frag);
+            ranges.push(frag);
             start += delta;
             remaining -= delta;
         }
         if remaining != 0 {
             return None;
         }
-        return Some(ranged_hndl);
+        return Some(ranges);
+    }
+    pub fn rev_query(&self, paddr: u64) -> Vec<u64> {
+        let maps: Vec<Rc<RIOMap>> = self.rev_maps.at(paddr).iter().map(|&x| x.clone()).collect();
+        if maps.is_empty() {
+            return Vec::new();
+        }
+        return maps.iter().map(|map| paddr - map.paddr + map.vaddr).collect();
     }
     pub fn split_vaddr_sparce_range(&self, vaddr: u64, size: u64) -> Vec<RIOMap> {
         let maps: Vec<Rc<RIOMap>> = self.maps.overlap(vaddr, vaddr + size - 1).iter().map(|&x| x.clone()).collect();
@@ -317,5 +324,21 @@ mod maps_query_test {
                 }
             ]
         );
+    }
+    #[test]
+    fn test_rev_query() {
+        let mut map_query = RIOMapQuery::new();
+        map_query.map(0, 0x4000, 0x90).unwrap();
+        map_query.map(0x100, 0x5000, 0x90).unwrap();
+        map_query.map(0x200, 0x2000, 0x90).unwrap();
+        map_query.map(0x300, 0x3000, 0x90).unwrap();
+        map_query.map(0, 0x6000, 0x90).unwrap();
+        map_query.map(0, 0x7000, 0x90).unwrap();
+        map_query.map(0, 0x8000, 0x90).unwrap();
+        map_query.map(0, 0x9000, 0x90).unwrap();
+        map_query.map(0, 0x10000, 0x90).unwrap();
+        assert_eq!(map_query.rev_query(0x45), vec![0x4045, 0x6045, 0x7045, 0x8045, 0x9045, 0x10045]);
+        assert_eq!(map_query.rev_query(0x145), vec![0x5045]);
+        assert_eq!(map_query.rev_query(700), vec![]);
     }
 }

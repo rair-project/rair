@@ -294,6 +294,12 @@ impl RIO {
     pub fn vir_to_phy(&self, vaddr: u64, size: u64) -> Option<Vec<RIOMap>> {
         self.maps.split_vaddr_range(vaddr, size)
     }
+    /// This funciton reverse-queries individual physical addresses. It convert
+    /// physical address to virtual address. The return value is a vector of
+    /// virtual addresses, all of which would map to the provided physical address
+    pub fn phy_to_vir(&self, phy: u64) -> Vec<u64> {
+        self.maps.rev_query(phy)
+    }
 
     /// Iterate over open URIs
     pub fn uri_iter<'a>(&'a self) -> Box<dyn Iterator<Item = &'a RIODesc> + 'a> {
@@ -649,5 +655,29 @@ mod rio_tests {
     #[test]
     fn test_vread_sparce() {
         operate_on_files(&vread_sparce_cb, &[DATA, DATA, DATA]);
+    }
+
+    fn phy_to_vir_cb(paths: &[&Path]) {
+        let mut io = RIO::new();
+        let len = DATA.len() as u64;
+        io.open_at(&paths[0].to_string_lossy(), IoMode::READ, 0x0).unwrap();
+        io.open_at(&paths[1].to_string_lossy(), IoMode::READ, 0x200).unwrap();
+        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, 0x400).unwrap();
+        io.map(0, 0x4000, len).unwrap();
+        io.map(0x200, 0x5000, len).unwrap();
+        io.map(0x400, 0x2000, len).unwrap();
+        io.map(0, 0x6000, len).unwrap();
+        io.map(0, 0x7000, len).unwrap();
+        io.map(0, 0x8000, len).unwrap();
+        io.map(0, 0x9000, len).unwrap();
+        io.map(0, 0x10000, len).unwrap();
+        assert_eq!(io.phy_to_vir(0x45), vec![0x4045, 0x6045, 0x7045, 0x8045, 0x9045, 0x10045]);
+        assert_eq!(io.phy_to_vir(0x245), vec![0x5045]);
+        assert_eq!(io.phy_to_vir(700), vec![]);
+    }
+    #[test]
+
+    fn test_phy_to_vir() {
+        operate_on_files(&phy_to_vir_cb, &[DATA, DATA, DATA]);
     }
 }
