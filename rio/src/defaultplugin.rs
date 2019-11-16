@@ -42,18 +42,15 @@ impl RIOPluginOperations for FileInternals {
     }
 
     fn write(&mut self, raddr: usize, buf: &[u8]) -> Result<(), IoError> {
-        match self.map.as_mut().one() {
-            Some(mutmap) => {
-                if raddr + buf.len() > mutmap.len() {
-                    return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
-                }
-                mutmap[raddr..raddr + buf.len()].copy_from_slice(buf);
+        if let Some(mutmap) = self.map.as_mut().one() {
+            if raddr + buf.len() > mutmap.len() {
+                return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
             }
-            None => {
-                return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "File Not Writable")));
-            }
+            mutmap[raddr..raddr + buf.len()].copy_from_slice(buf);
+            return Ok(());
+        } else {
+            return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "File Not Writable")));
         }
-        return Ok(());
     }
 }
 
