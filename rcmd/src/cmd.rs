@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use error::ParserError;
+use error::*;
 use grammar::*;
 use pest::iterators::Pair;
 
@@ -52,10 +52,7 @@ impl RedPipe {
                 let arg = Argument::parse_argument(pairs.next().unwrap());
                 return RedPipe::RedirectCat(Box::new(arg));
             }
-            _ => {
-                println!("{:#?}", type_identifier);
-                unimplemented!();
-            }
+            _ => unimplemented_pair(type_identifier),
         };
     }
 }
@@ -104,10 +101,7 @@ fn pair_to_num(root: Pair<Rule>) -> Result<u64, ParserError> {
         Rule::HEX => u64::from_str_radix(&root.as_str()[2..], 16),
         Rule::OCT => u64::from_str_radix(&root.as_str()[1..], 8),
         Rule::DEC => u64::from_str_radix(root.as_str(), 10),
-        _ => {
-            println!("{:#?}", root);
-            unimplemented!();
-        }
+        _ => unimplemented_pair(root),
     };
     match result {
         Ok(x) => return Ok(x),
@@ -124,10 +118,7 @@ impl Cmd {
                 Rule::Loc => cmd.loc = Some(pair_to_num(pair.into_inner().next().unwrap())?),
                 Rule::Arguments => cmd.args = Argument::parse_arguments(pair),
                 Rule::RedPipe => cmd.red_pipe = Box::new(RedPipe::parse_pipe(pair)),
-                _ => {
-                    println!("{:#?}", pair);
-                    unimplemented!();
-                }
+                _ => unimplemented_pair(pair),
             }
         }
         return Ok(cmd);

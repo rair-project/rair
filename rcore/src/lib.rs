@@ -25,7 +25,8 @@ extern crate rustyline;
 extern crate rustyline_derive;
 extern crate yansi;
 
-#[cfg(test)] extern crate test_file;
+#[cfg(test)]
+extern crate test_file;
 mod commands;
 mod core;
 mod helper;

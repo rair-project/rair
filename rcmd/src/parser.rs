@@ -15,11 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use cmd::Cmd;
-use error::ParserError;
+use error::*;
 use grammar::*;
 use help::HelpCmd;
 use pest::Parser;
-
 #[derive(Debug, PartialEq)]
 pub enum ParseTree {
     Help(HelpCmd),
@@ -40,10 +39,7 @@ impl ParseTree {
             Rule::Comment => return Ok(ParseTree::Comment),
             Rule::EmptyLine => return Ok(ParseTree::NewLine),
             Rule::CommandLine => return Ok(ParseTree::Cmd(Cmd::parse_cmd(pair)?)),
-            _ => {
-                println!("{:#?}", pair);
-                unimplemented!();
-            }
+            _ => unimplemented_pair(pair),
         }
     }
 }
