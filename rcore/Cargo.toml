@@ -20,3 +20,7 @@ yansi = "0.5.0"
 rio = {path = "../rio"}
 rtrees = {path = "../rtrees"}
 rcmd = {path = "../rcmd"}
+
+[dev-dependencies]
+
+test_file = {path = "../test_file"}
