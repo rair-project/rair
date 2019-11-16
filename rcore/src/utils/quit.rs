@@ -35,3 +35,21 @@ impl Cmd for Quit {
         help(core, &"quit", &"q", vec![("", "Quit Current session.")]);
     }
 }
+
+#[cfg(test)]
+mod test_quit {
+    use super::*;
+    use writer::Writer;
+    use yansi::Paint;
+    #[test]
+    fn test_quit_docs() {
+        Paint::disable();
+        let mut core = Core::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let quit = Quit::new();
+        quit.help(&mut core);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "Commands: [quit | q]\n\nUsage:\nq\tQuit Current session.\n");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+    }
+}

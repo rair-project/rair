@@ -75,7 +75,11 @@ pub fn help(core: &mut Core, long: &str, short: &str, usage: Vec<(&str, &str)>) 
     };
     writeln!(core.stdout, "Usage:").unwrap();
     for (args, description) in usage {
-        writeln!(core.stdout, "{} {}\t{}", Paint::rgb(r1, g1, b1, used), Paint::rgb(r2, g2, b2, args), description,).unwrap()
+        write!(core.stdout, "{}", Paint::rgb(r1, g1, b1, used)).unwrap();
+        if !args.is_empty() {
+            write!(core.stdout, " {}", Paint::rgb(r2, g2, b2, args)).unwrap();
+        }
+        writeln!(core.stdout, "\t{}", description,).unwrap()
     }
 }
 
