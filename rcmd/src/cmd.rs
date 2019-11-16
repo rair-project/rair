@@ -17,7 +17,7 @@
 
 use error::*;
 use grammar::*;
-use pest::iterators::Pair;
+use pest::iterators::{Pair, Pairs};
 
 #[derive(Debug, PartialEq)]
 pub enum RedPipe {
@@ -33,25 +33,28 @@ impl Default for RedPipe {
     }
 }
 impl RedPipe {
-    fn parse_pipe(root: Pair<Rule>) -> Self {
+    fn parse_pipe(pairs: Pairs<Rule>) -> Self {
+        let mut ret = Vec::new();
+        for pair in pairs {
+            ret.push(Argument::parse_argument(pair))
+        }
+        return RedPipe::Pipe(ret);
+    }
+    fn parse_red(mut pairs: Pairs<Rule>) -> Self {
+        let arg = Argument::parse_argument(pairs.next().unwrap());
+        return RedPipe::Redirect(Box::new(arg));
+    }
+    fn parse_redcat(mut pairs: Pairs<Rule>) -> Self {
+        let arg = Argument::parse_argument(pairs.next().unwrap());
+        return RedPipe::RedirectCat(Box::new(arg));
+    }
+    fn parse_redpipe(root: Pair<Rule>) -> Self {
         let mut pairs = root.into_inner();
         let type_identifier = pairs.next().unwrap();
         match type_identifier.as_rule() {
-            Rule::Pipe => {
-                let mut ret = Vec::new();
-                for pair in pairs {
-                    ret.push(Argument::parse_argument(pair));
-                }
-                return RedPipe::Pipe(ret);
-            }
-            Rule::Red => {
-                let arg = Argument::parse_argument(pairs.next().unwrap());
-                return RedPipe::Redirect(Box::new(arg));
-            }
-            Rule::RedCat => {
-                let arg = Argument::parse_argument(pairs.next().unwrap());
-                return RedPipe::RedirectCat(Box::new(arg));
-            }
+            Rule::Pipe => return RedPipe::parse_pipe(pairs),
+            Rule::Red => return RedPipe::parse_red(pairs),
+            Rule::RedCat => return RedPipe::parse_redcat(pairs),
             _ => unimplemented_pair(type_identifier),
         };
     }
@@ -117,7 +120,7 @@ impl Cmd {
                 Rule::Command => cmd.command = pair.as_str().to_owned(),
                 Rule::Loc => cmd.loc = Some(pair_to_num(pair.into_inner().next().unwrap())?),
                 Rule::Arguments => cmd.args = Argument::parse_arguments(pair),
-                Rule::RedPipe => cmd.red_pipe = Box::new(RedPipe::parse_pipe(pair)),
+                Rule::RedPipe => cmd.red_pipe = Box::new(RedPipe::parse_redpipe(pair)),
                 _ => unimplemented_pair(pair),
             }
         }
