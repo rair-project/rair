@@ -66,9 +66,10 @@ where
 
     fn next(&mut self) -> Option<(K, &'a V)> {
         let result;
-        match self.current.take() {
-            None => return None,
-            Some(node) => result = Some((node.key(), node.data_ref())),
+        if let Some(node) = self.current.take() {
+            result = Some((node.key(), node.data_ref()));
+        } else {
+            return None;
         }
         if let Some(node) = self.right.pop() {
             match node {

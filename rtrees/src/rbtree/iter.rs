@@ -57,9 +57,10 @@ where
 
     fn next(&mut self) -> Option<(K, V)> {
         let result;
-        match self.current.take() {
-            None => return None,
-            Some(node) => result = Some((node.key(), node.data())),
+        if let Some(node) = self.current.take() {
+            result = Some((node.key(), node.data()));
+        } else {
+            return None;
         }
         if let Some(node) = self.right.pop() {
             self.add_subtree(node);

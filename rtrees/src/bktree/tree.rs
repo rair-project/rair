@@ -44,12 +44,11 @@ where
     }
     fn insert(&mut self, key: K, value: V) {
         let distance = self.key.distance(&key);
-        match self.children.get_mut(&distance) {
-            Some(child) => child.insert(key, value),
-            None => {
-                self.children.insert(distance, BKTreeNode::new(key, value));
-            }
-        };
+        if let Some(child) = self.children.get_mut(&distance) {
+            child.insert(key, value);
+        } else {
+            self.children.insert(distance, BKTreeNode::new(key, value));
+        }
     }
 
     fn find(&self, key: &K, tolerance: u64) -> (Vec<&V>, Vec<&K>) {
@@ -89,9 +88,10 @@ where
 
     /// Inserts a new (*key*, *value*) pair into the KB-Tree
     pub fn insert(&mut self, key: K, value: V) {
-        match &mut self.root {
-            Some(root) => root.insert(key, value),
-            None => self.root = Some(BKTreeNode::new(key, value)),
+        if let Some(root) = &mut self.root {
+            root.insert(key, value);
+        } else {
+            self.root = Some(BKTreeNode::new(key, value));
         }
     }
 
@@ -102,10 +102,7 @@ where
     /// Two keys *key1* and *key2* are said to be approximate match IFF
     /// `key1.distance(key2) <= tolerance`.
     pub fn find(&self, key: &K, tolerance: u64) -> (Vec<&V>, Vec<&K>) {
-        return match &self.root {
-            Some(root) => root.find(&key, tolerance),
-            None => (Vec::new(), Vec::new()),
-        };
+        return if let Some(root) = &self.root { root.find(&key, tolerance) } else { (Vec::new(), Vec::new()) };
     }
 }
 
