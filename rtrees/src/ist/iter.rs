@@ -41,9 +41,10 @@ impl<K: Ord + Copy, V> Iterator for ISTIterator<K, V> {
         if let Some(data) = self.current_iter.next() {
             return Some(data);
         }
-        match self.tree_iter.next() {
-            Some((_, v)) => self.current_iter = v.into_iter(),
-            None => return None,
+        if let Some((_, v)) = self.tree_iter.next() {
+            self.current_iter = v.into_iter();
+        } else {
+            return None;
         }
         return self.current_iter.next();
     }

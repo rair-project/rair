@@ -233,10 +233,7 @@ where
     /// assert_eq!(rbtree.size(), 3);
     /// ```
     pub fn size(&self) -> u64 {
-        match &self.0 {
-            Some(node) => return node.size(),
-            None => return 0,
-        }
+        return if let Some(node) = &self.0 { node.size() } else { 0 };
     }
 
     /// 0 will be returned in case of empty tree. If tree has nodes, then *get_level*
@@ -256,10 +253,7 @@ where
     /// assert!(rbtree.get_level() >= 10 && rbtree.get_level() <= 20);
     /// ```
     pub fn get_level(&self) -> u64 {
-        match self.as_ref() {
-            Some(node) => return node.get_level(),
-            None => return 0,
-        }
+        return if let Some(node) = self.as_ref() { node.get_level() } else { 0 };
     }
 
     pub(crate) fn sync_aug(&mut self) {
@@ -360,12 +354,8 @@ where
             return;
         }
         match key.cmp(&self.key()) {
-            Ordering::Greater => {
-                self.right_mut().force_sync_aug(key);
-            }
-            Ordering::Less => {
-                self.left_mut().force_sync_aug(key);
-            }
+            Ordering::Greater => self.right_mut().force_sync_aug(key),
+            Ordering::Less => self.left_mut().force_sync_aug(key),
             _ => (),
         }
         self.sync_aug();

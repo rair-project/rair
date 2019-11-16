@@ -130,12 +130,11 @@ impl<K: Ord + Copy, V> IST<K, V> {
         assert!(lo <= hi);
         let interval = Interval::new(lo, hi);
         let aug_data = AugData::new(interval, 1);
-        match self.root.search_mut(interval) {
-            Some(data_vec) => {
-                data_vec.push(data);
-                self.root.force_sync_aug(interval);
-            }
-            None => self.root.insert(interval, aug_data, vec![data]),
+        if let Some(data_vec) = self.root.search_mut(interval) {
+            data_vec.push(data);
+            self.root.force_sync_aug(interval);
+        } else {
+            self.root.insert(interval, aug_data, vec![data]);
         }
     }
 
