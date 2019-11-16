@@ -41,7 +41,7 @@ impl Cmd for Mode {
                 self.history.borrow_mut().add(core);
                 if core.mode == AddrMode::Phy {
                     let vir = core.io.phy_to_vir(core.get_loc());
-                    if !vir.is_empty(){
+                    if !vir.is_empty() {
                         core.set_loc(vir[0]);
                     }
                 }
@@ -72,7 +72,37 @@ impl Cmd for Mode {
             core,
             &"mode",
             &"m",
-            vec![("vir", "Set view mode to virtual address space."), ("phy", "Set view mode to phyisical address space.")],
+            vec![("vir", "Set view mode to virtual address space."), ("phy", "Set view mode to physical address space.")],
         );
     }
+}
+
+#[cfg(test)]
+mod test_mode {
+    use super::*;
+    use writer::Writer;
+    use yansi::Paint;
+
+    #[test]
+    fn test_docs() {
+        Paint::disable();
+        let mut core = Core::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let mode: Mode = Default::default();
+        mode.help(&mut core);
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "Commands: [mode | m]\n\
+             \n\
+             Usage:\n\
+             m vir\tSet view mode to virtual address space.\n\
+             m phy\tSet view mode to physical address space.\n\
+             "
+        );
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+    }
+
+    #[test]
+    fn test_mode() {}
 }
