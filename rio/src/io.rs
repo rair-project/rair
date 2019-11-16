@@ -163,17 +163,16 @@ impl RIO {
     /// ```
     pub fn pread(&mut self, paddr: u64, buf: &mut [u8]) -> Result<(), IoError> {
         let result = self.descs.paddr_range_to_hndl(paddr, buf.len() as u64);
-        match result {
-            Some(operations) => {
-                let mut start = 0;
-                for (hndl, paddr, size) in operations {
-                    let desc = self.descs.hndl_to_mut_desc(hndl).unwrap();
-                    desc.read(paddr as usize, &mut buf[start as usize..(start + size) as usize])?;
-                    start += size;
-                }
-                return Ok(());
+        if let Some(operations) = result {
+            let mut start = 0;
+            for (hndl, paddr, size) in operations {
+                let desc = self.descs.hndl_to_mut_desc(hndl).unwrap();
+                desc.read(paddr as usize, &mut buf[start as usize..(start + size) as usize])?;
+                start += size;
             }
-            None => return Err(IoError::AddressNotFound),
+            return Ok(());
+        } else {
+            return Err(IoError::AddressNotFound);
         }
     }
     /// Read from the physical address space of current [RIO] object. Data is stored in a sparce
@@ -216,17 +215,16 @@ impl RIO {
     /// ```
     pub fn pwrite(&mut self, paddr: u64, buf: &[u8]) -> Result<(), IoError> {
         let result = self.descs.paddr_range_to_hndl(paddr, buf.len() as u64);
-        match result {
-            Some(operations) => {
-                let mut start = 0;
-                for (hndl, paddr, size) in operations {
-                    let desc = self.descs.hndl_to_mut_desc(hndl).unwrap();
-                    desc.write(paddr as usize, &buf[start as usize..(start + size) as usize])?;
-                    start += size;
-                }
-                return Ok(());
+        if let Some(operations) = result {
+            let mut start = 0;
+            for (hndl, paddr, size) in operations {
+                let desc = self.descs.hndl_to_mut_desc(hndl).unwrap();
+                desc.write(paddr as usize, &buf[start as usize..(start + size) as usize])?;
+                start += size;
             }
-            None => return Err(IoError::AddressNotFound),
+            return Ok(());
+        } else {
+            return Err(IoError::AddressNotFound);
         }
     }
     ///  Map memory regions from physical address space to virtual address space
@@ -246,16 +244,15 @@ impl RIO {
     /// data to fill *buf* an error is returned.
     pub fn vread(&mut self, vaddr: u64, buf: &mut [u8]) -> Result<(), IoError> {
         let result = self.maps.split_vaddr_range(vaddr, buf.len() as u64);
-        match result {
-            Some(maps) => {
-                let mut start = 0;
-                for map in maps {
-                    self.pread(map.paddr, &mut buf[start as usize..(start + map.size) as usize])?;
-                    start += map.size;
-                }
-                return Ok(());
+        if let Some(maps) = result {
+            let mut start = 0;
+            for map in maps {
+                self.pread(map.paddr, &mut buf[start as usize..(start + map.size) as usize])?;
+                start += map.size;
             }
-            None => return Err(IoError::AddressNotFound),
+            return Ok(());
+        } else {
+            return Err(IoError::AddressNotFound);
         }
     }
     /// read memory from virtual address space. Data is stored in a sparce
@@ -276,17 +273,15 @@ impl RIO {
     /// write memory into virtual address space
     pub fn vwrite(&mut self, vaddr: u64, buf: &[u8]) -> Result<(), IoError> {
         let result = self.maps.split_vaddr_range(vaddr, buf.len() as u64);
-        match result {
-            Some(maps) => {
-                let mut start = 0;
-                for map in maps {
-                    self.pwrite(map.paddr, &buf[start as usize..(start + map.size) as usize])?;
-                    start += map.size;
-                }
-
-                return Ok(());
+        if let Some(maps) = result {
+            let mut start = 0;
+            for map in maps {
+                self.pwrite(map.paddr, &buf[start as usize..(start + map.size) as usize])?;
+                start += map.size;
             }
-            None => return Err(IoError::AddressNotFound),
+            return Ok(());
+        } else {
+            return Err(IoError::AddressNotFound);
         }
     }
 
