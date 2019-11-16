@@ -40,47 +40,36 @@ impl PartialEq for IoError {
         match self {
             IoError::AddressNotFound => {
                 if let IoError::AddressNotFound = rhs {
-                    true
-                } else {
-                    false
+                    return true;
                 }
             }
             IoError::AddressesOverlapError => {
                 if let IoError::AddressesOverlapError = rhs {
-                    true
-                } else {
-                    false
+                    return true;
                 }
             }
             IoError::IoPluginNotFoundError => {
                 if let IoError::IoPluginNotFoundError = rhs {
-                    true
-                } else {
-                    false
+                    return true;
                 }
             }
             IoError::TooManyFilesError => {
                 if let IoError::TooManyFilesError = rhs {
-                    true
-                } else {
-                    false
+                    return true;
                 }
             }
             IoError::HndlNotFoundError => {
                 if let IoError::HndlNotFoundError = rhs {
-                    true
-                } else {
-                    false
+                    return true;
                 }
             }
             IoError::Parse(_) => {
                 if let IoError::Parse(_) = rhs {
-                    true
-                } else {
-                    false
+                    return true;
                 }
             }
         }
+        return false;
     }
 }
 impl fmt::Display for IoError {
