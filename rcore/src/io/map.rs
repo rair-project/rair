@@ -154,6 +154,51 @@ impl Cmd for ListMap {
         }
     }
     fn help(&self, core: &mut Core) {
-        help(core, &"maps", &"", vec![("", "List all memory maps")]);
+        help(core, &"maps", &"", vec![("", "List all memory maps.")]);
+    }
+}
+#[cfg(test)]
+mod test_mapping {
+    use super::*;
+    use writer::Writer;
+    use yansi::Paint;
+    #[test]
+    fn test_map_docs() {
+        Paint::disable();
+        let mut core = Core::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let map = Map::new();
+        map.help(&mut core);
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "Command: [map]\n\nUsage:\nmap [phy] [vir] [size]\tMap region from physical address space to virtual address space.\n"
+        );
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+    }
+    #[test]
+    fn test_unmap_docs() {
+        Paint::disable();
+        let mut core = Core::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let unmap = UnMap::new();
+        unmap.help(&mut core);
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "Commands: [unmap | um]\n\nUsage:\num [vir] [size]\tUnmap a previosly mapped memory region.\n"
+        );
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+    }
+    #[test]
+    fn test_list_map_docs() {
+        Paint::disable();
+        let mut core = Core::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let maps = ListMap::new();
+        maps.help(&mut core);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "Command: [maps]\n\nUsage:\nmaps\tList all memory maps.\n");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
 }
