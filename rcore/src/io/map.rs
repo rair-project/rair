@@ -136,7 +136,7 @@ impl Cmd for ListMap {
         let (r, g, b) = core.color_palette[5];
         writeln!(
             core.stdout,
-            "{: <20}{: <20}{: <5}",
+            "{: <20}{: <20}{}",
             Paint::rgb(r, g, b, "Virtual Address"),
             Paint::rgb(r, g, b, "Physical Address"),
             Paint::rgb(r, g, b, "Size")
@@ -145,7 +145,7 @@ impl Cmd for ListMap {
         for map in core.io.map_iter() {
             writeln!(
                 core.stdout,
-                "{: <20}{: <20}{: <5}",
+                "{: <20}{: <20}{}",
                 format!("0x{:x}", map.vaddr),
                 format!("0x{:x}", map.paddr),
                 format!("0x{:x}", map.size)
@@ -160,6 +160,9 @@ impl Cmd for ListMap {
 #[cfg(test)]
 mod test_mapping {
     use super::*;
+    use rio::*;
+    use std::path::Path;
+    use test_file::*;
     use writer::Writer;
     use yansi::Paint;
     #[test]
@@ -200,5 +203,48 @@ mod test_mapping {
         maps.help(&mut core);
         assert_eq!(core.stdout.utf8_string().unwrap(), "Command: [maps]\n\nUsage:\nmaps\tList all memory maps.\n");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
+    }
+    fn test_map_cb(path: &Path) {
+        Paint::disable();
+        let mut core = Core::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let mut map = Map::new();
+        let mut unmap = UnMap::new();
+        let mut maps = ListMap::new();
+        core.io.open(&path.to_string_lossy(), IoMode::READ).unwrap();
+        map.run(&mut core, &["0x0".to_string(), "0x500".to_string(), "0x20".to_string()]);
+        map.run(&mut core, &["0x10".to_string(), "0x520".to_string(), "0x20".to_string()]);
+        map.run(&mut core, &["0x20".to_string(), "0x540".to_string(), "0x20".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        maps.run(&mut core, &[]);
+        assert_eq!(core.stdout.utf8_string().unwrap(),
+        "Virtual Address     Physical Address    Size\n\
+        0x500               0x0                 0x20\n\
+        0x520               0x10                0x20\n\
+        0x540               0x20                0x20\n");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        unmap.run(&mut core, &["0x520".to_string(), "0x20".to_string()]);
+        unmap.run(&mut core, &["0x510".to_string(), "0x5".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        maps.run(&mut core, &[]);
+        assert_eq!(core.stdout.utf8_string().unwrap(),
+        "Virtual Address     Physical Address    Size\n\
+        0x500               0x0                 0x10\n\
+        0x515               0x15                0xb\n\
+        0x540               0x20                0x20\n");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+    }
+    #[test]
+    fn test_map() {
+        operate_on_file(&test_map_cb, DATA);
     }
 }
