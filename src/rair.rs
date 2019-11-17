@@ -1,9 +1,23 @@
 #![warn(clippy::cargo)]
 #![allow(clippy::multiple_crate_versions)]
 #![allow(clippy::needless_return)]
-
-#[macro_use]
-extern crate clap;
+/*
+ * rair.rs: rair CLI.
+ * Copyright (C) 2019  Oddcoder
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+#[macro_use] extern crate clap;
 extern crate app_dirs;
 extern crate rcmd;
 extern crate rcore;
@@ -74,15 +88,9 @@ fn repl_inners(core: &mut Core) {
                 writeln!(core.stderr, "{}", t.err().unwrap().to_string()).unwrap();
             }
         }
-        Err(ReadlineError::Interrupted) => {
-            writeln!(core.stdout, "CTRL-C").unwrap();
-        }
-        Err(ReadlineError::Eof) => {
-            std::process::exit(0);
-        }
-        Err(err) => {
-            writeln!(core.stdout, "Error: {:?}", err).unwrap();
-        }
+        Err(ReadlineError::Interrupted) => writeln!(core.stdout, "CTRL-C").unwrap(),
+        Err(ReadlineError::Eof) => std::process::exit(0),
+        Err(err) =>  writeln!(core.stdout, "Error: {:?}", err).unwrap(),
     }
     core.rl.save_history(&core.hist_file()).unwrap();
 }
@@ -102,10 +110,7 @@ fn run_cmd(core: &mut Core, cmd: Cmd) {
     for arg in cmd.args {
         match eval_arg(core, arg) {
             Ok(arg) => args.push(arg),
-            Err(e) => {
-                writeln!(core.stderr, "{}", e).unwrap();
-                return;
-            }
+            Err(e) => return writeln!(core.stderr, "{}", e).unwrap(),
         }
     }
     // process redirections or pipes
@@ -114,27 +119,18 @@ fn run_cmd(core: &mut Core, cmd: Cmd) {
     match *cmd.red_pipe {
         RedPipe::Redirect(arg) => match create_redirect(core, *arg) {
             Ok(out) => stdout = Some(mem::replace(&mut core.stdout, out)),
-            Err(e) => {
-                writeln!(core.stderr, "{}", e).unwrap();
-                return;
-            }
+            Err(e) => return writeln!(core.stderr, "{}", e).unwrap(),
         },
         RedPipe::RedirectCat(arg) => match create_redirect_cat(core, *arg) {
             Ok(out) => stdout = Some(mem::replace(&mut core.stdout, out)),
-            Err(e) => {
-                writeln!(core.stderr, "{}", e).unwrap();
-                return;
-            }
+            Err(e) => return writeln!(core.stderr, "{}", e).unwrap(),
         },
         RedPipe::Pipe(arg) => match create_pipe(core, arg) {
             Ok((process, writer)) => {
                 child = Some(process);
                 stdout = Some(mem::replace(&mut core.stdout, writer));
             }
-            Err(e) => {
-                writeln!(core.stderr, "{}", e).unwrap();
-                return;
-            }
+            Err(e) => return writeln!(core.stderr, "{}", e).unwrap(),
         },
         RedPipe::None => (),
     }
