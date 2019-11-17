@@ -59,6 +59,9 @@ impl Cmd for Map {
             Ok(s) => s,
             Err(e) => return map_error(core, "size", &e.to_string()),
         };
+        if size == 0 {
+            return;
+        }
         if let Err(e) = core.io.map(phy, vir, size) {
             error_msg(core, "Failed to map memory", &e.to_string());
         }
@@ -92,6 +95,9 @@ impl Cmd for UnMap {
             Ok(s) => s,
             Err(e) => return unmap_error(core, "size", &e.to_string()),
         };
+        if size == 0 {
+            return;
+        }
         if let Err(e) = core.io.unmap(vir, size) {
             error_msg(core, "Failed to unmap memory", &e.to_string());
         }
@@ -192,6 +198,7 @@ mod test_mapping {
         map.run(&mut core, &["0x0".to_string(), "0x500".to_string(), "0x20".to_string()]);
         map.run(&mut core, &["0x10".to_string(), "0x520".to_string(), "0x20".to_string()]);
         map.run(&mut core, &["0x20".to_string(), "0x540".to_string(), "0x20".to_string()]);
+        map.run(&mut core, &["0x20".to_string(), "0x540".to_string(), "0".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
@@ -209,6 +216,7 @@ mod test_mapping {
         core.stdout = Writer::new_buf();
         unmap.run(&mut core, &["0x520".to_string(), "0x20".to_string()]);
         unmap.run(&mut core, &["0x510".to_string(), "0x5".to_string()]);
+        unmap.run(&mut core, &["0x510".to_string(), "0".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
