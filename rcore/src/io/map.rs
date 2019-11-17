@@ -23,10 +23,16 @@ use yansi::Paint;
 #[derive(Default)]
 pub struct Map {}
 
-fn helper_error(core: &mut Core, name: &str, err: &str) {
+fn map_error(core: &mut Core, name: &str, err: &str) {
     let name = Paint::default(name).bold();
-    let msg = format!("Failed to parse {}, {}", name, err);
+    let msg = format!("Failed to parse {}, {}.", name, err);
     error_msg(core, "Failed to map memory", &msg);
+    return;
+}
+fn unmap_error(core: &mut Core, name: &str, err: &str) {
+    let name = Paint::default(name).bold();
+    let msg = format!("Failed to parse {}, {}.", name, err);
+    error_msg(core, "Failed to unmap memory", &msg);
     return;
 }
 impl Map {
@@ -41,21 +47,18 @@ impl Cmd for Map {
             expect(core, args.len() as u64, 3);
             return;
         }
-        let phy;
-        let vir;
-        let size;
-        match str_to_num(&args[0]) {
-            Ok(p) => phy = p,
-            Err(e) => return helper_error(core, "phy", &e.to_string()),
-        }
-        match str_to_num(&args[1]) {
-            Ok(v) => vir = v,
-            Err(e) => return helper_error(core, "vir", &e.to_string()),
-        }
-        match str_to_num(&args[2]) {
-            Ok(s) => size = s,
-            Err(e) => return helper_error(core, "size", &e.to_string()),
-        }
+        let phy = match str_to_num(&args[0]) {
+            Ok(p) => p,
+            Err(e) => return map_error(core, "phy", &e.to_string()),
+        };
+        let vir = match str_to_num(&args[1]) {
+            Ok(v) => v,
+            Err(e) => return map_error(core, "vir", &e.to_string()),
+        };
+        let size = match str_to_num(&args[2]) {
+            Ok(s) => s,
+            Err(e) => return map_error(core, "size", &e.to_string()),
+        };
         if let Err(e) = core.io.map(phy, vir, size) {
             error_msg(core, "Failed to map memory", &e.to_string());
         }
@@ -80,16 +83,15 @@ impl Cmd for UnMap {
             expect(core, args.len() as u64, 2);
             return;
         }
-        let vir;
-        let size;
-        match str_to_num(&args[0]) {
-            Ok(v) => vir = v,
-            Err(e) => return helper_error(core, "vir", &e.to_string()),
-        }
-        match str_to_num(&args[1]) {
-            Ok(s) => size = s,
-            Err(e) => return helper_error(core, "size", &e.to_string()),
-        }
+        let vir = match str_to_num(&args[0]) {
+            Ok(v) => v,
+            Err(e) => return unmap_error(core, "vir", &e.to_string()),
+        };
+
+        let size = match str_to_num(&args[1]) {
+            Ok(s) => s,
+            Err(e) => return unmap_error(core, "size", &e.to_string()),
+        };
         if let Err(e) = core.io.unmap(vir, size) {
             error_msg(core, "Failed to unmap memory", &e.to_string());
         }
@@ -224,5 +226,72 @@ mod test_mapping {
     #[test]
     fn test_map() {
         operate_on_file(&test_map_cb, DATA);
+    }
+    #[test]
+    fn test_map_error() {
+        Paint::disable();
+        let mut core = Core::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let mut map = Map::new();
+        let mut unmap = UnMap::new();
+        let mut maps = ListMap::new();
+        map.run(&mut core, &[]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 3 argument(s), found 0.\n");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        map.run(&mut core, &["08".to_string(), "0x500".to_string(), "0x20".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to map memory\nFailed to parse phy, invalid digit found in string.\n");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        map.run(&mut core, &["0x0".to_string(), "0b500".to_string(), "0x20".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to map memory\nFailed to parse vir, invalid digit found in string.\n");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        map.run(&mut core, &["0x0".to_string(), "0x500".to_string(), "ff".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to map memory\nFailed to parse size, invalid digit found in string.\n"
+        );
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        map.run(&mut core, &["0x0".to_string(), "0x500".to_string(), "0x20".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to map memory\nCannot resolve address.\n");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        maps.run(&mut core, &["0xff".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 0 argument(s), found 1.\n");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        unmap.run(&mut core, &["0xff".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 2 argument(s), found 1.\n");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        unmap.run(&mut core, &["0b500".to_string(), "0x20".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to unmap memory\nFailed to parse vir, invalid digit found in string.\n"
+        );
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        unmap.run(&mut core, &["0x500".to_string(), "ff".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to unmap memory\nFailed to parse size, invalid digit found in string.\n"
+        );
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        unmap.run(&mut core, &["0x500".to_string(), "0x20".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to unmap memory\nCannot resolve address.\n");
     }
 }
