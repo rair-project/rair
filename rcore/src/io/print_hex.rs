@@ -45,7 +45,7 @@ impl Cmd for PrintHex {
                 return error_msg(
                     core,
                     &e.to_string(),
-                    &format!("Expect Hex, binary, Octal or Decimal value but found {} instead", Paint::default(&args[0]).italic()),
+                    &format!("Expect Hex, binary, Octal or Decimal value but found {} instead.", Paint::default(&args[0]).italic()),
                 )
             }
         };
@@ -479,5 +479,23 @@ mod test_print_hex {
     #[test]
     fn test_px_vir() {
         operate_on_file(&test_px_vir_cb, DATA);
+    }
+
+    #[test]
+    fn test_px_err() {
+        Paint::disable();
+        let mut core = Core::new();
+        let mut px = PrintHex::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        px.run(&mut core, &[]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 1 argument(s), found 0.\n");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+
+        px.run(&mut core, &["0x".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: cannot parse integer from empty string\nExpect Hex, binary, Octal or Decimal value but found 0x instead.\n");
     }
 }
