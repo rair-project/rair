@@ -23,6 +23,12 @@ use yansi::Paint;
 #[derive(Default)]
 pub struct Map {}
 
+fn helper_error(core: &mut Core, name: &str, err: &str) {
+    let name = Paint::default(name).bold();
+    let msg = format!("Failed to parse {}, {}", name, err);
+    error_msg(core, "Failed to map memory", &msg);
+    return;
+}
 impl Map {
     pub fn new() -> Self {
         Default::default()
@@ -40,30 +46,15 @@ impl Cmd for Map {
         let size;
         match str_to_num(&args[0]) {
             Ok(p) => phy = p,
-            Err(e) => {
-                let name = Paint::default("phy").bold();
-                let msg = format!("Failed to parse {}, {}", name, &e.to_string());
-                error_msg(core, "Failed to map memory", &msg);
-                return;
-            }
+            Err(e) => return helper_error(core, "phy", &e.to_string()),
         }
         match str_to_num(&args[1]) {
             Ok(v) => vir = v,
-            Err(e) => {
-                let name = Paint::default("vir").bold();
-                let msg = format!("Failed to parse {}, {}", name, &e.to_string());
-                error_msg(core, "Failed to map memory", &msg);
-                return;
-            }
+            Err(e) => return helper_error(core, "vir", &e.to_string()),
         }
         match str_to_num(&args[2]) {
             Ok(s) => size = s,
-            Err(e) => {
-                let name = Paint::default("size").bold();
-                let msg = format!("Failed to parse {}, {}", name, &e.to_string());
-                error_msg(core, "Failed to map memory", &msg);
-                return;
-            }
+            Err(e) => return helper_error(core, "size", &e.to_string()),
         }
         if let Err(e) = core.io.map(phy, vir, size) {
             error_msg(core, "Failed to map memory", &e.to_string());
@@ -93,21 +84,11 @@ impl Cmd for UnMap {
         let size;
         match str_to_num(&args[0]) {
             Ok(v) => vir = v,
-            Err(e) => {
-                let name = Paint::default("phy").bold();
-                let msg = format!("Failed to parse {}, {}", name, &e.to_string());
-                error_msg(core, "Failed to unmap memory", &msg);
-                return;
-            }
+            Err(e) => return helper_error(core, "vir", &e.to_string()),
         }
         match str_to_num(&args[1]) {
             Ok(s) => size = s,
-            Err(e) => {
-                let name = Paint::default("vir").bold();
-                let msg = format!("Failed to parse {}, {}", name, &e.to_string());
-                error_msg(core, "Failed to unmap memory", &msg);
-                return;
-            }
+            Err(e) => return helper_error(core, "size", &e.to_string()),
         }
         if let Err(e) = core.io.unmap(vir, size) {
             error_msg(core, "Failed to unmap memory", &e.to_string());
@@ -143,14 +124,7 @@ impl Cmd for ListMap {
         )
         .unwrap();
         for map in core.io.map_iter() {
-            writeln!(
-                core.stdout,
-                "{: <20}{: <20}{}",
-                format!("0x{:x}", map.vaddr),
-                format!("0x{:x}", map.paddr),
-                format!("0x{:x}", map.size)
-            )
-            .unwrap();
+            writeln!(core.stdout, "{: <20}{: <20}{}", format!("0x{:x}", map.vaddr), format!("0x{:x}", map.paddr), format!("0x{:x}", map.size)).unwrap();
         }
     }
     fn help(&self, core: &mut Core) {
@@ -221,11 +195,13 @@ mod test_mapping {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         maps.run(&mut core, &[]);
-        assert_eq!(core.stdout.utf8_string().unwrap(),
-        "Virtual Address     Physical Address    Size\n\
-        0x500               0x0                 0x20\n\
-        0x520               0x10                0x20\n\
-        0x540               0x20                0x20\n");
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "Virtual Address     Physical Address    Size\n\
+             0x500               0x0                 0x20\n\
+             0x520               0x10                0x20\n\
+             0x540               0x20                0x20\n"
+        );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -236,11 +212,13 @@ mod test_mapping {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         maps.run(&mut core, &[]);
-        assert_eq!(core.stdout.utf8_string().unwrap(),
-        "Virtual Address     Physical Address    Size\n\
-        0x500               0x0                 0x10\n\
-        0x515               0x15                0xb\n\
-        0x540               0x20                0x20\n");
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "Virtual Address     Physical Address    Size\n\
+             0x500               0x0                 0x10\n\
+             0x515               0x15                0xb\n\
+             0x540               0x20                0x20\n"
+        );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
     #[test]
