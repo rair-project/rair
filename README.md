@@ -28,7 +28,7 @@ A) start rair completely from scratch.
 
 B) replacing parts from radare till it all becomes written in rust.
 
-Ufortunately that didn't work out as expected for many reasons. Idiomatic rust is slightly different from Idiomatic C, where in rust you need to respect a very strict ownership/lifetime model that is almost non existent in C. Also radare2 is moving target and keeping compatiability with such huge system is very hard task on its own.
+Ufortunately idiomatic rust is slightly different from idiomatic C. In rust you need to respect a very strict ownership/lifetime model that is almost non existent in C. Also radare2 is moving target and keeping compatiability with such huge system is very hard task on its own.
 ## Get started
 
 ``` bash
@@ -39,9 +39,10 @@ $ cargo install
 ## Current status
 |   Module  	|   Rust Porting   |                                            Documentation                                           |
 |:-------------:|:----------------:|:--------------------------------------------------------------------------------------------------:|
+|    Rair       |:heavy_check_mark:|NA|
+|   r_core  	|:heavy_check_mark:|[![API](https://img.shields.io/badge/api-master-purple.svg)](https://rair-project.github.io/rair-core/rcore/index.html)|
 |   rtrees      |:heavy_check_mark:|[![API](https://img.shields.io/badge/api-master-purple.svg)](https://rair-project.github.io/rair-core/rtrees)|
 |   rio       	|:heavy_check_mark:|[![API](https://img.shields.io/badge/api-master-purple.svg)](https://rair-project.github.io/rair-core/rio/index.html)|
-|    Rair       |        WIP       |NA|
 |  R2agent  	|        NA        |NA|
 |    R2pm   	|        NA        |NA|
 |   Rabin   	|        NA        |NA|
@@ -59,9 +60,7 @@ $ cargo install
 |    r_bp   	|        NA        |NA|
 |  r_config 	|        NA        |NA|
 |   r_cons  	|        NA        |NA|
-|   r_core  	|        NA        |NA|
 |  r_crypto 	|        NA        |NA|
-|  r_debug  	|        NA        |NA|
 |   r_egg   	|        NA        |NA|
 |   r_flag  	|        NA        |NA|
 |    r_fs   	|        NA        |NA|
@@ -71,7 +70,6 @@ $ cargo install
 |  r_parse  	|        NA        |NA|
 |   r_reg   	|        NA        |NA|
 |  r_search 	|        NA        |NA|
-|  r_socket 	|        NA        |NA|
 | r_syscall 	|        NA        |NA|
 |   r_util  	|        NA        |NA|
 
