@@ -40,7 +40,7 @@ $ cargo install
 |   Module  	|   Rust Porting   |                                            Documentation                                           |
 |:-------------:|:----------------:|:--------------------------------------------------------------------------------------------------:|
 |    Rair       |:heavy_check_mark:|NA|
-|   r_core  	|:heavy_check_mark:|[![API](https://img.shields.io/badge/api-master-purple.svg)](https://rair-project.github.io/rair-core/rcore/index.html)|
+|   rcore  	|:heavy_check_mark:|[![API](https://img.shields.io/badge/api-master-purple.svg)](https://rair-project.github.io/rair-core/rcore/index.html)|
 |   rtrees      |:heavy_check_mark:|[![API](https://img.shields.io/badge/api-master-purple.svg)](https://rair-project.github.io/rair-core/rtrees)|
 |   rio       	|:heavy_check_mark:|[![API](https://img.shields.io/badge/api-master-purple.svg)](https://rair-project.github.io/rair-core/rio/index.html)|
 |  R2agent  	|        NA        |NA|
