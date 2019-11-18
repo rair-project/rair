@@ -20,7 +20,6 @@ use std::io;
 bitflags! {
     #[derive(Default)]
     pub struct IoMode: u64 {
-    const EXECUTE = 1;
     const WRITE = 2;
     const READ = 4;
     }
