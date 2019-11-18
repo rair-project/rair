@@ -22,6 +22,7 @@ bitflags! {
     pub struct IoMode: u64 {
     const WRITE = 2;
     const READ = 4;
+    const COW = 8;
     }
 }
 
