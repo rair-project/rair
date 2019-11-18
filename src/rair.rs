@@ -61,6 +61,7 @@ fn main() {
             match c {
                 'r' => perm |= IoMode::READ,
                 'w' => perm |= IoMode::WRITE,
+                'c' => perm |= IoMode::COW,
                 _ => panic_msg(&mut core, &format!("Unknown Permission: `{}`", c), ""),
             }
         }
