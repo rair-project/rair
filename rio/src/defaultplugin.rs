@@ -98,15 +98,9 @@ impl RIOPlugin for FilePlugin {
         if !flags.contains(IoMode::READ) {
             return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Can't Open File without reading")));
         }
-        if flags.contains(IoMode::WRITE) && flags.contains(IoMode::EXECUTE) {
-            return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Can't Open File as Writable and Executable")));
-        }
         if flags.contains(IoMode::WRITE) {
             let f = OpenOptions::new().read(true).write(true).open(FilePlugin::uri_to_path(uri))?;
             file = FileInternals::MutMap(unsafe { MmapOptions::new().map_mut(&f)? });
-        } else if flags.contains(IoMode::EXECUTE) {
-            let f = OpenOptions::new().read(true).open(FilePlugin::uri_to_path(uri))?;
-            file = FileInternals::Map(unsafe { MmapOptions::new().map_exec(&f)? });
         } else {
             let f = OpenOptions::new().read(true).open(FilePlugin::uri_to_path(uri))?;
             file = FileInternals::Map(unsafe { MmapOptions::new().map(&f)? });
@@ -163,17 +157,7 @@ mod default_plugin_tests {
         //plugin.open(&path.to_string_lossy(), IoMode::READ).unwrap();
         //plugin.open(&path.to_string_lossy(), IoMode::READ | IoMode::WRITE).unwrap();
         //plugin.open(&path.to_string_lossy(), IoMode::READ | IoMode::EXECUTE).unwrap();
-        let mut e = plugin.open(&path.to_string_lossy(), IoMode::WRITE);
-        match e {
-            Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied),
-            _ => assert!(true, "PermissionDenied Error should have been generated"),
-        };
-        e = plugin.open(&path.to_string_lossy(), IoMode::EXECUTE);
-        match e {
-            Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied),
-            _ => assert!(true, "PermissionDenied Error should have been generated"),
-        };
-        e = plugin.open(&path.to_string_lossy(), IoMode::READ | IoMode::WRITE | IoMode::EXECUTE);
+        let e = plugin.open(&path.to_string_lossy(), IoMode::WRITE);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied),
             _ => assert!(true, "PermissionDenied Error should have been generated"),
