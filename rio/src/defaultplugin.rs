@@ -95,10 +95,17 @@ impl RIOPlugin for FilePlugin {
 
     fn open(&mut self, uri: &str, flags: IoMode) -> Result<RIOPluginDesc, IoError> {
         let file: FileInternals;
-        if !flags.contains(IoMode::READ) {
-            return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Can't Open File without reading")));
+        if !flags.contains(IoMode::READ)  && flags.contains(IoMode::WRITE) {
+            return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Can't Open File for writing reading")));
         }
-        if flags.contains(IoMode::WRITE) {
+        // we can't have write with cow bcause this mean we had writer without read or read with cow lol
+        if flags.contains(IoMode::READ)  && flags.contains(IoMode::COW) {
+            return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Can't Open File with permission as Write and Copy-On-Write")));
+        }
+        if flags.contains(IoMode::COW) {
+            let f = OpenOptions::new().read(true).open(FilePlugin::uri_to_path(uri))?;
+            file = FileInternals::MutMap(unsafe { MmapOptions::new().map_copy(&f)? });
+        } else  if flags.contains(IoMode::WRITE) {
             let f = OpenOptions::new().read(true).write(true).open(FilePlugin::uri_to_path(uri))?;
             file = FileInternals::MutMap(unsafe { MmapOptions::new().map_mut(&f)? });
         } else {
@@ -150,22 +157,33 @@ mod default_plugin_tests {
         assert_eq!(meta.version, METADATA.version);
     }
 
-    fn test_open_errors_cb(path: &Path) {
+    fn test_open_errors_cb(paths: &[&Path]) {
         let mut plugin = plugin();
-        let custom_path = String::from("file://") + &path.to_string_lossy();
-        plugin.open(&custom_path, IoMode::READ).unwrap();
-        //plugin.open(&path.to_string_lossy(), IoMode::READ).unwrap();
-        //plugin.open(&path.to_string_lossy(), IoMode::READ | IoMode::WRITE).unwrap();
-        //plugin.open(&path.to_string_lossy(), IoMode::READ | IoMode::EXECUTE).unwrap();
-        let e = plugin.open(&path.to_string_lossy(), IoMode::WRITE);
+        let custom_path = String::from("file://") + &paths[0].to_string_lossy();
+        plugin.open(&custom_path, IoMode::COW).unwrap();
+        plugin.open(&paths[1].to_string_lossy(), IoMode::READ).unwrap();
+        plugin.open(&paths[2].to_string_lossy(), IoMode::READ | IoMode::WRITE).unwrap();
+        let mut e = plugin.open(&paths[3].to_string_lossy(), IoMode::WRITE);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied),
-            _ => assert!(true, "PermissionDenied Error should have been generated"),
+            _ => assert!(false, "Permission Denied Error should have been generated"),
+        };
+
+        e = plugin.open(&paths[3].to_string_lossy(), IoMode::READ | IoMode::COW);
+        match e {
+            Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied),
+            _ => assert!(false, "Permission Denied Error should have been generated"),
+        };
+
+        e = plugin.open(&paths[3].to_string_lossy(), IoMode::READ |IoMode::WRITE | IoMode::COW);
+        match e {
+            Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied),
+            _ => assert!(false, "Permission Denied Error should have been generated"),
         };
     }
     #[test]
     fn test_open_errors() {
-        operate_on_file(&test_open_errors_cb, DATA);
+        operate_on_files(&test_open_errors_cb, &[DATA, DATA, DATA, DATA]);
     }
     fn test_read_cb(path: &Path) {
         let mut plugin = plugin();
