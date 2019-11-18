@@ -20,7 +20,6 @@
 
 #[macro_use]
 extern crate bitflags;
-extern crate either_n;
 extern crate memmap;
 extern crate rtrees;
 #[cfg(test)]

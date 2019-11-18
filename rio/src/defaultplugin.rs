@@ -14,15 +14,32 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use either_n::Either2;
 use memmap::*;
 use plugin::*;
 use std::fs::OpenOptions;
 use std::io;
+use std::ops::Deref;
 use std::path::Path;
 use utils::*;
-struct FileInternals {
-    map: Either2<Mmap, MmapMut>,
+enum FileInternals {
+    Map(Mmap),
+    MutMap(MmapMut),
+}
+
+impl FileInternals {
+    fn len(&self) -> usize {
+        match self {
+            FileInternals::Map(m) => return m.len(),
+            FileInternals::MutMap(m) => return m.len(),
+        }
+    }
+    fn as_mut(&mut self) -> Option<&mut MmapMut> {
+        if let FileInternals::MutMap(mutmap) = self {
+            return Some(mutmap);
+        } else {
+            return None;
+        }
+    }
 }
 const METADATA: RIOPluginMetadata = RIOPluginMetadata {
     name: "FilePlugin",
@@ -31,18 +48,26 @@ const METADATA: RIOPluginMetadata = RIOPluginMetadata {
     license: "LGPL",
     version: "0.0.1",
 };
-
+impl Deref for FileInternals {
+    type Target = [u8];
+    fn deref(&self) -> &[u8] {
+        match self {
+            FileInternals::Map(m) => &**m,
+            FileInternals::MutMap(m) => &**m,
+        }
+    }
+}
 impl RIOPluginOperations for FileInternals {
     fn read(&mut self, raddr: usize, buffer: &mut [u8]) -> Result<(), IoError> {
-        if self.map.len() < raddr + buffer.len() {
+        if self.len() < raddr + buffer.len() {
             return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
         }
-        buffer.copy_from_slice(&self.map[raddr..raddr + buffer.len()]);
+        buffer.copy_from_slice(&self[raddr..raddr + buffer.len()]);
         return Ok(());
     }
 
     fn write(&mut self, raddr: usize, buf: &[u8]) -> Result<(), IoError> {
-        if let Some(mutmap) = self.map.as_mut().one() {
+        if let Some(mutmap) = self.as_mut() {
             if raddr + buf.len() > mutmap.len() {
                 return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
             }
@@ -78,25 +103,19 @@ impl RIOPlugin for FilePlugin {
         }
         if flags.contains(IoMode::WRITE) {
             let f = OpenOptions::new().read(true).write(true).open(FilePlugin::uri_to_path(uri))?;
-            file = FileInternals {
-                map: Either2::One(unsafe { MmapOptions::new().map_mut(&f)? }),
-            };
+            file = FileInternals::MutMap(unsafe { MmapOptions::new().map_mut(&f)? });
         } else if flags.contains(IoMode::EXECUTE) {
             let f = OpenOptions::new().read(true).open(FilePlugin::uri_to_path(uri))?;
-            file = FileInternals {
-                map: Either2::Two(unsafe { MmapOptions::new().map_exec(&f)? }),
-            };
+            file = FileInternals::Map(unsafe { MmapOptions::new().map_exec(&f)? });
         } else {
             let f = OpenOptions::new().read(true).open(FilePlugin::uri_to_path(uri))?;
-            file = FileInternals {
-                map: Either2::Two(unsafe { MmapOptions::new().map(&f)? }),
-            };
+            file = FileInternals::Map(unsafe { MmapOptions::new().map(&f)? });
         }
         let desc = RIOPluginDesc {
             name: uri.to_owned(),
             perm: flags,
             raddr: 0,
-            size: (file.map.len() as u64),
+            size: (file.len() as u64),
             plugin_operations: Box::new(file),
         };
         return Ok(desc);
