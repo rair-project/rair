@@ -22,10 +22,10 @@ name = "rair"
 path = "src/rair.rs"
 
 [dependencies]
-clap = "2.33.0"
-rustyline = "5.0.4"
-app_dirs = "1.2.1"
-yansi = "0.5.0"
+clap = "2.33"
+rustyline = "5.0"
+app_dirs = "1.2"
+yansi = "0.5"
 rtrees = {path = "rtrees"}
 rio = {path = "rio"}
 rcmd = {path = "rcmd"}
