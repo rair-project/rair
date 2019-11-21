@@ -20,6 +20,9 @@
 
 #[macro_use]
 extern crate bitflags;
+#[macro_use]
+extern crate nom;
+
 extern crate memmap;
 extern crate rtrees;
 #[cfg(test)]
@@ -28,6 +31,7 @@ extern crate test_file;
 mod defaultplugin;
 mod desc;
 mod descquery;
+mod ihex;
 mod io;
 mod mapsquery;
 mod plugin;
