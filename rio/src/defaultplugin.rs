@@ -95,17 +95,20 @@ impl RIOPlugin for FilePlugin {
 
     fn open(&mut self, uri: &str, flags: IoMode) -> Result<RIOPluginDesc, IoError> {
         let file: FileInternals;
-        if !flags.contains(IoMode::READ)  && flags.contains(IoMode::WRITE) {
+        if !flags.contains(IoMode::READ) && flags.contains(IoMode::WRITE) {
             return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Can't Open File for writing reading")));
         }
         // we can't have write with cow bcause this mean we had writer without read or read with cow lol
-        if flags.contains(IoMode::READ)  && flags.contains(IoMode::COW) {
-            return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Can't Open File with permission as Write and Copy-On-Write")));
+        if flags.contains(IoMode::READ) && flags.contains(IoMode::COW) {
+            return Err(IoError::Parse(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "Can't Open File with permission as Write and Copy-On-Write",
+            )));
         }
         if flags.contains(IoMode::COW) {
             let f = OpenOptions::new().read(true).open(FilePlugin::uri_to_path(uri))?;
             file = FileInternals::MutMap(unsafe { MmapOptions::new().map_copy(&f)? });
-        } else  if flags.contains(IoMode::WRITE) {
+        } else if flags.contains(IoMode::WRITE) {
             let f = OpenOptions::new().read(true).write(true).open(FilePlugin::uri_to_path(uri))?;
             file = FileInternals::MutMap(unsafe { MmapOptions::new().map_mut(&f)? });
         } else {
@@ -175,7 +178,7 @@ mod default_plugin_tests {
             _ => assert!(false, "Permission Denied Error should have been generated"),
         };
 
-        e = plugin.open(&paths[3].to_string_lossy(), IoMode::READ |IoMode::WRITE | IoMode::COW);
+        e = plugin.open(&paths[3].to_string_lossy(), IoMode::READ | IoMode::WRITE | IoMode::COW);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied),
             _ => assert!(false, "Permission Denied Error should have been generated"),

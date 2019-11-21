@@ -33,6 +33,7 @@ pub enum IoError {
     IoPluginNotFoundError,
     HndlNotFoundError,
     TooManyFilesError,
+    Custom(String),
     Parse(io::Error),
 }
 impl PartialEq for IoError {
@@ -63,6 +64,11 @@ impl PartialEq for IoError {
                     return true;
                 }
             }
+            IoError::Custom(s) => {
+                if let IoError::Custom(s2) = rhs {
+                    return s == s2;
+                }
+            }
             IoError::Parse(_) => {
                 if let IoError::Parse(_) = rhs {
                     return true;
@@ -76,10 +82,11 @@ impl fmt::Display for IoError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             IoError::AddressNotFound => write!(f, "Cannot resolve address."),
-            IoError::AddressesOverlapError => write!(f, "Phyiscal addresses overlap"),
-            IoError::IoPluginNotFoundError => write!(f, "Can not find Suitable IO Plugin"),
+            IoError::AddressesOverlapError => write!(f, "Phyiscal addresses overlap."),
+            IoError::IoPluginNotFoundError => write!(f, "Can not find Suitable IO Plugin."),
             IoError::TooManyFilesError => write!(f, "You have too many open files."),
-            IoError::HndlNotFoundError => write!(f, "Handle Does not exist"),
+            IoError::HndlNotFoundError => write!(f, "Handle Does not exist."),
+            IoError::Custom(s) => write!(f, "{}.", s),
             IoError::Parse(ref e) => e.fmt(f),
         }
     }
