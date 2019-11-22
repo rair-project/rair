@@ -17,6 +17,7 @@
 
 extern crate tempfile;
 
+use std::fs;
 use std::io::Write;
 use std::path::Path;
 use tempfile::NamedTempFile;
@@ -31,6 +32,13 @@ pub const DATA: &[u8] = &[
 pub fn operate_on_file(test_function: &dyn Fn(&Path), data: &[u8]) {
     let mut file = NamedTempFile::new().unwrap();
     file.write_all(data).unwrap();
+    test_function(file.path());
+}
+
+pub fn operate_on_copy(test_function: &dyn Fn(&Path), path: &str) {
+    let mut file = NamedTempFile::new().unwrap();
+    //file.write_all(data).unwrap();
+    fs::copy(path, &mut file).unwrap();
     test_function(file.path());
 }
 
