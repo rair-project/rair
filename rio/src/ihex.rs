@@ -225,6 +225,7 @@ impl FileInternals {
         writeln!(file, ":02000004{:04x}{:02x}", addr, checksum)?;
         return Ok(());
     }
+
     fn write_record02(&self, file: &mut File, addr: u64) -> Result<(), IoError> {
         let addr = (addr >> 4) as u16;
         let mut checksum = 4;
@@ -235,6 +236,7 @@ impl FileInternals {
         writeln!(file, ":02000002{:04x}{:02x}", addr, checksum)?;
         return Ok(());
     }
+
     fn write_data(&self, file: &mut File) -> Result<(), IoError> {
         let mut checksum: u16 = 0x10;
         let mut addr = self.base();
@@ -291,7 +293,7 @@ impl FileInternals {
         } else {
             return 0;
         };
-        return max - min;
+        return max - min + 1;
     }
     fn base(&self) -> u64 {
         if let Some((k, _)) = self.bytes.iter().next() {
@@ -398,4 +400,20 @@ impl RIOPlugin for IHexPlugin {
 
 pub fn plugin() -> Box<dyn RIOPlugin> {
     return Box::new(IHexPlugin::new());
+}
+
+#[cfg(test)]
+mod test_ihex {
+    use super::*;
+    #[test]
+    fn test_tiny_ihex_read() {
+        // this is simple ihex file testing,
+        // no sparce file with holes, no nothing but basic record 00 and record 01
+        let mut p = plugin();
+        let mut file = p.open("ihex://../../testing_binaries/rio/ihex/tiny.hex", IoMode::READ).unwrap();
+        assert_eq!(file.size, 11);
+        let mut buffer = vec![0; file.size as usize];
+        file.plugin_operations.read(0x0, &mut buffer).unwrap();
+        assert_eq!(buffer, [0x02, 0x00, 0x00, 0x02, 0x00, 0x09, 0x02, 0x00, 0x03, 0x80, 0xfe]);
+    }
 }
