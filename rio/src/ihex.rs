@@ -416,4 +416,21 @@ mod test_ihex {
         file.plugin_operations.read(0x0, &mut buffer).unwrap();
         assert_eq!(buffer, [0x02, 0x00, 0x00, 0x02, 0x00, 0x09, 0x02, 0x00, 0x03, 0x80, 0xfe]);
     }
+
+    #[test]
+    fn test_tiny_sparce_ihex_read() {
+        //sparce file with holes, no nothing but basic record 00 and record 01
+        let mut p = plugin();
+        let mut file = p.open("ihex://../../testing_binaries/rio/ihex/tiny_sparce.hex", IoMode::READ).unwrap();
+        assert_eq!(file.size, 0x20);
+        let mut buffer = vec![0; file.size as usize];
+        file.plugin_operations.read(0x50, &mut buffer).unwrap();
+        assert_eq!(buffer, [
+            0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,
+            0x24, 0x68, 0xac, 0xef, 0xaa, 0xbb, 0xee, 0xff
+            ]);
+
+    }
 }
