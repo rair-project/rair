@@ -164,13 +164,7 @@ fn parse_record05(input: &[u8]) -> IResult<&[u8], Record> {
 
 impl FileInternals {
     fn parse_ihex(&mut self, input: &[u8]) -> Result<(), IoError> {
-        named!(parse_record(&[u8]) -> Record, alt!(
-            parse_record00 |
-            parse_record01 |
-            parse_record02 |
-            parse_record03 |
-            parse_record04 |
-            parse_record05));
+        named!(parse_record(&[u8]) -> Record, alt!(parse_record00 | parse_record01 | parse_record02 | parse_record03 | parse_record04 | parse_record05));
         let mut input = input;
         let mut base = 0u64;
         let mut line = 1;
@@ -422,6 +416,4 @@ mod test_ihex {
         file.plugin_operations.read(0x0, &mut buffer).unwrap();
         assert_eq!(buffer, [0x02, 0x00, 0x00, 0x02, 0x00, 0x09, 0x02, 0x00, 0x03, 0x80, 0xfe]);
     }
-
-
 }
