@@ -388,10 +388,7 @@ impl RIOPlugin for IHexPlugin {
     // either file:// or just no "://" to start with
     fn accept_uri(&self, uri: &str) -> bool {
         let split: Vec<&str> = uri.split("://").collect();
-        if split.len() == 1 {
-            return true;
-        }
-        if split[0] == "ihex" {
+        if split.len() == 2 && split[0] == "ihex" {
             return true;
         }
         return false;
@@ -405,6 +402,15 @@ pub fn plugin() -> Box<dyn RIOPlugin> {
 #[cfg(test)]
 mod test_ihex {
     use super::*;
+
+    #[test]
+    fn test_accept_uri() {
+        let p = plugin();
+        assert_eq!(p.accept_uri("ihex:///bin/ls"), true);
+        assert_eq!(p.accept_uri("ihx:///bin/ls"), false);
+        assert_eq!(p.accept_uri("/bin/ls"), false);
+    }
+
     #[test]
     fn test_tiny_ihex_read() {
         // this is simple ihex file testing,
@@ -416,4 +422,6 @@ mod test_ihex {
         file.plugin_operations.read(0x0, &mut buffer).unwrap();
         assert_eq!(buffer, [0x02, 0x00, 0x00, 0x02, 0x00, 0x09, 0x02, 0x00, 0x03, 0x80, 0xfe]);
     }
+
+
 }
