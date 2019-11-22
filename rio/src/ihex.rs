@@ -485,4 +485,19 @@ mod test_ihex {
         // no sparce file with holes, no nothing but basic record 00 and record 01
         operate_on_copy(&tiny_sparce_ihex_write_cb, "../../testing_binaries/rio/ihex/tiny_sparce.hex");
     }
+
+    #[test]
+    fn test_big_read() {
+        //test reading from huge file with record 00 and record 01
+        let mut p = plugin();
+        let mut file = p.open("ihex://../../testing_binaries/rio/ihex/record_00_01.hex", IoMode::READ).unwrap();
+        assert_eq!(file.size, 0xead);
+        let mut buffer = vec![0; 4 as usize];
+        file.plugin_operations.read(0x520, &mut buffer).unwrap();
+        assert_eq!(buffer, [0x80, 0x040, 0x06, 0x7c]);
+        file.plugin_operations.read(0xe87, &mut buffer).unwrap();
+        assert_eq!(buffer, [0xd3, 0x22, 0x32, 0x32]);
+        file.plugin_operations.read(0xea9, &mut buffer).unwrap();
+        assert_eq!(buffer, [0x32, 0x32, 0x32, 0x32]);
+    }
 }
