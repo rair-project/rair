@@ -460,4 +460,29 @@ mod test_ihex {
             ]
         );
     }
+    fn tiny_sparce_ihex_write_cb(path: &Path) {
+        let mut p = plugin();
+        let uri = String::from("ihex://") + &path.to_string_lossy();
+        let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
+
+        file.plugin_operations.write(0x55, &[0x80, 0x90, 0xff]).unwrap();
+        drop(file);
+        file = p.open(&uri, IoMode::READ).unwrap();
+        assert_eq!(file.size, 0x20);
+        let mut buffer = vec![0; file.size as usize];
+        file.plugin_operations.read(0x50, &mut buffer).unwrap();
+        assert_eq!(
+            buffer,
+            [
+                0x02, 0x00, 0x00, 0x00, 0x00, 0x80, 0x90, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x24, 0x68, 0xac, 0xef, 0xaa, 0xbb,
+                0xee, 0xff
+            ]
+        );
+    }
+    #[test]
+    fn test_tiny_sparce_ihex_write() {
+        // this is simple ihex file testing,
+        // no sparce file with holes, no nothing but basic record 00 and record 01
+        operate_on_copy(&tiny_sparce_ihex_write_cb, "../../testing_binaries/rio/ihex/tiny_sparce.hex");
+    }
 }
