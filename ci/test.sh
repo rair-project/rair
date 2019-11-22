@@ -1,5 +1,6 @@
 #!/bin/sh
 set -e
+git -C ../ clone https://github.com/Rair-Project/testing_binaries.git
 
 if [ $COV ]; then
   set +e # cargo install might fail because package already exist in cache
