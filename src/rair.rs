@@ -53,7 +53,7 @@ fn main() {
         .get_matches();
     let mut core = Core::new();
     let mut perm: IoMode = IoMode::READ;
-    let mut paddr: u64 = 0;
+    let mut paddr = None;
     let uri = matches.value_of("File").unwrap();
     if let Some(p) = matches.value_of("Permission") {
         perm = Default::default();
@@ -67,10 +67,15 @@ fn main() {
         }
     }
     if let Some(addr) = matches.value_of("Paddr") {
-        paddr = str_to_num(addr).unwrap_or_else(|e| panic_msg(&mut core, &e.to_string(), ""));
+        paddr = Some(str_to_num(addr).unwrap_or_else(|e| panic_msg(&mut core, &e.to_string(), "")));
     }
-    core.io.open_at(uri, perm, paddr).unwrap_or_else(|e| panic_msg(&mut core, &e.to_string(), ""));
-    core.set_loc(paddr);
+    if let Some(paddr) = paddr {
+        core.io.open_at(uri, perm, paddr).unwrap_or_else(|e| panic_msg(&mut core, &e.to_string(), ""));
+        core.set_loc(paddr);
+    } else {
+        let hndl = core.io.open(uri, perm).unwrap_or_else(|e| panic_msg(&mut core, &e.to_string(), ""));
+        core.set_loc(core.io.hndl_to_desc(hndl).unwrap().paddr_base());
+    }
     loop {
         repl_inners(&mut core);
     }
