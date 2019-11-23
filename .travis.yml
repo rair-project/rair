@@ -13,7 +13,13 @@ matrix:
     - os: osx
     - os: windows
     - os: android
+
+    - os: linux
+      arch: x86
+    - os: windows
+      arch: x86
     
+
 install:
 - ci/install.sh
 script:
