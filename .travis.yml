@@ -18,7 +18,8 @@ matrix:
       arch: x86
     - os: windows
       arch: x86
-    
+    - os: android
+      arch: arm64    
 
 install:
 - ci/install.sh
