@@ -7,15 +7,13 @@ matrix:
   include:
     - os: linux
       env: COV=true
-    - os: osx
-    - os: windows
     - os: linux
       rust: nightly
       env: DOC=true 
     - os: osx
-      rust: nightly
     - os: windows
-      rust: nightly
+    - os: android
+    
 install:
 - ci/install.sh
 script:
