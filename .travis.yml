@@ -16,18 +16,6 @@ matrix:
       rust: nightly
     - os: windows
       rust: nightly
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-      - libcurl4-openssl-dev
-      - libelf-dev
-      - libdw-dev
-      - cmake
-      - gcc
-      - binutils-dev
-      - libiberty-dev
 install:
 - ci/install.sh
 script:
