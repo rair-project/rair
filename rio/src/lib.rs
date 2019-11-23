@@ -36,6 +36,7 @@ mod io;
 mod mapsquery;
 mod plugin;
 mod utils;
+mod malloc;
 pub use desc::*;
 pub use io::*;
 pub use mapsquery::*;

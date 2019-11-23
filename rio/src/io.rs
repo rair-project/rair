@@ -18,6 +18,7 @@ use defaultplugin;
 use desc::RIODesc;
 use descquery::RIODescQuery;
 use ihex;
+use malloc;
 use mapsquery::{RIOMap, RIOMapQuery};
 use plugin::*;
 use std::collections::BTreeMap;
@@ -42,6 +43,7 @@ impl RIO {
         let mut io: RIO = Default::default();
         io.load_plugin(defaultplugin::plugin());
         io.load_plugin(ihex::plugin());
+        io.load_plugin(malloc::plugin());
         return io;
     }
 
