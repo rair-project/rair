@@ -71,7 +71,11 @@ impl RIO {
     pub fn open(&mut self, uri: &str, flags: IoMode) -> Result<u64, IoError> {
         for plugin in &mut self.plugins {
             if plugin.accept_uri(uri) {
-                return self.descs.register_open(&mut **plugin, uri, flags);
+                if let Ok(hndl) = self.descs.register_open_default(&mut **plugin, uri, flags) {
+                    return Ok(hndl);
+                } else {
+                    return self.descs.register_open(&mut **plugin, uri, flags);
+                }
             }
         }
         return Err(IoError::IoPluginNotFoundError);
