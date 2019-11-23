@@ -311,6 +311,10 @@ impl RIO {
     pub fn map_iter<'a>(&'a self) -> Box<dyn Iterator<Item = Rc<RIOMap>> + 'a> {
         self.maps.into_iter()
     }
+    // Return equivalent [RIODesc] structure for the given *hndl*
+    pub fn hndl_to_desc(&self, hndl: u64) -> Option<&RIODesc> {
+        return self.descs.hndl_to_desc(hndl);
+    }
 }
 
 #[cfg(test)]
@@ -680,5 +684,18 @@ mod rio_tests {
 
     fn test_phy_to_vir() {
         operate_on_files(&phy_to_vir_cb, &[DATA, DATA, DATA]);
+    }
+    fn hndl_to_desc_cb(path: &Path) {
+        let mut io = RIO::new();
+        let hndl = io.open_at(&path.to_string_lossy(), IoMode::READ, 0x0).unwrap();
+        assert!(io.hndl_to_desc(hndl + 1).is_none());
+        let desc = io.hndl_to_desc(hndl).unwrap();
+        assert_eq!(desc.size() as usize, DATA.len());
+        assert_eq!(desc.paddr_base(), 0);
+        assert_eq!(desc.name(), &path.to_string_lossy());
+    }
+    #[test]
+    fn test_hndl_to_desc() {
+        operate_on_file(&hndl_to_desc_cb, &DATA)
     }
 }
