@@ -65,9 +65,8 @@ named!(parse_newline, alt!(tag!("\r\n") | tag!("\n") | tag!("\r")));
 enum Record {
     Data(u64, Vec<u8>), // Record 00 (base address, bytes)
     EOF,                // Record 01
-    ESA(u64),           // Record 02
+    EA(u64),           // Extended Address: Record 02, Record 04
     SSA(u32),           //Record 03
-    ELA(u64),           // Record 04
     SLA(u32),           // record 05
 }
 fn from_hex(input: &[u8]) -> Result<u8, std::num::ParseIntError> {
@@ -126,7 +125,7 @@ fn parse_record02(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, addr) = hex_big_word(input)?; // data
     let (input, _) = hex_byte(input)?; // checksum
     let (input, _) = parse_newline(input)?; //newline
-    return Ok((input, Record::ESA((addr as u64) << 4)));
+    return Ok((input, Record::EA((addr as u64) << 4)));
 }
 
 fn parse_record03(input: &[u8]) -> IResult<&[u8], Record> {
@@ -148,7 +147,7 @@ fn parse_record04(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, addr) = hex_big_word(input)?; // data
     let (input, _) = hex_byte(input)?; // checksum
     let (input, _) = parse_newline(input)?; //newline
-    return Ok((input, Record::ELA((addr as u64) << 16)));
+    return Ok((input, Record::EA((addr as u64) << 16)));
 }
 
 fn parse_record05(input: &[u8]) -> IResult<&[u8], Record> {
@@ -181,9 +180,8 @@ impl FileInternals {
                         self.bytes.insert(i + addr + base, data[i as usize]);
                     }
                 }
-                Record::ESA(addr) => base = addr,
+                Record::EA(addr) => base = addr,
                 Record::SSA(addr) => self.ssa = Some(addr),
-                Record::ELA(addr) => base = addr,
                 Record::SLA(addr) => self.sla = Some(addr),
             }
             line += 1;
