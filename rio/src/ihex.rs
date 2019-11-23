@@ -239,7 +239,7 @@ impl FileInternals {
         for (k, v) in self.bytes.iter() {
             if i != 0 {
                 if i == 0x10 || *k != addr + 1 {
-                    writeln!(file, ":{:02x}{}{:02x}", i, data, 256 - checksum)?;
+                    writeln!(file, ":{:02x}{}{:02x}", i, data, (256 - checksum)&0xff)?;
                     data.clear();
                     checksum = 0x10;
                     i = 0;
@@ -602,5 +602,45 @@ mod test_ihex {
     #[test]
     fn test_write_02_03() {
         operate_on_copy(&write_02_03_cb, "../../testing_binaries/rio/ihex/record_02_03.hex");
+    }
+
+    #[test]
+    fn test_read_04_05() {
+        let mut p = plugin();
+        let mut file = p.open("ihex://../../testing_binaries/rio/ihex/record_04_05.hex", IoMode::READ).unwrap();
+        assert_eq!(file.size, 0xEF60);
+        let mut buffer = [0; 4];
+        file.plugin_operations.read(0x123400C1, &mut buffer).unwrap();
+        assert_eq!(buffer, [0x48, 0x85, 0x46, 0x0C]);
+    }
+
+    fn write_04_05_cb(path: &Path) {
+        let mut p = plugin();
+        let uri = String::from("ihex://") + &path.to_string_lossy();
+        let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
+
+        file.plugin_operations.write(0x123400C1, &[0x80, 0x90, 0xff, 0xfe]).unwrap();
+
+        drop(file);
+        file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
+        assert_eq!(file.size, 0xEF60);
+        let mut buffer = [0; 4];
+        file.plugin_operations.read(0x123400C1, &mut buffer).unwrap();
+        assert_eq!(buffer, [0x80, 0x90, 0xff, 0xfe]);
+        file.plugin_operations.write(0x123400C1, &[0x48, 0x85, 0x46, 0x0C]).unwrap();
+        drop(file);
+        file = p.open(&uri, IoMode::READ).unwrap();
+        let mut file2 = p.open("ihex://../../testing_binaries/rio/ihex/record_04_05.hex", IoMode::READ).unwrap();
+        assert_eq!(file.size, file2.size);
+        let mut data = vec![0; file.size as usize];
+        let mut data2 = vec![0; file.size as usize];
+        file.plugin_operations.read(0, &mut data).unwrap();
+        file2.plugin_operations.read(0, &mut data2).unwrap();
+        assert_eq!(data, data2);
+    }
+
+    #[test]
+    fn test_write_04_05() {
+        operate_on_copy(&write_04_05_cb, "../../testing_binaries/rio/ihex/record_04_05.hex");
     }
 }
