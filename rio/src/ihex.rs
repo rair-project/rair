@@ -65,7 +65,7 @@ named!(parse_newline, alt!(tag!("\r\n") | tag!("\n") | tag!("\r")));
 enum Record {
     Data(u64, Vec<u8>), // Record 00 (base address, bytes)
     EOF,                // Record 01
-    EA(u64),           // Extended Address: Record 02, Record 04
+    EA(u64),            // Extended Address: Record 02, Record 04
     SSA(u32),           //Record 03
     SLA(u32),           // record 05
 }
@@ -237,7 +237,7 @@ impl FileInternals {
         for (k, v) in self.bytes.iter() {
             if i != 0 {
                 if i == 0x10 || *k != addr + 1 {
-                    writeln!(file, ":{:02x}{}{:02x}", i, data, (256 - checksum)&0xff)?;
+                    writeln!(file, ":{:02x}{}{:02x}", i, data, (256 - checksum) & 0xff)?;
                     data.clear();
                     checksum = 0x10;
                     i = 0;
@@ -640,5 +640,18 @@ mod test_ihex {
     #[test]
     fn test_write_04_05() {
         operate_on_copy(&write_04_05_cb, "../../testing_binaries/rio/ihex/record_04_05.hex");
+    }
+
+    #[test]
+    fn test_broken() {
+        let mut p = plugin();
+        let err = p.open("ihex://../../testing_binaries/rio/ihex/broken.hex", IoMode::READ).err().unwrap();
+        assert_eq!(err, IoError::Custom("Invalid Ihex entry at line: 4".to_string()));
+    }
+    #[test]
+    fn test_empty() {
+        let mut p = plugin();
+        let f = p.open("ihex://../../testing_binaries/rio/ihex/empty.hex", IoMode::READ).unwrap();
+        assert_eq!(f.size, 0);
     }
 }
