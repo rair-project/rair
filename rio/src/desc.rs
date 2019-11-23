@@ -28,6 +28,9 @@ pub struct RIODesc {
 }
 
 impl RIODesc {
+    pub(crate) fn raddr(&self) -> u64 {
+        self.raddr
+    }
     pub(crate) fn open(plugin: &mut dyn RIOPlugin, uri: &str, flags: IoMode) -> Result<RIODesc, IoError> {
         let plugin_desc = plugin.open(uri, flags)?;
         let desc = RIODesc {

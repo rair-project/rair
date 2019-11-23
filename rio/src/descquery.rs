@@ -85,6 +85,21 @@ impl RIODescQuery {
         self.paddr_to_hndls.insert(lo, lo + size - 1, hndl);
         return Ok(hndl);
     }
+
+    pub(crate) fn register_open_default(&mut self, plugin: &mut dyn RIOPlugin, uri: &str, flags: IoMode) -> Result<u64, IoError> {
+        let hndl = self.register_handle(plugin, uri, flags)?;
+        let desc = self.hndl_to_desc(hndl).unwrap();
+        let lo = desc.raddr();
+        let hi = lo + desc.size - 1;
+        if !self.paddr_to_hndls.overlap(lo, hi).is_empty() {
+            self.deregister_hndl(hndl).unwrap();
+            return Err(IoError::AddressesOverlapError);
+        }
+        self.hndl_to_mut_desc(hndl).unwrap().paddr = lo;
+        self.paddr_to_hndls.insert(lo, hi, hndl);
+        return Ok(hndl);
+    }
+
     pub(crate) fn register_open_at(&mut self, plugin: &mut dyn RIOPlugin, uri: &str, flags: IoMode, at: u64) -> Result<u64, IoError> {
         let hndl = self.register_handle(plugin, uri, flags)?;
         let lo = at;
