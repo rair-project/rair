@@ -84,7 +84,7 @@ impl RIOPlugin for MallocPlugin {
     fn open(&mut self, uri: &str, flags: IoMode) -> Result<RIOPluginDesc, IoError> {
         let file: MallocInternal;
         if flags.contains(IoMode::COW) {
-            return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Can't Open File with permission Copy-On-Write")));
+            return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Can't open file with permission Copy-On-Write")));
         }
 
         if !flags.contains(IoMode::READ) {
@@ -136,5 +136,33 @@ mod test_malloc {
         file.plugin_operations.write(0x0, &[0xab; 0x100]).unwrap();
         file.plugin_operations.read(0x0, &mut buffer).unwrap();
         assert_eq!(&buffer[..], &[0xab; 100][..]);
+        p.open("malloc://0b100", IoMode::READ | IoMode::WRITE).unwrap();
+        p.open("malloc://0500", IoMode::READ | IoMode::WRITE).unwrap();
+        p.open("malloc://500", IoMode::READ | IoMode::WRITE).unwrap();
+    }
+
+    #[test]
+    fn test_malloc_errors() {
+        let mut p = plugin();
+        let mut err = p.open("malloc://0x", IoMode::READ | IoMode::WRITE).err().unwrap();
+        assert_eq!(err, IoError::Custom("Failed to parse given uri as usize".to_string()));
+        err = p.open("malloc://0x500", IoMode::READ).err().unwrap();
+        assert_eq!(err, IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Memory based files must have write permission")));
+        err = p.open("malloc://0x500", IoMode::WRITE).err().unwrap();
+        assert_eq!(err, IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Memory based files must have read permission")));
+        err = p.open("malloc://0x500", IoMode::READ | IoMode::WRITE | IoMode::COW).err().unwrap();
+        assert_eq!(err, IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Can't open file with permission Copy-On-Write")));
+    }
+
+    #[test]
+    fn test_read_write_error() {
+        let mut p = plugin();
+        let mut file = p.open("malloc://0x50", IoMode::READ | IoMode::WRITE).unwrap();
+        assert_eq!(file.size, 0x50);
+        let mut buffer = [1; 0x51];
+        let mut err = file.plugin_operations.read(0, &mut buffer).err().unwrap();
+        assert_eq!(err, IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
+        err = file.plugin_operations.write(0, &buffer).err().unwrap();
+        assert_eq!(err, IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
     }
 }
