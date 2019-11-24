@@ -75,7 +75,7 @@ impl RIODesc {
 #[cfg(test)]
 mod default_plugin_tests {
     use super::*;
-    use defaultplugin;
+    use plugins::defaultplugin;
     use std::io;
     use std::path::Path;
     use test_file::*;

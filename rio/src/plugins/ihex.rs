@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use defaultplugin;
+use super::defaultplugin;
 use nom::bytes::complete::tag;
 use nom::bytes::complete::take_while_m_n;
 use nom::combinator::map_res;
