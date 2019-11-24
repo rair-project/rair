@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use plugin::*;
-use utils::*;
 use std::io;
+use utils::*;
 
 const METADATA: RIOPluginMetadata = RIOPluginMetadata {
     name: "Malloc",
@@ -27,14 +27,12 @@ const METADATA: RIOPluginMetadata = RIOPluginMetadata {
     license: "LGPL",
     version: "0.0.1",
 };
-struct MallocInternal{
+struct MallocInternal {
     data: Vec<u8>,
 }
 impl MallocInternal {
-    fn new(size: u64) -> Self{
-        MallocInternal{
-            data: vec![0; size as usize],
-        }
+    fn new(size: u64) -> Self {
+        MallocInternal { data: vec![0; size as usize] }
     }
     fn len(&self) -> usize {
         return self.data.len();
@@ -75,7 +73,6 @@ impl MallocPlugin {
             return u64::from_str_radix(&n[1..], 8).ok();
         }
         return u64::from_str_radix(n, 10).ok();
-    
     }
 }
 
@@ -87,10 +84,9 @@ impl RIOPlugin for MallocPlugin {
     fn open(&mut self, uri: &str, flags: IoMode) -> Result<RIOPluginDesc, IoError> {
         let file: MallocInternal;
         if flags.contains(IoMode::COW) {
-            return Err(IoError::Parse(io::Error::new(
-                io::ErrorKind::PermissionDenied, "Can't Open File with permission Copy-On-Write",)));
+            return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Can't Open File with permission Copy-On-Write")));
         }
-        
+
         if !flags.contains(IoMode::READ) {
             return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Memory based files must have read permission")));
         }
@@ -100,7 +96,6 @@ impl RIOPlugin for MallocPlugin {
         match MallocPlugin::uri_to_size(uri) {
             Some(size) => file = MallocInternal::new(size),
             None => return Err(IoError::Custom("Failed to parse given uri as usize".to_string())),
-
         }
         let desc = RIOPluginDesc {
             name: uri.to_owned(),
@@ -123,5 +118,23 @@ impl RIOPlugin for MallocPlugin {
 }
 
 pub fn plugin() -> Box<dyn RIOPlugin> {
-    return Box::new(MallocPlugin{});
+    return Box::new(MallocPlugin {});
+}
+
+#[cfg(test)]
+
+mod test_malloc {
+    use super::*;
+    #[test]
+    fn test_malloc() {
+        let mut p = plugin();
+        let mut file = p.open("malloc://0x500", IoMode::READ | IoMode::WRITE).unwrap();
+        assert_eq!(file.size, 0x500);
+        let mut buffer = [1; 100];
+        file.plugin_operations.read(0x0, &mut buffer).unwrap();
+        assert_eq!(&buffer[..], &[0; 100][..]);
+        file.plugin_operations.write(0x0, &[0xab; 0x100]).unwrap();
+        file.plugin_operations.read(0x0, &mut buffer).unwrap();
+        assert_eq!(&buffer[..], &[0xab; 100][..]);
+    }
 }
