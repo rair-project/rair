@@ -14,13 +14,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use defaultplugin;
 use desc::RIODesc;
 use descquery::RIODescQuery;
-use ihex;
-use malloc;
 use mapsquery::{RIOMap, RIOMapQuery};
 use plugin::*;
+use plugins;
 use std::collections::BTreeMap;
 use std::rc::Rc;
 use utils::*;
@@ -41,9 +39,7 @@ impl RIO {
     /// ````
     pub fn new() -> RIO {
         let mut io: RIO = Default::default();
-        io.load_plugin(defaultplugin::plugin());
-        io.load_plugin(ihex::plugin());
-        io.load_plugin(malloc::plugin());
+        plugins::load_plugins(&mut io);
         return io;
     }
 

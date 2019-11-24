@@ -1,8 +1,5 @@
-#![warn(clippy::cargo)]
-#![allow(clippy::multiple_crate_versions)]
-#![allow(clippy::needless_return)]
 /*
- * rio: rair IO library impelementation
+ * plugins: List of built-in RIO plugins.
  * Copyright (C) 2019  Oddcoder
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,26 +14,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+use io::RIO;
+pub mod defaultplugin;
+pub mod ihex;
+pub mod malloc;
 
-#[macro_use]
-extern crate bitflags;
-#[macro_use]
-extern crate nom;
-
-extern crate memmap;
-extern crate rtrees;
-#[cfg(test)]
-extern crate test_file;
-
-mod desc;
-mod descquery;
-mod io;
-mod mapsquery;
-mod plugin;
-mod plugins;
-mod utils;
-pub use desc::*;
-pub use io::*;
-pub use mapsquery::*;
-pub use plugin::*;
-pub use utils::*;
+pub(crate) fn load_plugins(io: &mut RIO) {
+    io.load_plugin(defaultplugin::plugin());
+    io.load_plugin(ihex::plugin());
+    io.load_plugin(malloc::plugin());
+}
