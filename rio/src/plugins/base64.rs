@@ -195,8 +195,10 @@ impl RIOPlugin for Base64Plugin {
 
     fn open(&mut self, uri: &str, flags: IoMode) -> Result<RIOPluginDesc, IoError> {
         let mut def_desc = self.defaultplugin.open(&Base64Plugin::uri_to_path(uri).to_string_lossy(), flags)?;
-        let mut paddings = [0; 2];
-        def_desc.plugin_operations.read(def_desc.size as usize - 2, &mut paddings).unwrap();
+        let mut paddings = [0; 4];
+        if def_desc.plugin_operations.read(def_desc.size as usize - paddings.len(), &mut paddings).is_err() {
+            return Err(IoError::Custom("Corrupted base64 data".to_string()));
+        };
         let padding_size = paddings.iter().filter(|&n| *n == b'=').count();
         let internal = Base64Internal {
             file: def_desc.plugin_operations,
@@ -246,5 +248,34 @@ mod test_base64 {
         let mut buffer = vec![0; 45];
         file.plugin_operations.read(0, &mut buffer).unwrap();
         assert_eq!(buffer, &bytes[..]);
+    }
+
+    #[test]
+    fn test_one_pad_read() {
+        let mut p = plugin();
+        let mut file = p.open("b64://../../testing_binaries/rio/base64/one_pad.b64", IoMode::READ).unwrap();
+        assert_eq!(file.size, 2);
+        let mut b1 = [0; 1];
+        file.plugin_operations.read(0, &mut b1).unwrap();
+        assert_eq!(b1, [b'T']);
+        file.plugin_operations.read(1, &mut b1).unwrap();
+        assert_eq!(b1, [b'h']);
+        let mut b2 = [0; 2];
+        file.plugin_operations.read(0, &mut b2).unwrap();
+        assert_eq!(b2, [b'T', b'h']);
+        let e = file.plugin_operations.read(1, &mut b2).err().unwrap();
+        assert_eq!(e, IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
+    }
+
+    #[test]
+    fn test_two_pad_read() {
+        let mut p = plugin();
+        let mut file = p.open("b64://../../testing_binaries/rio/base64/two_pad.b64", IoMode::READ).unwrap();
+        assert_eq!(file.size, 1);
+        let mut b1 = [0; 1];
+        file.plugin_operations.read(0, &mut b1).unwrap();
+        assert_eq!(b1, [b'T']);
+        let e = file.plugin_operations.read(1, &mut b1).err().unwrap();
+        assert_eq!(e, IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
     }
 }
