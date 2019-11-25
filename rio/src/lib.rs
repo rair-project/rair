@@ -23,11 +23,11 @@ extern crate bitflags;
 #[macro_use]
 extern crate nom;
 
+extern crate base64;
 extern crate memmap;
 extern crate rtrees;
 #[cfg(test)]
 extern crate test_file;
-extern crate base64;
 
 mod desc;
 mod descquery;
