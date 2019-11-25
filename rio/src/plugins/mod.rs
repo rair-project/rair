@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use io::RIO;
+pub mod base64;
 pub mod defaultplugin;
 pub mod ihex;
 pub mod malloc;
-pub mod base64;
 
 pub(crate) fn load_plugins(io: &mut RIO) {
     io.load_plugin(defaultplugin::plugin());

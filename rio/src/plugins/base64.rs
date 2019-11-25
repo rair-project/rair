@@ -14,13 +14,14 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use plugin::*;
-use std::io;
-use utils::*;
 use super::defaultplugin;
-use std::path::Path;
 use base64;
+use base64::{decode_config_slice, encode_config_slice};
+use plugin::*;
 use std::cmp;
+use std::io;
+use std::path::Path;
+use utils::*;
 const METADATA: RIOPluginMetadata = RIOPluginMetadata {
     name: "Base64",
     desc: "This plugin is used to open base64 encoded files.",
@@ -31,8 +32,6 @@ const METADATA: RIOPluginMetadata = RIOPluginMetadata {
 struct Base64Internal {
     file: Box<dyn RIOPluginOperations>, // defaultplugin
     len: u64,
-
-
 }
 impl Base64Internal {
     fn len(&self) -> u64 {
@@ -49,13 +48,13 @@ impl Base64Internal {
         let mut b64data = [0; 4];
         let mut decoded_data = [0; 3];
         self.file.read(b64base, &mut b64data)?;
-        if let Err(_) = base64::decode_config_slice(&b64data, base64::STANDARD, &mut decoded_data) {
+        if decode_config_slice(&b64data, base64::STANDARD, &mut decoded_data).is_err() {
             return Err(IoError::Custom("Corrupted base64 data".to_string()));
         }
         buffer[0..size].copy_from_slice(&decoded_data[offset..offset + size]);
         return Ok((raddr + size, &mut buffer[size..]));
     }
- 
+
     fn read_last_unaligned_block<'a>(&mut self, raddr: usize, buffer: &'a mut [u8]) -> Result<(usize, &'a mut [u8]), IoError> {
         // we assume that raddr is always aligned on the start
         let size = buffer.len() % 3;
@@ -68,7 +67,7 @@ impl Base64Internal {
         let mut b64data = [0; 4];
         let mut decoded_data = [0; 3];
         self.file.read(b64base, &mut b64data)?;
-        if let Err(_) = base64::decode_config_slice(&b64data, base64::STANDARD, &mut decoded_data) {
+        if decode_config_slice(&b64data, base64::STANDARD, &mut decoded_data).is_err() {
             return Err(IoError::Custom("Corrupted base64 data".to_string()));
         }
         buffer[offset..].copy_from_slice(&decoded_data[0..size]);
@@ -81,14 +80,14 @@ impl Base64Internal {
         return Ok((raddr, buffer));
     }
     fn read_aligned_blocks(&mut self, raddr: usize, buffer: &mut [u8]) -> Result<(), IoError> {
-        if buffer.len() == 0 {
+        if buffer.is_empty() {
             return Ok(());
         }
         let b64size = buffer.len() / 3 * 4;
         let b64addr = raddr / 3 * 4;
         let mut b64data = vec![0; b64size];
         self.file.read(b64addr, &mut b64data)?;
-        if let Err(_) = base64::decode_config_slice(&b64data, base64::STANDARD, buffer) {
+        if decode_config_slice(&b64data, base64::STANDARD, buffer).is_err() {
             return Err(IoError::Custom("Corrupted base64 data".to_string()));
         }
         return Ok(());
@@ -105,13 +104,13 @@ impl Base64Internal {
         let mut b64data = [0; 4];
         let mut decoded_data = [0; 3];
         self.file.read(b64base, &mut b64data)?;
-        if let Err(_) = base64::decode_config_slice(&b64data, base64::STANDARD, &mut decoded_data) {
+        if decode_config_slice(&b64data, base64::STANDARD, &mut decoded_data).is_err() {
             return Err(IoError::Custom("Corrupted base64 data".to_string()));
         }
         decoded_data[offset..offset + size].copy_from_slice(&buffer[0..size]);
-        base64::encode_config_slice(&decoded_data[0..offset + size], base64::STANDARD, &mut b64data);
+        encode_config_slice(&decoded_data[0..offset + size], base64::STANDARD, &mut b64data);
         self.file.write(b64base, &b64data)?;
-        return Ok((raddr + size, & buffer[size..]));
+        return Ok((raddr + size, &buffer[size..]));
     }
 
     fn write_last_unaligned_block<'a>(&mut self, raddr: usize, buffer: &'a [u8]) -> Result<(usize, &'a [u8]), IoError> {
@@ -126,11 +125,11 @@ impl Base64Internal {
         let mut b64data = [0; 4];
         let mut decoded_data = [0; 3];
         self.file.read(b64base, &mut b64data)?;
-        if let Err(_) = base64::decode_config_slice(&b64data, base64::STANDARD, &mut decoded_data) {
+        if decode_config_slice(&b64data, base64::STANDARD, &mut decoded_data).is_err() {
             return Err(IoError::Custom("Corrupted base64 data".to_string()));
         }
         decoded_data[0..size].copy_from_slice(&buffer[offset..]);
-        base64::encode_config_slice(&decoded_data[0..offset + size], base64::STANDARD, &mut b64data);
+        encode_config_slice(&decoded_data[0..offset + size], base64::STANDARD, &mut b64data);
         self.file.write(b64base, &b64data)?;
         return Ok((raddr, &buffer[..offset]));
     }
@@ -141,13 +140,13 @@ impl Base64Internal {
         return Ok((raddr, buffer));
     }
     fn write_aligned_blocks(&mut self, raddr: usize, buffer: &[u8]) -> Result<(), IoError> {
-        if buffer.len() == 0 {
+        if buffer.is_empty() {
             return Ok(());
         }
         let b64size = buffer.len() / 3 * 4;
         let b64addr = raddr / 3 * 4;
         let mut b64data = vec![0; b64size];
-        base64::encode_config_slice(buffer, base64::STANDARD, &mut b64data);
+        encode_config_slice(buffer, base64::STANDARD, &mut b64data);
         self.file.write(b64addr, &b64data)?;
         return Ok(());
     }
@@ -189,7 +188,6 @@ impl Base64Plugin {
     }
 }
 
-
 impl RIOPlugin for Base64Plugin {
     fn get_metadata(&self) -> &'static RIOPluginMetadata {
         return &METADATA;
@@ -199,7 +197,7 @@ impl RIOPlugin for Base64Plugin {
         let mut def_desc = self.defaultplugin.open(&Base64Plugin::uri_to_path(uri).to_string_lossy(), flags)?;
         let mut paddings = [0; 2];
         def_desc.plugin_operations.read(def_desc.size as usize - 2, &mut paddings).unwrap();
-        let padding_size = paddings.iter().filter(|&n| *n == '=' as u8).count();
+        let padding_size = paddings.iter().filter(|&n| *n == b'=').count();
         let internal = Base64Internal {
             file: def_desc.plugin_operations,
             // each 1, 2, or 3 bytes are mapped to 4 bytes
@@ -226,4 +224,27 @@ impl RIOPlugin for Base64Plugin {
 
 pub fn plugin() -> Box<dyn RIOPlugin> {
     return Box::new(Base64Plugin::new());
+}
+
+#[cfg(test)]
+mod test_base64 {
+    use super::*;
+    #[test]
+    fn test_nopad_read() {
+        let mut p = plugin();
+        let mut file = p.open("b64://../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        assert_eq!(file.size, 45);
+        let bytes = b"The quick brown fox jumped over the lazy dog.";
+        //read from the start
+        for i in 1..20 {
+            let mut buffer = vec![0; i];
+            for j in 0..20 {
+                file.plugin_operations.read(j, &mut buffer).unwrap();
+                assert_eq!(buffer, &bytes[j..j + i]);
+            }
+        }
+        let mut buffer = vec![0; 45];
+        file.plugin_operations.read(0, &mut buffer).unwrap();
+        assert_eq!(buffer, &bytes[..]);
+    }
 }
