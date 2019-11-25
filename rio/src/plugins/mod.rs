@@ -18,9 +18,11 @@ use io::RIO;
 pub mod defaultplugin;
 pub mod ihex;
 pub mod malloc;
+pub mod base64;
 
 pub(crate) fn load_plugins(io: &mut RIO) {
     io.load_plugin(defaultplugin::plugin());
     io.load_plugin(ihex::plugin());
     io.load_plugin(malloc::plugin());
+    io.load_plugin(base64::plugin());
 }
