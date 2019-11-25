@@ -107,7 +107,6 @@ impl RIOPlugin for MallocPlugin {
         return Ok(desc);
     }
 
-    // either file:// or just no "://" to start with
     fn accept_uri(&self, uri: &str) -> bool {
         let split: Vec<&str> = uri.split("://").collect();
         if split.len() == 2 && split[0] == "malloc" {
