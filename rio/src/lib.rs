@@ -27,6 +27,7 @@ extern crate memmap;
 extern crate rtrees;
 #[cfg(test)]
 extern crate test_file;
+extern crate base64;
 
 mod desc;
 mod descquery;
