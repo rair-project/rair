@@ -108,7 +108,7 @@ impl Base64Internal {
             return Err(IoError::Custom("Corrupted base64 data".to_string()));
         }
         decoded_data[offset..offset + size].copy_from_slice(&buffer[0..size]);
-        encode_config_slice(&decoded_data[0..offset + size], base64::STANDARD, &mut b64data);
+        encode_config_slice(&decoded_data, base64::STANDARD, &mut b64data);
         self.file.write(b64base, &b64data)?;
         return Ok((raddr + size, &buffer[size..]));
     }
@@ -129,7 +129,7 @@ impl Base64Internal {
             return Err(IoError::Custom("Corrupted base64 data".to_string()));
         }
         decoded_data[0..size].copy_from_slice(&buffer[offset..]);
-        encode_config_slice(&decoded_data[0..offset + size], base64::STANDARD, &mut b64data);
+        encode_config_slice(&decoded_data, base64::STANDARD, &mut b64data);
         self.file.write(b64base, &b64data)?;
         return Ok((raddr, &buffer[..offset]));
     }
@@ -231,6 +231,8 @@ pub fn plugin() -> Box<dyn RIOPlugin> {
 #[cfg(test)]
 mod test_base64 {
     use super::*;
+    use test_file::*;
+
     #[test]
     fn test_nopad_read() {
         let mut p = plugin();
@@ -277,5 +279,26 @@ mod test_base64 {
         assert_eq!(b1, [b'T']);
         let e = file.plugin_operations.read(1, &mut b1).err().unwrap();
         assert_eq!(e, IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
+    }
+    fn nopad_write_cb(path: &Path) {
+        let mut p = plugin();
+        let uri = String::from("b64://") + &path.to_string_lossy();
+        let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
+        file.plugin_operations.write(0, b"t").unwrap();
+        file.plugin_operations.write(1, b"HE").unwrap();
+        file.plugin_operations.write(3, b"_QU").unwrap();
+        file.plugin_operations.write(6, b"ICK_").unwrap();
+        file.plugin_operations.write(10, b"BROWN").unwrap();
+        file.plugin_operations.write(15, b"_FOX_J").unwrap();
+        file.plugin_operations.write(21, b"UMPED_O").unwrap();
+        file.plugin_operations.write(28, b"VER_THE_").unwrap();
+        file.plugin_operations.write(36, b"LAZY_DOG;").unwrap();
+        let mut data = [0; 45];
+        file.plugin_operations.read(0, &mut data).unwrap();
+        assert_eq!(&data[..], &b"tHE_QUICK_BROWN_FOX_JUMPED_OVER_THE_LAZY_DOG;"[..]);
+    }
+    #[test]
+    fn test_nopad_write() {
+        operate_on_copy(&nopad_write_cb, "../../testing_binaries/rio/base64/no_padding.b64");
     }
 }
