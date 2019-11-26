@@ -301,4 +301,44 @@ mod test_base64 {
     fn test_nopad_write() {
         operate_on_copy(&nopad_write_cb, "../../testing_binaries/rio/base64/no_padding.b64");
     }
+
+    fn one_pad_write_cb(path: &Path) {
+        let mut p = plugin();
+        let uri = String::from("b64://") + &path.to_string_lossy();
+        let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
+        file.plugin_operations.write(0, b"t").unwrap();
+        file.plugin_operations.write(1, b"H").unwrap();
+        let mut d2 = [0; 2];
+        file.plugin_operations.read(0, &mut d2).unwrap();
+        assert_eq!(&d2[..], &b"tH"[..]);
+        file.plugin_operations.write(0, b"Th").unwrap();
+        file.plugin_operations.read(0, &mut d2).unwrap();
+        assert_eq!(&d2[..], &b"Th"[..]);
+        let e = file.plugin_operations.write(1, &mut d2).err().unwrap();
+        assert_eq!(e, IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
+    }
+
+    #[test]
+    fn test_one_pad_write() {
+        operate_on_copy(&one_pad_write_cb, "../../testing_binaries/rio/base64/one_pad.b64");
+    }
+
+    fn two_pad_write_cb(path: &Path) {
+        let mut p = plugin();
+        let uri = String::from("b64://") + &path.to_string_lossy();
+        let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
+        file.plugin_operations.write(0, b"t").unwrap();
+        let mut d2 = [0; 1];
+        file.plugin_operations.read(0, &mut d2).unwrap();
+        assert_eq!(&d2[..], &b"t"[..]);
+        file.plugin_operations.write(0, b"T").unwrap();
+        file.plugin_operations.read(0, &mut d2).unwrap();
+        assert_eq!(&d2[..], &b"T"[..]);
+        let e = file.plugin_operations.write(1, b"H").err().unwrap();
+        assert_eq!(e, IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
+    }
+    #[test]
+    fn test_two_pad_write() {
+        operate_on_copy(&two_pad_write_cb, "../../testing_binaries/rio/base64/two_pad.b64");
+    }
 }
