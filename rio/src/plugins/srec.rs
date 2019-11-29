@@ -180,10 +180,10 @@ fn parse_record9(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, _) = hex_byte(input)?; //checksum
     return Ok((input, Record::EOF(start as u64)));
 }
+named!(parse_record(&[u8]) -> Record, alt!(parse_record0 | parse_record1 | parse_record2 | parse_record3 | parse_record5 | parse_record6 | parse_record7 | parse_record8 | parse_record9));
 
 impl SrecInternal {
     fn parse_srec(&mut self, input: &[u8]) -> Result<(), IoError> {
-        named!(parse_record(&[u8]) -> Record, alt!(parse_record0 | parse_record1 | parse_record2 | parse_record3 | parse_record5 | parse_record6 | parse_record7 | parse_record8 | parse_record9));
         let mut input = input;
         let mut line = 1;
         loop {
