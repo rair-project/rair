@@ -461,4 +461,34 @@ mod test_srec {
             panic!("Expected Data record");
         }
     }
+    #[test]
+    fn test_record07() {
+        let input = b"S70512001000D8";
+        let (input, rec) = parse_record7(input).unwrap();
+        assert_eq!(input, b"");
+        match rec {
+            Record::EOF(addr) => assert_eq!(addr, 0x12001000),
+            _ => panic!("Expected EOF record"),
+        }
+    }
+    #[test]
+    fn test_record08() {
+        let input = b"S804100000EB";
+        let (input, rec) = parse_record8(input).unwrap();
+        assert_eq!(input, b"");
+        match rec {
+            Record::EOF(addr) => assert_eq!(addr, 0x100000),
+            _ => panic!("Expected EOF record"),
+        }
+    }
+    #[test]
+    fn test_record09() {
+        let input = b"S9031234B6";
+        let (input, rec) = parse_record9(input).unwrap();
+        assert_eq!(input, b"");
+        match rec {
+            Record::EOF(addr) => assert_eq!(addr, 0x1234),
+            _ => panic!("Expected EOF record"),
+        }
+    }
 }
