@@ -496,7 +496,28 @@ mod test_srec {
             panic!("Expected Data record");
         }
     }
-
+    #[test]
+    fn test_record5() {
+        let input = b"S5031234B6\n";
+        let (input, rec) = parse_record5(input).unwrap();
+        assert_eq!(input, b"");
+        if let Record::Count(count) = rec {
+            assert_eq!(count, 0x1234);
+        } else {
+            panic!("Expected Count record");
+        }
+    }
+    #[test]
+    fn test_record6() {
+        let input = b"S6041234565F\n";
+        let (input, rec) = parse_record6(input).unwrap();
+        assert_eq!(input, b"");
+        if let Record::Count(count) = rec {
+            assert_eq!(count, 0x123456);
+        } else {
+            panic!("Expected Count record");
+        }
+    }
     #[test]
     fn test_record07() {
         let input = b"S70512001000D8";
