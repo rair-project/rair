@@ -427,3 +427,18 @@ impl RIOPlugin for SrecPlugin {
 pub fn plugin() -> Box<dyn RIOPlugin> {
     return Box::new(SrecPlugin::new());
 }
+
+#[cfg(test)]
+mod test_srec {
+    use super::*;
+    #[test]
+    fn test_record0() {
+        let input = b"S021000036384B50524F47202020323043524541544544204259204541535936384B6D\n";
+        let (input, rec) = parse_record0(input).unwrap();
+        assert_eq!(input, b"");
+        match rec {
+            Record::Header(header) => assert_eq!(header, b"68KPROG   20CREATED BY EASY68K"),
+            _ => panic!("Expected Header record"),
+        }
+    }
+}
