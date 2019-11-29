@@ -441,4 +441,24 @@ mod test_srec {
             _ => panic!("Expected Header record"),
         }
     }
+
+    #[test]
+    fn test_record1() {
+        let input = b"S1231000427900001142103C0020123C00004E4F123C00014E4F2841123C00024E4F2641BE\n";
+        let (input, rec) = parse_record1(input).unwrap();
+        assert_eq!(input, b"");
+        if let Record::Data(addr, data) = rec {
+            assert_eq!(addr, 0x1000);
+            assert_eq!(data.len(), 0x20);
+            assert_eq!(
+                data,
+                [
+                    0x42, 0x79, 0x00, 0x00, 0x11, 0x42, 0x10, 0x3C, 0x00, 0x20, 0x12, 0x3C, 0x00, 0x00, 0x4E, 0x4F, 0x12, 0x3C, 0x00, 0x01, 0x4E, 0x4F, 0x28, 0x41, 0x12, 0x3C, 0x00, 0x02, 0x4E, 0x4F,
+                    0x26, 0x41
+                ]
+            );
+        } else {
+            panic!("Expected Data record");
+        }
+    }
 }
