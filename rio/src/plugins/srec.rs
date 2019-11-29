@@ -548,4 +548,15 @@ mod test_srec {
             _ => panic!("Expected EOF record"),
         }
     }
+    #[test]
+    fn test_s0_s1_s8_file() {
+        let mut p = plugin();
+        let mut file = p.open("srec://../../testing_binaries/rio/srec/record_0_1_8.s68", IoMode::READ).unwrap();
+        assert_eq!(file.size, 0x142);
+        let mut data = vec![0u8; 16];
+        file.plugin_operations.read(0x1000, &mut data).unwrap();
+        assert_eq!(data, [0x42, 0x79, 0x00, 0x00, 0x11, 0x42, 0x10, 0x3C, 0x00, 0x20, 0x12, 0x3C, 0x00, 0x00, 0x4E, 0x4F,]);
+        file.plugin_operations.read(0x1070, &mut data).unwrap();
+        assert_eq!(data, [0x67, 0xB0, 0x8A, 0xFC, 0x00, 0x3C, 0xBA, 0x7C, 0x00, 0x00, 0x66, 0x04, 0x3A, 0x3C, 0x00, 0x0C,]);
+    }
 }
