@@ -462,6 +462,42 @@ mod test_srec {
         }
     }
     #[test]
+    fn test_record2() {
+        let input = b"S2234210007900001142103C0020123C00004E4F123C00014E4F2841123C00024E4F2641BE\n";
+        let (input, rec) = parse_record2(input).unwrap();
+        assert_eq!(input, b"");
+        if let Record::Data(addr, data) = rec {
+            assert_eq!(addr, 0x421000);
+            assert_eq!(data.len(), 0x1f);
+            assert_eq!(
+                data,
+                [
+                    0x79, 0x00, 0x00, 0x11, 0x42, 0x10, 0x3C, 0x00, 0x20, 0x12, 0x3C, 0x00, 0x00, 0x4E, 0x4F, 0x12, 0x3C, 0x00, 0x01, 0x4E, 0x4F, 0x28, 0x41, 0x12, 0x3C, 0x00, 0x02, 0x4E, 0x4F, 0x26,
+                    0x41
+                ]
+            );
+        } else {
+            panic!("Expected Data record");
+        }
+    }
+    #[test]
+    fn test_record3() {
+        let input = b"S3234200100079001142103C0020123C00004E4F123C00014E4F2841123C00024E4F2641BE\n";
+        let (input, rec) = parse_record3(input).unwrap();
+        assert_eq!(input, b"");
+        if let Record::Data(addr, data) = rec {
+            assert_eq!(addr, 0x42001000);
+            assert_eq!(data.len(), 0x1e);
+            assert_eq!(
+                data,
+                [0x79, 0x00, 0x11, 0x42, 0x10, 0x3C, 0x00, 0x20, 0x12, 0x3C, 0x00, 0x00, 0x4E, 0x4F, 0x12, 0x3C, 0x00, 0x01, 0x4E, 0x4F, 0x28, 0x41, 0x12, 0x3C, 0x00, 0x02, 0x4E, 0x4F, 0x26, 0x41]
+            );
+        } else {
+            panic!("Expected Data record");
+        }
+    }
+
+    #[test]
     fn test_record07() {
         let input = b"S70512001000D8";
         let (input, rec) = parse_record7(input).unwrap();
