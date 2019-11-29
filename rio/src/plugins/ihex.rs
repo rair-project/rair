@@ -105,7 +105,6 @@ fn parse_record01(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, _) = hex_big_word(input)?; // addr entry
     let (input, _) = tag("01")(input)?; // record ID
     let (input, _) = hex_byte(input)?; // checksum
-    let (input, _) = parse_newline(input)?; //newline
     return Ok((input, Record::EOF));
 }
 fn parse_record02(input: &[u8]) -> IResult<&[u8], Record> {
