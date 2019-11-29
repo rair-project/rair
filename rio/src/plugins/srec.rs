@@ -233,7 +233,7 @@ impl SrecInternal {
         if self.header.len() > 0xff {
             return Err(IoError::Custom("Cannot write S0 Entry with size > 0xff".to_string()));
         }
-        write!(file, "S0{:02x}", self.header.len()).unwrap();
+        write!(file, "S0{:02x}0000", self.header.len() + 3).unwrap();
         let mut checksum = self.header.len() as u16;
         for byte in self.header.iter() {
             checksum = (checksum + *byte as u16) & 0xff;
@@ -253,8 +253,8 @@ impl SrecInternal {
             if i != 0 {
                 if i == 0x10 || *k != addr + 1 {
                     let size = i + extra_data;
-                    checksum = (checksum + size) & 0xff;
-                    writeln!(file, "{}{:02x}{}{}", record, size, data, !checksum)?;
+                    checksum = (!(checksum + size)) & 0xff;
+                    writeln!(file, "{}{:02x}{}{:02x}", record, size, data, checksum)?;
 
                     data.clear();
                     checksum = 0;
@@ -294,8 +294,8 @@ impl SrecInternal {
         }
         if !data.is_empty() {
             let size = i + extra_data;
-            checksum = (checksum + size) & 0xff;
-            writeln!(file, "{}{:02x}{}{}", record, size, data, !checksum)?;
+            checksum = (!(checksum + size)) & 0xff;
+            writeln!(file, "{}{:02x}{}{:02x}", record, size, data, checksum)?;
         }
 
         return Ok(());
@@ -431,6 +431,7 @@ pub fn plugin() -> Box<dyn RIOPlugin> {
 #[cfg(test)]
 mod test_srec {
     use super::*;
+    use test_file::*;
     #[test]
     fn test_record0() {
         let input = b"S021000036384B50524F47202020323043524541544544204259204541535936384B6D\n";
@@ -558,5 +559,37 @@ mod test_srec {
         assert_eq!(data, [0x42, 0x79, 0x00, 0x00, 0x11, 0x42, 0x10, 0x3C, 0x00, 0x20, 0x12, 0x3C, 0x00, 0x00, 0x4E, 0x4F,]);
         file.plugin_operations.read(0x1070, &mut data).unwrap();
         assert_eq!(data, [0x67, 0xB0, 0x8A, 0xFC, 0x00, 0x3C, 0xBA, 0x7C, 0x00, 0x00, 0x66, 0x04, 0x3A, 0x3C, 0x00, 0x0C,]);
+    }
+
+    fn write_s0_s1_s8_cb(path: &Path) {
+        let mut p = plugin();
+        let uri = String::from("srec://") + &path.to_string_lossy();
+        let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
+
+        file.plugin_operations.write(0x1000, &[0x80, 0x90, 0xff, 0xfe]).unwrap();
+        file.plugin_operations.write(0x1070, &[0x80, 0x90, 0xff, 0xfe]).unwrap();
+        drop(file);
+        file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
+        assert_eq!(file.size, 0x142);
+        let mut data = vec![0u8; 16];
+        file.plugin_operations.read(0x1000, &mut data).unwrap();
+        assert_eq!(data, [0x80, 0x90, 0xff, 0xfe, 0x11, 0x42, 0x10, 0x3C, 0x00, 0x20, 0x12, 0x3C, 0x00, 0x00, 0x4E, 0x4F,]);
+        file.plugin_operations.read(0x1070, &mut data).unwrap();
+        assert_eq!(data, [0x80, 0x90, 0xff, 0xfe, 0x00, 0x3C, 0xBA, 0x7C, 0x00, 0x00, 0x66, 0x04, 0x3A, 0x3C, 0x00, 0x0C,]);
+        file.plugin_operations.write(0x1000, &[0x42, 0x79, 0x00, 0x00]).unwrap();
+        file.plugin_operations.write(0x1070, &[0x67, 0xB0, 0x8A, 0xFC]).unwrap();
+        drop(file);
+        let mut original = p.open("srec://../../testing_binaries/rio/srec/record_0_1_8.s68", IoMode::READ).unwrap();
+        let mut file = p.open(&uri, IoMode::READ).unwrap();
+        let mut d1 = [0; 0x142];
+        let mut d2 = [0; 0x142];
+        file.plugin_operations.read(0x1000, &mut d1).unwrap();
+        original.plugin_operations.read(0x1000, &mut d2).unwrap();
+        assert_eq!(d1[..], d2[..]);
+    }
+
+    #[test]
+    fn test_write_s0_s1_s8() {
+        operate_on_copy(&write_s0_s1_s8_cb, "../../testing_binaries/rio/srec/record_0_1_8.s68");
     }
 }
