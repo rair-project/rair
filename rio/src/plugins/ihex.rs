@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use super::defaultplugin;
+use super::dummy::Dummy;
 use nom::bytes::complete::tag;
 use nom::bytes::complete::take_while_m_n;
 use nom::combinator::map_res;
@@ -30,16 +31,6 @@ use std::io::Write as IoWrite;
 use std::path::Path;
 use std::str;
 use utils::*;
-struct Dummy {}
-
-impl RIOPluginOperations for Dummy {
-    fn read(&mut self, _raddr: usize, _buffer: &mut [u8]) -> Result<(), IoError> {
-        return Ok(());
-    }
-    fn write(&mut self, _raddr: usize, _buffer: &[u8]) -> Result<(), IoError> {
-        return Ok(());
-    }
-}
 
 const METADATA: RIOPluginMetadata = RIOPluginMetadata {
     name: "IHex",

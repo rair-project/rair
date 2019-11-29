@@ -1,5 +1,5 @@
 /*
- * plugins: List of built-in RIO plugins.
+ * dummy.rs: RIO dummy plugin: It does nothing at all, usually it is used when reopening files.
  * Copyright (C) 2019  Oddcoder
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -14,17 +14,16 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use io::RIO;
-pub mod base64;
-pub mod defaultplugin;
-pub mod dummy;
-pub mod ihex;
-pub mod malloc;
-pub mod srec;
-pub(crate) fn load_plugins(io: &mut RIO) {
-    io.load_plugin(defaultplugin::plugin());
-    io.load_plugin(ihex::plugin());
-    io.load_plugin(malloc::plugin());
-    io.load_plugin(base64::plugin());
-    io.load_plugin(srec::plugin());
+
+use plugin::*;
+use utils::*;
+pub struct Dummy {}
+
+impl RIOPluginOperations for Dummy {
+    fn read(&mut self, _raddr: usize, _buffer: &mut [u8]) -> Result<(), IoError> {
+        return Ok(());
+    }
+    fn write(&mut self, _raddr: usize, _buffer: &[u8]) -> Result<(), IoError> {
+        return Ok(());
+    }
 }
