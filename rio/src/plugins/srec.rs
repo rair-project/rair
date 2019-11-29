@@ -166,21 +166,18 @@ fn parse_record7(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, _) = tag("S705")(input)?;
     let (input, start) = hex_big_dword(input)?;
     let (input, _) = hex_byte(input)?; //checksum
-    let (input, _) = parse_newline(input)?; //newline
     return Ok((input, Record::EOF(start as u64)));
 }
 fn parse_record8(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, _) = tag("S804")(input)?;
     let (input, start) = hex_big_24bits(input)?;
     let (input, _) = hex_byte(input)?; //checksum
-    let (input, _) = parse_newline(input)?; //newline
     return Ok((input, Record::EOF(start as u64)));
 }
 fn parse_record9(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, _) = tag("S903")(input)?;
     let (input, start) = hex_big_word(input)?;
     let (input, _) = hex_byte(input)?; //checksum
-    let (input, _) = parse_newline(input)?; //newline
     return Ok((input, Record::EOF(start as u64)));
 }
 
