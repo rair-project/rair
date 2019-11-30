@@ -550,9 +550,9 @@ mod test_srec {
         }
     }
     #[test]
-    fn test_s0_s1_s8_file() {
+    fn test_s0_s1_s9_file() {
         let mut p = plugin();
-        let mut file = p.open("srec://../../testing_binaries/rio/srec/record_0_1_8.srec", IoMode::READ).unwrap();
+        let mut file = p.open("srec://../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
         assert_eq!(file.size, 0x142);
         let mut data = vec![0u8; 16];
         file.plugin_operations.read(0x1000, &mut data).unwrap();
@@ -561,7 +561,7 @@ mod test_srec {
         assert_eq!(data, [0x67, 0xB0, 0x8A, 0xFC, 0x00, 0x3C, 0xBA, 0x7C, 0x00, 0x00, 0x66, 0x04, 0x3A, 0x3C, 0x00, 0x0C,]);
     }
 
-    fn write_s0_s1_s8_cb(path: &Path) {
+    fn write_s0_s1_s9_cb(path: &Path) {
         let mut p = plugin();
         let uri = String::from("srec://") + &path.to_string_lossy();
         let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
@@ -579,7 +579,7 @@ mod test_srec {
         file.plugin_operations.write(0x1000, &[0x42, 0x79, 0x00, 0x00]).unwrap();
         file.plugin_operations.write(0x1070, &[0x67, 0xB0, 0x8A, 0xFC]).unwrap();
         drop(file);
-        let mut original = p.open("srec://../../testing_binaries/rio/srec/record_0_1_8.srec", IoMode::READ).unwrap();
+        let mut original = p.open("srec://../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
         let mut file = p.open(&uri, IoMode::READ).unwrap();
         let mut d1 = [0; 0x142];
         let mut d2 = [0; 0x142];
@@ -589,8 +589,8 @@ mod test_srec {
     }
 
     #[test]
-    fn test_write_s0_s1_s8() {
-        operate_on_copy(&write_s0_s1_s8_cb, "../../testing_binaries/rio/srec/record_0_1_8.srec");
+    fn test_write_s0_s1_s9() {
+        operate_on_copy(&write_s0_s1_s9_cb, "../../testing_binaries/rio/srec/record_0_1_9.srec");
     }
 
     #[test]
@@ -629,4 +629,6 @@ mod test_srec {
     fn test_write_s2() {
         operate_on_copy(&write_s2_cb, "../../testing_binaries/rio/srec/record_0_2_8.srec");
     }
+
+    
 }
