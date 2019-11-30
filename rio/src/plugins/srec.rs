@@ -667,4 +667,11 @@ mod test_srec {
     fn test_write_s3() {
         operate_on_copy(&write_s3_cb, "../../testing_binaries/rio/srec/record_0_3_7.srec");
     }
+
+    #[test]
+    fn test_corrupted() {
+        let mut p = plugin();
+        let err = p.open("srec://../../testing_binaries/rio/srec/corrupted.srec", IoMode::READ).err().unwrap();
+        assert_eq!(err, IoError::Custom("Invalid S-record at line: 2".to_string()));
+    }
 }
