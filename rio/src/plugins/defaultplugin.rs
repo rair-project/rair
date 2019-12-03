@@ -96,13 +96,13 @@ impl RIOPlugin for FilePlugin {
     fn open(&mut self, uri: &str, flags: IoMode) -> Result<RIOPluginDesc, IoError> {
         let file: FileInternals;
         if !flags.contains(IoMode::READ) && flags.contains(IoMode::WRITE) {
-            return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Can't Open File for writing reading")));
+            return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Can't Open File for writing without reading")));
         }
         // we can't have write with cow bcause this mean we had writer without read or read with cow lol
         if flags.contains(IoMode::READ) && flags.contains(IoMode::COW) {
             return Err(IoError::Parse(io::Error::new(
                 io::ErrorKind::PermissionDenied,
-                "Can't Open File with permission as Write and Copy-On-Write",
+                "Can't Open File with permission as Read and Copy-On-Write",
             )));
         }
         if flags.contains(IoMode::COW) {
