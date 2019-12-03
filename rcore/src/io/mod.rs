@@ -16,15 +16,19 @@
  */
 mod map;
 mod print_hex;
+mod files;
 use self::map::*;
 use self::print_hex::*;
+use self::files::*;
 use core::Core;
 use std::cell::RefCell;
 use std::rc::Rc;
+
 
 pub fn register_io(core: &mut Core) {
     core.add_command("map", "", Rc::new(RefCell::new(Map::new())));
     core.add_command("maps", "", Rc::new(RefCell::new(ListMap::new())));
     core.add_command("printHex", "px", Rc::new(RefCell::new(PrintHex::new())));
     core.add_command("unmap", "um", Rc::new(RefCell::new(UnMap::new())));
+    core.add_command("files", "", Rc::new(RefCell::new(ListFiles::new())));
 }

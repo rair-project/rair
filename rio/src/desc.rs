@@ -70,6 +70,10 @@ impl RIODesc {
     pub fn perm(&self) -> IoMode {
         return self.perm;
     }
+    /// Returns the Handle of given file descriptor.
+    pub fn hndl(&self) -> u64 {
+        return self.hndl;
+    }
 }
 
 #[cfg(test)]
