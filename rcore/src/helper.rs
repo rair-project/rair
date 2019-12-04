@@ -49,6 +49,16 @@ pub fn expect(core: &mut Core, args_len: u64, expect: u64) {
     writeln!(core.stderr, "{}: Expected {} argument(s), found {}.", error, expected, found).unwrap();
 }
 
+pub fn expect_range(core: &mut Core, args_len: u64, min: u64, max: u64) {
+    assert!(min < max);
+    let (r, g, b) = core.color_palette[3];
+    let error = Paint::rgb(r, g, b, "Arguments Error").bold();
+    let min_str = Paint::rgb(r, g, b, format!("{}", min));
+    let max_str = Paint::rgb(r, g, b, format!("{}", max));
+    let found = Paint::rgb(r, g, b, format!("{}", args_len));
+    writeln!(core.stderr, "{}: Expected between {} and {} arguments, found {}.", error, min_str, max_str, found).unwrap();
+}
+
 pub fn error_msg(core: &mut Core, title: &str, msg: &str) {
     let (r, g, b) = core.color_palette[3];
     writeln!(core.stderr, "{}: {}", Paint::rgb(r, g, b, "Error").bold(), Paint::rgb(r, g, b, title)).unwrap();
@@ -147,6 +157,14 @@ mod test_helper {
         Paint::disable();
         expect(&mut core, 5, 7);
         assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 7 argument(s), found 5.\n");
+    }
+    #[test]
+    fn test_expect_range() {
+        let mut core = Core::new();
+        core.stderr = Writer::new_buf();
+        Paint::disable();
+        expect_range(&mut core, 5, 7, 10);
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected between 7 and 10 arguments, found 5.\n");
     }
 
     #[test]
