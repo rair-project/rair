@@ -22,7 +22,7 @@ CustomAlpha = _{ASCII_ALPHA | "_"}
 CustomAlphaNum = _{ASCII_ALPHANUMERIC | "_"}
 // Alpha Numerics with some Symbols except "@ or #"
 ANS = {ASCII_ALPHANUMERIC | "/" | "\\" | "~" | "!" | "$" |
-    "%" | "^" | "&" | "*" | "(" | ")" | "_" | "+" | "=" | "-"}
+    "%" | "^" | "&" | "*" | "(" | ")" | "_" | "+" | "=" | "-" | ":" | "."}
 // Alpha Numerics with White space and Symbols
 ANWS = { WHITESPACE |ANS | "@" | "#"}
 
