@@ -14,16 +14,15 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+mod files;
 mod map;
 mod print_hex;
-mod files;
+use self::files::*;
 use self::map::*;
 use self::print_hex::*;
-use self::files::*;
 use core::Core;
 use std::cell::RefCell;
 use std::rc::Rc;
-
 
 pub fn register_io(core: &mut Core) {
     core.add_command("map", "", Rc::new(RefCell::new(Map::new())));
@@ -31,4 +30,5 @@ pub fn register_io(core: &mut Core) {
     core.add_command("printHex", "px", Rc::new(RefCell::new(PrintHex::new())));
     core.add_command("unmap", "um", Rc::new(RefCell::new(UnMap::new())));
     core.add_command("files", "", Rc::new(RefCell::new(ListFiles::new())));
+    core.add_command("open", "o", Rc::new(RefCell::new(OpenFile::new())));
 }
