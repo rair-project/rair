@@ -125,6 +125,43 @@ impl Cmd for OpenFile {
 
     }
     fn help(&self, core: &mut Core) {
-        help(core, &"open", &"o", vec![("<Perm> [URI] <Addr>", "Open given URI using given optional permission (default to readonly) at given optional address")]);
+        help(core, &"open", &"o", vec![("<Perm> [URI] <Addr>", "Open given URI using given optional permission (default to readonly) at given optional address.")]);
     }
 }
+
+#[derive(Default)]
+pub struct CloseFile {}
+
+
+impl CloseFile {
+    pub fn new() -> Self {
+        Default::default()
+    }
+}
+
+impl Cmd for CloseFile {
+    fn run(&mut self, core: &mut Core, args: &[String]) {
+        if args.len() != 1 {
+            expect(core, args.len() as u64, 1);
+            return;
+        }
+        let hndl =  match str_to_num(&args[0]){
+            Ok(hndl) => hndl,
+            Err(e) => {
+                let err_str = format!("{}", e);
+                error_msg(core, "Invalid hndl", &err_str);
+                return;
+
+            }
+        };
+        if let Err(e) = core.io.close(hndl) {
+            let err_str = format!("{}", e);
+            error_msg(core, "Failed to Open File", &err_str);
+        }
+
+    }
+    fn help(&self, core: &mut Core) {
+        help(core, &"close", &"", vec![("[hndl]", "Close file with given hndl.")]);
+    }
+}
+

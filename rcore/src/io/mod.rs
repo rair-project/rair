@@ -31,4 +31,5 @@ pub fn register_io(core: &mut Core) {
     core.add_command("unmap", "um", Rc::new(RefCell::new(UnMap::new())));
     core.add_command("files", "", Rc::new(RefCell::new(ListFiles::new())));
     core.add_command("open", "o", Rc::new(RefCell::new(OpenFile::new())));
+    core.add_command("close", "", Rc::new(RefCell::new(CloseFile::new())));
 }
