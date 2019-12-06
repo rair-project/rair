@@ -285,12 +285,9 @@ mod test_files {
         open.run(&mut core, &["file_that_doesnt_exist".to_string()]);
         close.run(&mut core, &["5".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(
-            core.stderr.utf8_string().unwrap(),
-            "Error: Failed to open file\n\
-             No such file or directory (os error 2)\n\
-             Error: Failed to close file\n\
-             Handle Does not exist.\n"
-        );
+        let err = core.stderr.utf8_string().unwrap();
+        assert!(err.starts_with("Error: Failed to open file\n"));
+        // what in between is different between Windows and *Nix
+        assert!(err.ends_with("Error: Failed to close file\nHandle Does not exist.\n"));
     }
 }
