@@ -273,4 +273,24 @@ mod test_files {
              Arguments Error: Expected 1 argument(s), found 0.\n"
         );
     }
+
+    #[test]
+    fn test_failed_open_close() {
+        Paint::disable();
+        let mut core = Core::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let mut open = OpenFile::new();
+        let mut close = CloseFile::new();
+        open.run(&mut core, &["file_that_doesnt_exist".to_string()]);
+        close.run(&mut core, &["5".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to open file\n\
+             No such file or directory (os error 2)\n\
+             Error: Failed to close file\n\
+             Handle Does not exist.\n"
+        );
+    }
 }
