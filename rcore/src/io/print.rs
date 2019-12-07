@@ -98,7 +98,444 @@ impl Cmd for PrintHex {
         }
     }
     fn help(&self, core: &mut Core) {
-        help(core, &"printHex", &"px", vec![("[size]", "View data of at current location in hex format.")]);
+        help(core, &"printHex", &"px", vec![("[size]", "View data at current location in hex format.")]);
+    }
+}
+
+#[derive(Default)]
+pub struct PrintBase {}
+
+impl PrintBase {
+    pub fn new() -> Self {
+        Default::default()
+    }
+}
+fn encode_bin(data: &[u8]) -> String {
+    let mut out = String::with_capacity(data.len() * 8);
+    for byte in data {
+        out += &format!("{:08b}", byte);
+    }
+    return out;
+}
+fn encode_hex(data: &[u8]) -> String {
+    let mut out = String::with_capacity(data.len() * 2);
+    for byte in data {
+        out += &format!("{:02x}", byte);
+    }
+    return out;
+}
+impl Cmd for PrintBase {
+    fn run(&mut self, core: &mut Core, args: &[String]) {
+        if args.len() != 2 {
+            expect(core, args.len() as u64, 2);
+            return;
+        }
+        let size = match str_to_num(&args[1]) {
+            Ok(size) => size as usize,
+            Err(e) => {
+                let err_str = format!("{}", e);
+                error_msg(core, "Failed to parse size", &err_str);
+                return;
+            }
+        };
+        let mut data = vec![0; size];
+        if size == 0 {
+            return;
+        }
+        let loc = core.get_loc();
+        let error = match core.mode {
+            AddrMode::Phy => core.io.pread(loc, &mut data),
+            AddrMode::Vir => core.io.vread(loc, &mut data),
+        };
+        if let Err(e) = error {
+            error_msg(core, "Read Failed", &e.to_string());
+            return;
+        }
+        let data_str = match args[0].as_ref() {
+            "2" => encode_bin(&data),
+            "16" => encode_hex(&data),
+            _ => return error_msg(core, "Failed to print data", "Invalid base"),
+        };
+        writeln!(core.stdout, "{}", data_str).unwrap();
+    }
+    fn help(&self, core: &mut Core) {
+        help(core, &"printBase", &"pb", vec![("[base] [size]", "Print data stream at current location in [base] format.")]);
+        writeln!(core.stdout, "Supported bases: 2, 16").unwrap();
+    }
+}
+
+#[derive(Default)]
+pub struct PrintCSV {}
+
+impl PrintCSV {
+    pub fn new() -> Self {
+        Default::default()
+    }
+}
+
+fn csv8(data: &[u8]) -> String {
+    let mut out = String::with_capacity(data.len() * 6);
+    let mut terminal;
+    for (i, byte) in data.iter().enumerate() {
+        if i == data.len() - 1 {
+            terminal = "";
+        } else if (i + 1) % 16 != 0 || i == 0 {
+            terminal = ", ";
+        } else {
+            terminal = ",\n";
+        }
+        out += &format!("0x{:02x}{}", byte, terminal);
+    }
+    return out;
+}
+
+fn csv16(data: &[u8]) -> String {
+    // Data must be guaranteed to be of even length
+    let mut out = String::with_capacity(data.len() * 4);
+    let mut terminal;
+    for i in (0..data.len()).step_by(2) {
+        if i == data.len() - 2 {
+            terminal = "";
+        } else if (i + 2) % 24 != 0 || i == 0 {
+            terminal = ", ";
+        } else {
+            terminal = ",\n";
+        }
+        out += &format!("0x{:02x}{:02x}{}", data[i + 1], data[i], terminal);
+    }
+    return out;
+}
+
+fn csv32(data: &[u8]) -> String {
+    // Data must be guaranteed to be of even length
+    let mut out = String::with_capacity(data.len() * 3);
+    let mut terminal;
+    for i in (0..data.len()).step_by(4) {
+        if i == data.len() - 4 {
+            terminal = "";
+        } else if (i + 4) % 32 != 0 || i == 0 {
+            terminal = ", ";
+        } else {
+            terminal = ",\n";
+        }
+        out += "0x";
+        for j in (0..4).rev() {
+            out += &format!("{:02x}", data[i + j]);
+        }
+        out += terminal
+    }
+    return out;
+}
+
+fn csv64(data: &[u8]) -> String {
+    // Data must be guaranteed to be of even length
+    let mut out = String::with_capacity(data.len() * 3);
+    let mut terminal;
+    for i in (0..data.len()).step_by(8) {
+        if i == data.len() - 8 {
+            terminal = "";
+        } else if (i + 8) % 32 != 0 || i == 0 {
+            terminal = ", ";
+        } else {
+            terminal = ",\n";
+        }
+        out += "0x";
+        for j in (0..8).rev() {
+            out += &format!("{:02x}", data[i + j]);
+        }
+        out += terminal
+    }
+    return out;
+}
+
+fn csv128(data: &[u8]) -> String {
+    // Data must be guaranteed to be of even length
+    let mut out = String::with_capacity(data.len() * 3);
+    let mut terminal;
+    for i in (0..data.len()).step_by(16) {
+        if i == data.len() - 16 {
+            terminal = "";
+        } else if (i + 16) % 32 != 0 || i == 0 {
+            terminal = ", ";
+        } else {
+            terminal = ",\n";
+        }
+        out += "0x";
+        for j in (0..16).rev() {
+            out += &format!("{:02x}", data[i + j]);
+        }
+        out += terminal
+    }
+    return out;
+}
+
+fn csv256(data: &[u8]) -> String {
+    // Data must be guaranteed to be of even length
+    let mut out = String::with_capacity(data.len() * 3);
+    let mut terminal;
+    for i in (0..data.len()).step_by(32) {
+        if i == data.len() - 32 {
+            terminal = "";
+        } else if (i + 32) % 64 != 0 || i == 0 {
+            terminal = ", ";
+        } else {
+            terminal = ",\n";
+        }
+        out += "0x";
+        for j in (0..32).rev() {
+            out += &format!("{:02x}", data[i + j]);
+        }
+        out += terminal
+    }
+    return out;
+}
+
+fn csv512(data: &[u8]) -> String {
+    // Data must be guaranteed to be of even length
+    let mut out = String::with_capacity(data.len() * 3);
+    let mut terminal;
+    for i in (0..data.len()).step_by(64) {
+        if i == data.len() - 64 {
+            terminal = "";
+        } else {
+            terminal = ",\n";
+        }
+        out += "0x";
+        for j in (0..64).rev() {
+            out += &format!("{:02x}", data[i + j]);
+        }
+        out += terminal
+    }
+    return out;
+}
+
+impl Cmd for PrintCSV {
+    fn run(&mut self, core: &mut Core, args: &[String]) {
+        if args.len() != 2 {
+            expect(core, args.len() as u64, 2);
+            return;
+        }
+        let count = match str_to_num(&args[1]) {
+            Ok(count) => count as usize,
+            Err(e) => {
+                let err_str = format!("{}", e);
+                error_msg(core, "Failed to parse count", &err_str);
+                return;
+            }
+        };
+        let bsize = match str_to_num(&args[0]) {
+            Ok(size) => size as usize,
+            Err(e) => {
+                let err_str = format!("{}", e);
+                error_msg(core, "Failed to parse size", &err_str);
+                return;
+            }
+        };
+        let size = bsize / 8 * count;
+        if count == 0 {
+            return;
+        }
+        if size == 0 {
+            return error_msg(core, "Failed to print data", "Invalid size");
+        }
+        let mut data = vec![0; size];
+
+        let loc = core.get_loc();
+        let error = match core.mode {
+            AddrMode::Phy => core.io.pread(loc, &mut data),
+            AddrMode::Vir => core.io.vread(loc, &mut data),
+        };
+        if let Err(e) = error {
+            error_msg(core, "Read Failed", &e.to_string());
+            return;
+        }
+        let data_str = match bsize {
+            8 => csv8(&data),
+            16 => csv16(&data),
+            32 => csv32(&data),
+            64 => csv64(&data),
+            128 => csv128(&data),
+            256 => csv256(&data),
+            512 => csv512(&data),
+            _ => return error_msg(core, "Failed to print data", "Invalid size"),
+        };
+        writeln!(core.stdout, "{}", data_str).unwrap();
+    }
+    fn help(&self, core: &mut Core) {
+        help(
+            core,
+            &"printCSV",
+            &"pcsv",
+            vec![("[size] [count]", "Print data at current location as unsigned comma seperated values, each value of size [size] bits.")],
+        );
+        writeln!(core.stdout, "Supported size: 8, 16, 32, 64, 128, 256, 512.").unwrap();
+    }
+}
+
+#[derive(Default)]
+pub struct PrintSignedCSV {}
+
+impl PrintSignedCSV {
+    pub fn new() -> Self {
+        Default::default()
+    }
+}
+
+fn scsv8(data: &[u8]) -> String {
+    let mut out = String::with_capacity(data.len() * 6);
+    let mut terminal;
+    for (i, byte) in data.iter().enumerate() {
+        if i == data.len() - 1 {
+            terminal = "";
+        } else if (i + 1) % 16 != 0 || i == 0 {
+            terminal = ", ";
+        } else {
+            terminal = ",\n";
+        }
+        out += &format!("{}{}", *byte as i8, terminal);
+    }
+    return out;
+}
+
+fn scsv16(data: &[u8]) -> String {
+    // Data must be guaranteed to be of even length
+    let mut out = String::with_capacity(data.len() * 4);
+    let mut terminal;
+    for i in (0..data.len()).step_by(2) {
+        if i == data.len() - 2 {
+            terminal = "";
+        } else if (i + 2) % 24 != 0 || i == 0 {
+            terminal = ", ";
+        } else {
+            terminal = ",\n";
+        }
+        let x = ((data[i + 1] as u16) << 8) + data[i] as u16;
+        out += &format!("{}{}", x as i16, terminal);
+    }
+    return out;
+}
+
+fn scsv32(data: &[u8]) -> String {
+    // Data must be guaranteed to be of even length
+    let mut out = String::with_capacity(data.len() * 3);
+    let mut terminal;
+    for i in (0..data.len()).step_by(4) {
+        if i == data.len() - 4 {
+            terminal = "";
+        } else if (i + 4) % 32 != 0 || i == 0 {
+            terminal = ", ";
+        } else {
+            terminal = ",\n";
+        }
+        let mut x = 0u32;
+        for j in (0..4).rev() {
+            x = (x << 8) + data[i + j] as u32;
+        }
+        out += &format!("{}{}", x as i32, terminal);
+    }
+    return out;
+}
+
+fn scsv64(data: &[u8]) -> String {
+    // Data must be guaranteed to be of even length
+    let mut out = String::with_capacity(data.len() * 3);
+    let mut terminal;
+    for i in (0..data.len()).step_by(8) {
+        if i == data.len() - 8 {
+            terminal = "";
+        } else if (i + 8) % 32 != 0 || i == 0 {
+            terminal = ", ";
+        } else {
+            terminal = ",\n";
+        }
+        let mut x = 0u64;
+        for j in (0..8).rev() {
+            x = (x << 8) + data[i + j] as u64;
+        }
+        out += &format!("{}{}", x as i64, terminal);
+    }
+    return out;
+}
+
+fn scsv128(data: &[u8]) -> String {
+    // Data must be guaranteed to be of even length
+    let mut out = String::with_capacity(data.len() * 3);
+    let mut terminal;
+    for i in (0..data.len()).step_by(16) {
+        if i == data.len() - 16 {
+            terminal = "";
+        } else if (i + 16) % 32 != 0 || i == 0 {
+            terminal = ", ";
+        } else {
+            terminal = ",\n";
+        }
+        let mut x = 0u128;
+        for j in (0..16).rev() {
+            x = (x << 8) + data[i + j] as u128;
+        }
+        out += &format!("{}{}", x as i128, terminal);
+    }
+    return out;
+}
+
+impl Cmd for PrintSignedCSV {
+    fn run(&mut self, core: &mut Core, args: &[String]) {
+        if args.len() != 2 {
+            expect(core, args.len() as u64, 2);
+            return;
+        }
+        let count = match str_to_num(&args[1]) {
+            Ok(count) => count as usize,
+            Err(e) => {
+                let err_str = format!("{}", e);
+                error_msg(core, "Failed to parse count", &err_str);
+                return;
+            }
+        };
+        let bsize = match str_to_num(&args[0]) {
+            Ok(size) => size as usize,
+            Err(e) => {
+                let err_str = format!("{}", e);
+                error_msg(core, "Failed to parse size", &err_str);
+                return;
+            }
+        };
+        let size = bsize / 8 * count;
+        if count == 0 {
+            return;
+        }
+        if size == 0 {
+            return error_msg(core, "Failed to print data", "Invalid size");
+        }
+        let mut data = vec![0; size];
+
+        let loc = core.get_loc();
+        let error = match core.mode {
+            AddrMode::Phy => core.io.pread(loc, &mut data),
+            AddrMode::Vir => core.io.vread(loc, &mut data),
+        };
+        if let Err(e) = error {
+            error_msg(core, "Read Failed", &e.to_string());
+            return;
+        }
+        let data_str = match bsize {
+            8 => scsv8(&data),
+            16 => scsv16(&data),
+            32 => scsv32(&data),
+            64 => scsv64(&data),
+            128 => scsv128(&data),
+            _ => return error_msg(core, "Failed to print data", "Invalid size"),
+        };
+        writeln!(core.stdout, "{}", data_str).unwrap();
+    }
+    fn help(&self, core: &mut Core) {
+        help(
+            core,
+            &"printSCSV",
+            &"pscsv",
+            vec![("[size] [count]", "Print data at current location as signed comma seperated values, each value of size [size] bits.")],
+        );
+        writeln!(core.stdout, "Supported size: 8, 16, 32, 64, 128.").unwrap();
     }
 }
 
