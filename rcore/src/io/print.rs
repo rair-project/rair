@@ -1078,4 +1078,35 @@ mod test_print_hex {
         assert_eq!(core.stdout.utf8_string().unwrap(), "5647686c4948463161574e7249474a79\n");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
+
+    #[test]
+    fn test_pb_error() {
+        Paint::disable();
+        let mut core = Core::new();
+        let mut pb = PrintBase::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        pb.run(&mut core, &["16".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 2 argument(s), found 1.\n");
+
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        pb.run(&mut core, &["16".to_string(), "x".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to parse size\ninvalid digit found in string\n");
+
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        pb.run(&mut core, &["16".to_string(), "0x5000".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Read Failed\nCannot resolve address.\n");
+
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        pb.run(&mut core, &["5".to_string(), "5".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to print data\nInvalid base\n");
+    }
 }
