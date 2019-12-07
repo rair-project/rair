@@ -28,6 +28,9 @@ pub fn register_io(core: &mut Core) {
     core.add_command("map", "", Rc::new(RefCell::new(Map::new())));
     core.add_command("maps", "", Rc::new(RefCell::new(ListMap::new())));
     core.add_command("printHex", "px", Rc::new(RefCell::new(PrintHex::new())));
+    core.add_command("PrintBase", "pb", Rc::new(RefCell::new(PrintBase::new())));
+    core.add_command("PrintCSV", "pcsv", Rc::new(RefCell::new(PrintCSV::new())));
+    core.add_command("PrintSignedCSV", "pscsv", Rc::new(RefCell::new(PrintSignedCSV::new())));
     core.add_command("unmap", "um", Rc::new(RefCell::new(UnMap::new())));
     core.add_command("files", "", Rc::new(RefCell::new(ListFiles::new())));
     core.add_command("open", "o", Rc::new(RefCell::new(OpenFile::new())));
