@@ -1,5 +1,5 @@
 /*
- * print_hex: commands handling hex printing.
+ * print: commands handling raw data printing.
  * Copyright (C) 2019  Oddcoder
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by

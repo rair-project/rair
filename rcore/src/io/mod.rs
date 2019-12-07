@@ -16,10 +16,10 @@
  */
 mod files;
 mod map;
-mod print_hex;
+mod print;
 use self::files::*;
 use self::map::*;
-use self::print_hex::*;
+use self::print::*;
 use core::Core;
 use std::cell::RefCell;
 use std::rc::Rc;
