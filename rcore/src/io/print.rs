@@ -558,7 +558,7 @@ mod test_print_hex {
         px.help(&mut core);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
-            "Commands: [printHex | px]\n\nUsage:\npx [size]\tView data of at current location in hex format.\n"
+            "Commands: [printHex | px]\n\nUsage:\npx [size]\tView data at current location in hex format.\n"
         );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
