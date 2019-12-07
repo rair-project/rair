@@ -160,7 +160,7 @@ impl Cmd for PrintBase {
     }
     fn help(&self, core: &mut Core) {
         help(core, &"printBase", &"pb", vec![("[base] [size]", "Print data stream at current location in [base] format.")]);
-        writeln!(core.stdout, "Supported bases: 2, 16").unwrap();
+        writeln!(core.stdout, "Supported bases: 2, 16.").unwrap();
     }
 }
 
@@ -555,10 +555,30 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let px = PrintHex::new();
+        let pb = PrintBase::new();
+        let pcsv = PrintCSV::new();
+        let pscsv = PrintSignedCSV::new();
         px.help(&mut core);
+        pb.help(&mut core);
+        pcsv.help(&mut core);
+        pscsv.help(&mut core);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
-            "Commands: [printHex | px]\n\nUsage:\npx [size]\tView data at current location in hex format.\n"
+            "Commands: [printHex | px]\n\n\
+             Usage:\n\
+             px [size]\tView data at current location in hex format.\n\
+             Commands: [printBase | pb]\n\n\
+             Usage:\n\
+             pb [base] [size]\tPrint data stream at current location in [base] format.\n\
+             Supported bases: 2, 16.\n\
+             Commands: [printCSV | pcsv]\n\n\
+             Usage:\n\
+             pcsv [size] [count]\tPrint data at current location as unsigned comma seperated values, each value of size [size] bits.\n\
+             Supported size: 8, 16, 32, 64, 128, 256, 512.\n\
+             Commands: [printSCSV | pscsv]\n\n\
+             Usage:\n\
+             pscsv [size] [count]\tPrint data at current location as signed comma seperated values, each value of size [size] bits.\n\
+             Supported size: 8, 16, 32, 64, 128.\n"
         );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
