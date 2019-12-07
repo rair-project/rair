@@ -1029,4 +1029,53 @@ mod test_print_hex {
             "Error: cannot parse integer from empty string\nExpect Hex, binary, Octal or Decimal value but found 0x instead.\n"
         );
     }
+
+    #[test]
+    fn test_pb_2() {
+        let mut core = Core::new();
+        let mut pb = PrintBase::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        pb.run(&mut core, &["2".to_string(), "16".to_string()]);
+        core.io.map(0, 0x500, 16).unwrap();
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "01010110010001110110100001101100\
+             01001001010010000100011000110001\
+             01100001010101110100111001110010\
+             01001001010001110100101001111001\n");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.mode = AddrMode::Vir;
+        core.set_loc(0x500);
+        pb.run(&mut core, &["2".to_string(), "16".to_string()]);
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "01010110010001110110100001101100\
+             01001001010010000100011000110001\
+             01100001010101110100111001110010\
+             01001001010001110100101001111001\n");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+    }
+    #[test]
+    fn test_pb_16() {
+        let mut core = Core::new();
+        let mut pb = PrintBase::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io.map(0, 0x500, 16).unwrap();
+        pb.run(&mut core, &["16".to_string(), "16".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "5647686c4948463161574e7249474a79\n");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.mode = AddrMode::Vir;
+        core.set_loc(0x500);
+        pb.run(&mut core, &["16".to_string(), "16".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "5647686c4948463161574e7249474a79\n");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+    }
 }
