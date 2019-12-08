@@ -1391,4 +1391,154 @@ mod test_print_hex {
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Read Failed\nCannot resolve address.\n");
     }
+
+    #[test]
+    fn test_pscsv_8() {
+        let mut core = Core::new();
+        let mut pscsv = PrintSignedCSV::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io.map(0, 0x500, 35).unwrap();
+        pscsv.run(&mut core, &["8".to_string(), "35".to_string()]);
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "86, 71, 104, 108, 73, 72, 70, 49, 97, 87, 78, 114, 73, 71, 74, 121,\n\
+             98, 51, 100, 117, 73, 71, 90, 118, 101, 67, 66, 113, 100, 87, 49, 119,\n\
+             90, 87, 81\n"
+        );
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.mode = AddrMode::Vir;
+        core.set_loc(0x500);
+        pscsv.run(&mut core, &["8".to_string(), "35".to_string()]);
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "86, 71, 104, 108, 73, 72, 70, 49, 97, 87, 78, 114, 73, 71, 74, 121,\n\
+             98, 51, 100, 117, 73, 71, 90, 118, 101, 67, 66, 113, 100, 87, 49, 119,\n\
+             90, 87, 81\n"
+        );
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+    }
+    #[test]
+    fn test_pscsv_16() {
+        let mut core = Core::new();
+        let mut pscsv = PrintSignedCSV::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io.map(0, 0x500, 52).unwrap();
+        pscsv.run(&mut core, &["16".to_string(), "26".to_string()]);
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "18262, 27752, 18505, 12614, 22369, 29262, 18249, 31050, 13154, 30052, 18249, 30298,\n\
+             17253, 28994, 22372, 30513, 22362, 26449, 13154, 27738, 26979, 12354, 18273, 26453,\n\
+             18274, 13894\n"
+        );
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.mode = AddrMode::Vir;
+        core.set_loc(0x500);
+        pscsv.run(&mut core, &["16".to_string(), "26".to_string()]);
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "18262, 27752, 18505, 12614, 22369, 29262, 18249, 31050, 13154, 30052, 18249, 30298,\n\
+             17253, 28994, 22372, 30513, 22362, 26449, 13154, 27738, 26979, 12354, 18273, 26453,\n\
+             18274, 13894\n"
+        );
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+    }
+
+    #[test]
+    fn test_pscsv_32() {
+        let mut core = Core::new();
+        let mut pscsv = PrintSignedCSV::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io.map(0, 0x500, 60).unwrap();
+        pscsv.run(&mut core, &["32".to_string(), "15".to_string()]);
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "1818773334, 826689609, 1917736801, 2034911049, 1969501026, 1985627977, 1900168037, 1999722340,\n\
+             1733384026, 1817850722, 809658723, 1733642081, 910575458, 1799508837, 1969435234\n"
+        );
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.mode = AddrMode::Vir;
+        core.set_loc(0x500);
+        pscsv.run(&mut core, &["32".to_string(), "15".to_string()]);
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "1818773334, 826689609, 1917736801, 2034911049, 1969501026, 1985627977, 1900168037, 1999722340,\n\
+             1733384026, 1817850722, 809658723, 1733642081, 910575458, 1799508837, 1969435234\n"
+        );
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+    }
+
+    #[test]
+    fn test_pscsv_64() {
+        let mut core = Core::new();
+        let mut pscsv = PrintSignedCSV::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.io.open("../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
+        core.io.map(0, 0x500, 700).unwrap();
+        pscsv.run(&mut core, &["64".to_string(), "15".to_string()]);
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "3472328296244588627, 3473755479634818611, 3472898960311726645, 3473174933066100786,\n\
+             3545517304944341812, 3472895661491631157, 3833742175065420340, 3905528202515525940,\n\
+             724310114906159155, 3472328300573110611, 3472328296379134516, 4842267012207227185,\n\
+             4842269211196796976, 5058744371892990000, 3544385890584572465\n"
+        );
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.mode = AddrMode::Vir;
+        core.set_loc(0x500);
+        pscsv.run(&mut core, &["64".to_string(), "15".to_string()]);
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "3472328296244588627, 3473755479634818611, 3472898960311726645, 3473174933066100786,\n\
+             3545517304944341812, 3472895661491631157, 3833742175065420340, 3905528202515525940,\n\
+             724310114906159155, 3472328300573110611, 3472328296379134516, 4842267012207227185,\n\
+             4842269211196796976, 5058744371892990000, 3544385890584572465\n"
+        );
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+    }
+    #[test]
+    fn test_pscsv_128() {
+        let mut core = Core::new();
+        let mut pscsv = PrintSignedCSV::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.io.open("../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
+        core.io.map(0, 0x500, 700).unwrap();
+        pscsv.run(&mut core, &["128".to_string(), "7".to_string()]);
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "64079478307469671234530411534546514003, 64068769113493663281246783985836896821,\n\
+             64063617462232360116848175623869641524, 72044279224458795675434962490882339380,\n\
+             64053151500570986824316153078087956531, 89324060310752925109750682577375015476,\n\
+             93317362762628561321598115244768636976\n"
+        );
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.mode = AddrMode::Vir;
+        core.set_loc(0x500);
+        pscsv.run(&mut core, &["128".to_string(), "7".to_string()]);
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "64079478307469671234530411534546514003, 64068769113493663281246783985836896821,\n\
+             64063617462232360116848175623869641524, 72044279224458795675434962490882339380,\n\
+             64053151500570986824316153078087956531, 89324060310752925109750682577375015476,\n\
+             93317362762628561321598115244768636976\n"
+        );
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+    }
 }
