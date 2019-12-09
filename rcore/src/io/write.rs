@@ -215,7 +215,7 @@ mod test_write {
         wx.run(&mut core, &[]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 1 argument(s), found 0.\n");
-        
+
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         wx.run(&mut core, &["012".to_string()]);
@@ -234,6 +234,30 @@ mod test_write {
         wx.run(&mut core, &["0123".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Read Failed\nCannot resolve address.\n");
+    }
 
+    #[test]
+    fn test_wtf_error() {
+        Paint::disable();
+        let mut core = Core::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let mut wtf = WriteToFile::new();
+        core.io.open("malloc://0x50", IoMode::READ | IoMode::WRITE).unwrap();
+        wtf.run(&mut core, &[]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 2 argument(s), found 0.\n");
+
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        wtf.run(&mut core, &["0b12".to_string(), "file_that_won't_be_created".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to parse size\ninvalid digit found in string.\n");
+
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        wtf.run(&mut core, &["0x1234".to_string(), "file_that_won't_be_created".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to read data\nCannot resolve address.\n");
     }
 }
