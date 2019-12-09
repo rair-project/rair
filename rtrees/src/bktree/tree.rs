@@ -114,11 +114,11 @@ fn osa_distance(str1: &str, str2: &str) -> u64 {
     let a = str1.as_bytes();
     let b = str2.as_bytes();
     let mut d = vec![vec![0; b.len() + 1]; a.len() + 1];
-    for i in 0..=a.len() {
-        d[i][0] = i as u64;
+    for (i, item) in d.iter_mut().enumerate().take(a.len() + 1) {
+        item[0] = i as u64;
     }
-    for j in 0..=b.len() {
-        d[0][j] = j as u64;
+    for (j, item) in d[0].iter_mut().enumerate().take(b.len() + 1) {
+        *item = j as u64;
     }
     for i in 1..=a.len() {
         for j in 1..=b.len() {
