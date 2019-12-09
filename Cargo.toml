@@ -24,6 +24,7 @@ path = "src/rair.rs"
 [dependencies]
 clap = "2.33"
 rustyline = "5.0"
+rustyline-derive = "0.2"
 app_dirs = "1.2"
 yansi = "0.5"
 rtrees = {path = "rtrees"}

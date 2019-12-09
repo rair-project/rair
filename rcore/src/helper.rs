@@ -16,7 +16,7 @@
  */
 
 use core::*;
-use std::cell::{Ref, RefCell};
+use std::cell::RefCell;
 use std::fmt;
 use std::fmt::Display;
 use std::io::Write;
@@ -116,21 +116,6 @@ impl Display for AddrMode {
             AddrMode::Phy => write!(f, "Phy"),
             AddrMode::Vir => write!(f, "Vir"),
         }
-    }
-}
-
-// Thanks to @stephaneyfx#2922 for the struct
-pub struct ReadOnly<T>(Rc<RefCell<T>>);
-
-impl<T> ReadOnly<T> {
-    pub fn borrow(&self) -> Ref<'_, T> {
-        self.0.borrow()
-    }
-}
-
-impl<T> From<Rc<RefCell<T>>> for ReadOnly<T> {
-    fn from(x: Rc<RefCell<T>>) -> Self {
-        ReadOnly(x)
     }
 }
 
