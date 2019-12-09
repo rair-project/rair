@@ -37,7 +37,7 @@ impl Cmd for WriteHex {
             return;
         }
         if args[0].len() % 2 != 0 {
-            error_msg(core, "Failed to hexpairs", "Data can't have odd number of digits.");
+            error_msg(core, "Failed to parse data", "Data can't have odd number of digits.");
             return;
         }
         let mut hexpairs = args[0].chars().peekable();
@@ -47,8 +47,8 @@ impl Cmd for WriteHex {
             let byte = match u8::from_str_radix(&chunk, 16) {
                 Ok(byte) => byte,
                 Err(e) => {
-                    let msg = format!("{}", e);
-                    return error_msg(core, "Failed to hexpairs", &msg);
+                    let msg = format!("{}.", e);
+                    return error_msg(core, "Failed to parse data", &msg);
                 }
             };
             data.push(byte);
@@ -86,7 +86,7 @@ impl Cmd for WriteToFile {
         let size = match str_to_num(&args[0]) {
             Ok(size) => size as usize,
             Err(e) => {
-                let err_str = format!("{}", e);
+                let err_str = format!("{}.", e);
                 error_msg(core, "Failed to parse size", &err_str);
                 return;
             }
@@ -104,13 +104,13 @@ impl Cmd for WriteToFile {
         let mut file = match File::create(&args[1]) {
             Ok(file) => file,
             Err(e) => {
-                let err_str = format!("{}", e);
+                let err_str = format!("{}.", e);
                 error_msg(core, "Failed to open file", &err_str);
                 return;
             }
         };
         if let Err(e) = file.write_all(&data) {
-            let err_str = format!("{}", e);
+            let err_str = format!("{}.", e);
             error_msg(core, "Failed to write data to file", &err_str);
             return;
         }
@@ -202,5 +202,38 @@ mod test_write {
         assert_eq!(&data[..], &[0u8; 0x50][..]);
         drop(file);
         fs::remove_file("out_test_wtf_vir").unwrap();
+    }
+
+    #[test]
+    fn test_wx_error() {
+        Paint::disable();
+        let mut core = Core::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let mut wx = WriteHex::new();
+        core.io.open("malloc://0x50", IoMode::READ | IoMode::WRITE).unwrap();
+        wx.run(&mut core, &[]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 1 argument(s), found 0.\n");
+        
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        wx.run(&mut core, &["012".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to parse data\nData can't have odd number of digits.\n");
+
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        wx.run(&mut core, &["012x".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to parse data\ninvalid digit found in string.\n");
+
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.set_loc(0x500);
+        wx.run(&mut core, &["0123".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Read Failed\nCannot resolve address.\n");
+
     }
 }
