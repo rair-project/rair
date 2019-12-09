@@ -124,3 +124,32 @@ impl Cmd for WriteToFile {
         );
     }
 }
+
+#[cfg(test)]
+
+mod test_write {
+    use super::*;
+    use writer::Writer;
+    use yansi::Paint;
+    #[test]
+    fn test_help() {
+        Paint::disable();
+        let mut core = Core::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let wx = WriteHex::new();
+        let wtf = WriteToFile::new();
+        wx.help(&mut core);
+        wtf.help(&mut core);
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "Commands: [writetHex | wx]\n\n\
+             Usage:\n\
+             wx [hexpairs]\twrite given hexpairs data into the current address.\n\
+             Commands: [writeToFile | wtf]\n\n\
+             Usage:\n\
+             wtf [size] [filepath]\twrite data of size [size] at current location to file identified by [filepath].\n"
+        );
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+    }
+}
