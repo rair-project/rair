@@ -129,6 +129,8 @@ impl Cmd for WriteToFile {
 
 mod test_write {
     use super::*;
+    use rio::*;
+    use std::fs;
     use writer::Writer;
     use yansi::Paint;
     #[test]
@@ -151,5 +153,54 @@ mod test_write {
              wtf [size] [filepath]\twrite data of size [size] at current location to file identified by [filepath].\n"
         );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
+    }
+
+    #[test]
+    fn test_wx() {
+        Paint::disable();
+        let mut core = Core::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let mut wx = WriteHex::new();
+        core.io.open("malloc://0x5000", IoMode::READ | IoMode::WRITE).unwrap();
+        core.io.map(0x0, 0x500, 0x500).unwrap();
+        wx.run(&mut core, &["123456789abcde".to_string()]);
+        let mut data = [0; 7];
+        core.io.pread(0x0, &mut data).unwrap();
+        assert_eq!(data, [0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde]);
+        core.set_loc(0x500);
+        core.mode = AddrMode::Vir;
+        wx.run(&mut core, &["23456789abcde1".to_string()]);
+        core.io.vread(0x500, &mut data).unwrap();
+        assert_eq!(data, [0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xe1]);
+    }
+
+    #[test]
+    fn test_wtf() {
+        Paint::disable();
+        let mut core = Core::new();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let mut wtf = WriteToFile::new();
+        core.io.open("malloc://0x50", IoMode::READ | IoMode::WRITE).unwrap();
+        core.io.map(0x0, 0x500, 0x50).unwrap();
+
+        wtf.run(&mut core, &["0x50".to_string(), "out_test_wtf_phy".to_string()]);
+        let mut file = File::open("out_test_wtf_phy").unwrap();
+        let mut data = vec![];
+        file.read_to_end(&mut data).unwrap();
+        assert_eq!(&data[..], &[0u8; 0x50][..]);
+        drop(file);
+        fs::remove_file("out_test_wtf_phy").unwrap();
+
+        core.set_loc(0x500);
+        core.mode = AddrMode::Vir;
+        data = vec![];
+        wtf.run(&mut core, &["0x50".to_string(), "out_test_wtf_vir".to_string()]);
+        file = File::open("out_test_wtf_vir").unwrap();
+        file.read_to_end(&mut data).unwrap();
+        assert_eq!(&data[..], &[0u8; 0x50][..]);
+        drop(file);
+        fs::remove_file("out_test_wtf_vir").unwrap();
     }
 }
