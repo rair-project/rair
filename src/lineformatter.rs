@@ -15,9 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use commands::Commands;
-use helper::ReadOnly;
 use rcmd::*;
+use rcore::Commands;
 use rustyline::completion::{Completer, Pair};
 use rustyline::error::ReadlineError;
 use rustyline::highlight::Highlighter;
@@ -25,9 +24,24 @@ use rustyline::hint::{Hinter, HistoryHinter};
 use rustyline::Context;
 use rustyline_derive::Helper;
 use std::borrow::Cow::{self, Owned};
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell};
 use std::rc::Rc;
 use yansi::Paint;
+
+// Thanks to @stephaneyfx#2922 for the struct
+pub struct ReadOnly<T>(Rc<RefCell<T>>);
+
+impl<T> ReadOnly<T> {
+    pub fn borrow(&self) -> Ref<'_, T> {
+        self.0.borrow()
+    }
+}
+
+impl<T> From<Rc<RefCell<T>>> for ReadOnly<T> {
+    fn from(x: Rc<RefCell<T>>) -> Self {
+        ReadOnly(x)
+    }
+}
 
 #[derive(Helper)]
 pub struct LineFormatter {

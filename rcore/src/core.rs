@@ -15,19 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use app_dirs::*;
 use commands::Commands;
 use helper::*;
 use io::*;
-use lineformatter::LineFormatter;
 use loc::*;
 use rio::*;
-use rustyline::{CompletionType, Config, EditMode, Editor, OutputStreamType};
 use std::cell::RefCell;
 use std::io;
 use std::io::Write;
 use std::mem;
-use std::path::PathBuf;
 use std::rc::Rc;
 use utils::register_utils;
 use writer::Writer;
@@ -37,9 +33,7 @@ pub struct Core {
     pub stderr: Writer,
     pub mode: AddrMode,
     pub io: RIO,
-    pub rl: Editor<LineFormatter>,
     loc: u64,
-    app_info: AppInfo,
     commands: Rc<RefCell<Commands>>,
     pub color_palette: Vec<(u8, u8, u8)>,
 }
@@ -52,8 +46,6 @@ impl Default for Core {
             stderr: Writer::new_write(Box::new(io::stderr())),
             io: RIO::new(),
             loc: 0,
-            rl: Editor::<LineFormatter>::new(),
-            app_info: AppInfo { name: "rair", author: "RairDevs" },
             commands: Default::default(),
             color_palette: Vec::new(),
         }
@@ -64,6 +56,9 @@ impl Core {
         register_io(self);
         register_loc(self);
         register_utils(self);
+    }
+    pub fn commands(&mut self) -> Rc<RefCell<Commands>> {
+        return self.commands.clone();
     }
     fn init_colors(&mut self) {
         self.color_palette.push((0x58, 0x68, 0x75));
@@ -78,23 +73,17 @@ impl Core {
     }
     pub fn new() -> Self {
         let mut core: Core = Default::default();
-        let config = Config::builder()
-            .completion_type(CompletionType::Circular)
-            .edit_mode(EditMode::Emacs)
-            .output_stream(OutputStreamType::Stdout)
-            .build();
-        core.rl = Editor::with_config(config);
-        core.rl.set_helper(Some(LineFormatter::new(core.commands.clone())));
+        //let config = Config::builder()
+        //    .completion_type(CompletionType::Circular)
+        //    .edit_mode(EditMode::Emacs)
+        //    .output_stream(OutputStreamType::Stdout)
+        //    .build();
+        //core.rl = Editor::with_config(config);
+        //core.rl.set_helper(Some(LineFormatter::new(core.commands.clone())));
         core.load_commands();
-        drop(core.rl.load_history(&core.hist_file()));
+        //drop(core.rl.load_history(&core.hist_file()));
         core.init_colors();
         return core;
-    }
-
-    pub fn hist_file(&self) -> PathBuf {
-        let mut history = app_dir(AppDataType::UserData, &self.app_info, "/").unwrap();
-        history.push("history");
-        return history;
     }
 
     pub fn set_loc(&mut self, loc: u64) {

@@ -12,14 +12,10 @@ readme = "readme.md"
 
 
 [dependencies]
-app_dirs = "1.2"
-rustyline = "5.0"
-rustyline-derive = "0.2"
 yansi = "0.5"
 
 rio = {path = "../rio"}
 rtrees = {path = "../rtrees"}
-rcmd = {path = "../rcmd"}
 
 [dev-dependencies]
 

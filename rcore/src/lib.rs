@@ -17,12 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-extern crate app_dirs;
-extern crate rcmd;
 extern crate rio;
 extern crate rtrees;
-extern crate rustyline;
-extern crate rustyline_derive;
 extern crate yansi;
 
 #[cfg(test)]
@@ -31,11 +27,11 @@ mod commands;
 mod core;
 mod helper;
 mod io;
-mod lineformatter;
 mod loc;
 mod utils;
 mod writer;
 
+pub use commands::*;
 pub use core::*;
 pub use helper::*;
 pub use io::*;

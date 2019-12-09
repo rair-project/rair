@@ -25,17 +25,31 @@ extern crate rcore;
 extern crate rio;
 extern crate rtrees;
 extern crate rustyline;
+extern crate rustyline_derive;
 extern crate yansi;
 
+mod lineformatter;
+
+use app_dirs::*;
 use clap::{App, Arg};
+use lineformatter::LineFormatter;
 use rcmd::*;
 use rcore::{panic_msg, str_to_num, Core, Writer};
 use rio::*;
 use rustyline::error::ReadlineError;
+use rustyline::{CompletionType, Config, EditMode, Editor, OutputStreamType};
 use std::fs::{File, OpenOptions};
+use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::{io::prelude::*, io::Write, mem};
 use yansi::Paint;
+
+const APPINFO: AppInfo = AppInfo { name: "rair", author: "RairDevs" };
+pub fn hist_file() -> PathBuf {
+    let mut history = app_dir(AppDataType::UserData, &APPINFO, "/").unwrap();
+    history.push("history");
+    return history;
+}
 
 fn main() {
     let matches = App::new("rair")
@@ -55,6 +69,13 @@ fn main() {
     let mut perm: IoMode = IoMode::READ;
     let mut paddr = None;
     let uri = matches.value_of("File").unwrap();
+    let rl_config = Config::builder()
+        .completion_type(CompletionType::Circular)
+        .edit_mode(EditMode::Emacs)
+        .output_stream(OutputStreamType::Stdout)
+        .build();
+    let mut rl = Editor::with_config(rl_config);
+    rl.set_helper(Some(LineFormatter::new(core.commands())));
     if let Some(p) = matches.value_of("Permission") {
         perm = Default::default();
         for c in p.to_lowercase().chars() {
@@ -77,17 +98,17 @@ fn main() {
         core.set_loc(core.io.hndl_to_desc(hndl).unwrap().paddr_base());
     }
     loop {
-        repl_inners(&mut core);
+        repl_inners(&mut core, &mut rl);
     }
 }
 
-fn repl_inners(core: &mut Core) {
+fn repl_inners(core: &mut Core, rl: &mut Editor<LineFormatter>) {
     let prelude = &format!("[0x{:08x}]({})> ", core.get_loc(), core.mode);
     let (r, g, b) = core.color_palette[1];
-    let input = core.rl.readline(&format!("{}", Paint::rgb(r, g, b, prelude)));
+    let input = rl.readline(&format!("{}", Paint::rgb(r, g, b, prelude)));
     match &input {
         Ok(line) => {
-            core.rl.add_history_entry(line);
+            rl.add_history_entry(line);
             let t = ParseTree::construct(line);
             if let Ok(tree) = t {
                 evaluate(core, tree);
@@ -99,7 +120,7 @@ fn repl_inners(core: &mut Core) {
         Err(ReadlineError::Eof) => std::process::exit(0),
         Err(err) => writeln!(core.stdout, "Error: {:?}", err).unwrap(),
     }
-    core.rl.save_history(&core.hist_file()).unwrap();
+    rl.save_history(&hist_file()).unwrap();
 }
 
 fn evaluate(core: &mut Core, tree: ParseTree) {
