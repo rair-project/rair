@@ -17,9 +17,12 @@
 mod files;
 mod map;
 mod print;
+mod write;
+
 use self::files::*;
 use self::map::*;
 use self::print::*;
+use self::write::*;
 use core::Core;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -35,4 +38,5 @@ pub fn register_io(core: &mut Core) {
     core.add_command("files", "", Rc::new(RefCell::new(ListFiles::new())));
     core.add_command("open", "o", Rc::new(RefCell::new(OpenFile::new())));
     core.add_command("close", "", Rc::new(RefCell::new(CloseFile::new())));
+    core.add_command("writeHex", "wx", Rc::new(RefCell::new(WriteHex::new())));
 }
