@@ -17,6 +17,8 @@
 
 use core::*;
 use helper::*;
+use std::fs::File;
+use std::io::prelude::*;
 use std::u8;
 
 #[derive(Default)]
@@ -63,5 +65,62 @@ impl Cmd for WriteHex {
     }
     fn help(&self, core: &mut Core) {
         help(core, &"writetHex", &"wx", vec![("[hexpairs]", "write given hexpairs data into the current address.")]);
+    }
+}
+
+#[derive(Default)]
+pub struct WriteToFile {}
+
+impl WriteToFile {
+    pub fn new() -> Self {
+        Default::default()
+    }
+}
+
+impl Cmd for WriteToFile {
+    fn run(&mut self, core: &mut Core, args: &[String]) {
+        if args.len() != 2 {
+            expect(core, args.len() as u64, 2);
+            return;
+        }
+        let size = match str_to_num(&args[0]) {
+            Ok(size) => size as usize,
+            Err(e) => {
+                let err_str = format!("{}", e);
+                error_msg(core, "Failed to parse size", &err_str);
+                return;
+            }
+        };
+        let loc = core.get_loc();
+        let mut data = vec![0; size];
+        let error = match core.mode {
+            AddrMode::Phy => core.io.pread(loc, &mut data),
+            AddrMode::Vir => core.io.vread(loc, &mut data),
+        };
+        if let Err(e) = error {
+            error_msg(core, "Failed to read data", &e.to_string());
+            return;
+        }
+        let mut file = match File::create(&args[1]) {
+            Ok(file) => file,
+            Err(e) => {
+                let err_str = format!("{}", e);
+                error_msg(core, "Failed to open file", &err_str);
+                return;
+            }
+        };
+        if let Err(e) = file.write_all(&data) {
+            let err_str = format!("{}", e);
+            error_msg(core, "Failed to write data to file", &err_str);
+            return;
+        }
+    }
+    fn help(&self, core: &mut Core) {
+        help(
+            core,
+            &"writeToFile",
+            &"wtf",
+            vec![("[size] [filepath]", "write data of size [size] at current location to file identified by [filepath].")],
+        );
     }
 }

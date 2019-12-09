@@ -39,4 +39,5 @@ pub fn register_io(core: &mut Core) {
     core.add_command("open", "o", Rc::new(RefCell::new(OpenFile::new())));
     core.add_command("close", "", Rc::new(RefCell::new(CloseFile::new())));
     core.add_command("writeHex", "wx", Rc::new(RefCell::new(WriteHex::new())));
+    core.add_command("writeToFile", "wtf", Rc::new(RefCell::new(WriteToFile::new())));
 }
