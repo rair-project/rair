@@ -53,12 +53,12 @@ impl<K: Ord + Copy, A: Copy, V> Iterator for TreeIterator<K, A, V>
 where
     RBTree<K, A, V>: Augment<A>,
 {
-    type Item = (K, V);
+    type Item = (K, A, V);
 
-    fn next(&mut self) -> Option<(K, V)> {
+    fn next(&mut self) -> Option<(K, A, V)> {
         let result;
         if let Some(node) = self.current.take() {
-            result = Some((node.key(), node.data()));
+            result = Some((node.key(), node.aug_data(), node.data()));
         } else {
             return None;
         }
