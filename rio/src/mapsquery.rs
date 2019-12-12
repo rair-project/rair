@@ -192,7 +192,7 @@ impl<'a> IntoIterator for &'a RIOMapQuery {
     type Item = Rc<RIOMap>;
     type IntoIter = Box<dyn Iterator<Item = Rc<RIOMap>> + 'a>;
     fn into_iter(self) -> Box<dyn Iterator<Item = Rc<RIOMap>> + 'a> {
-        return Box::new((&self.maps).into_iter().cloned());
+        return Box::new((&self.maps).into_iter().map(|(_, _, map)| map).cloned());
     }
 }
 
