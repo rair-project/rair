@@ -8,4 +8,14 @@ keywords = ["Trees", "Intervals", "Binary Search Tree", "BST"]
 description = "A Bunch of completely safe augmented tree implementation in rust"
 categories = ["Data structures", "Memory management"]
 readme = "readme.md"
+
+[features]
+
+default = []
+serialize = ["serde"]
+
 [dependencies]
+serde = { version = "1.0", features = ["derive"], optional = true}
+
+[dev-dependencies]
+serde_json = "1.0"
