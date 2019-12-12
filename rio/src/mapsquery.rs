@@ -15,10 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use rtrees::ist::IST;
+use serde::{Deserialize, Serialize};
 use std::cmp::min;
 use std::rc::Rc;
 use utils::*;
-#[derive(Copy, Clone, PartialEq, Debug)]
+
+#[derive(Copy, Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct RIOMap {
     pub paddr: u64,
     pub vaddr: u64,
@@ -75,7 +77,7 @@ impl PartialEq<Rc<RIOMap>> for RIOMap {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Serialize, Deserialize)]
 pub(super) struct RIOMapQuery {
     maps: IST<u64, Rc<RIOMap>>,     //key = virtual address
     rev_maps: IST<u64, Rc<RIOMap>>, // key = physiscal address
@@ -339,6 +341,6 @@ mod maps_query_test {
         map_query.map(0, 0x10000, 0x90).unwrap();
         assert_eq!(map_query.rev_query(0x45), vec![0x4045, 0x6045, 0x7045, 0x8045, 0x9045, 0x10045]);
         assert_eq!(map_query.rev_query(0x145), vec![0x5045]);
-        assert_eq!(map_query.rev_query(700), vec![]);
+        assert_eq!(map_query.rev_query(700), Vec::<u64>::new());
     }
 }

@@ -19,14 +19,60 @@ use descquery::RIODescQuery;
 use mapsquery::{RIOMap, RIOMapQuery};
 use plugin::*;
 use plugins;
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::BTreeMap;
 use std::rc::Rc;
 use utils::*;
-#[derive(Default)]
+
+// Credits goes to @Talchas#7429 for the idea of using remote
+// to create something that behaves as finalize_hook() for
+// the deserializing subroutine.
+// Talchas: #[serde(remote="Foo") struct Bar makes it generate a
+//          mod Bar { fn deserialize... -> Result<Foo ...> } instead of
+//          impl Deserialize for Bar { fn deserialize... -> Result<Bar ...>
+//          it's designed to let you copypaste the definition of a type in
+//          some other crate that doesn't implement (De)serialize, and get
+//          methods that you can use with #[serde(with = ..)]. here I'm using
+//          it to just move the methods from a trait impl you can't wrap or
+//          override to separate functions you can
+#[derive(Default, Serialize, Deserialize)]
+#[serde(remote = "RIO")]
 pub struct RIO {
     descs: RIODescQuery,
     maps: RIOMapQuery,
+    #[serde(skip)]
     plugins: Vec<Box<dyn RIOPlugin>>,
+}
+impl Serialize for RIO {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        RIO::serialize(&self, serializer)
+    }
+}
+impl<'de> Deserialize<'de> for RIO {
+    fn deserialize<D>(d: D) -> Result<RIO, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let mut io = RIO::deserialize(d)?;
+        plugins::load_plugins(&mut io);
+        for desc in (&mut io.descs).into_iter() {
+            let mut found = false;
+            for plugin in &mut io.plugins {
+                if plugin.accept_uri(&desc.name) {
+                    desc.reopen(&mut **plugin).map_err(de::Error::custom)?;
+                    found = true;
+                    break;
+                }
+            }
+            if !found {
+                return Err(IoError::IoPluginNotFoundError).map_err(de::Error::custom);
+            }
+        }
+        return Ok(io);
+    }
 }
 
 impl RIO {
@@ -676,7 +722,7 @@ mod rio_tests {
         io.map(0, 0x10000, len).unwrap();
         assert_eq!(io.phy_to_vir(0x45), vec![0x4045, 0x6045, 0x7045, 0x8045, 0x9045, 0x10045]);
         assert_eq!(io.phy_to_vir(0x245), vec![0x5045]);
-        assert_eq!(io.phy_to_vir(700), vec![]);
+        assert_eq!(io.phy_to_vir(700), Vec::<u64>::new());
     }
     #[test]
 
@@ -695,5 +741,24 @@ mod rio_tests {
     #[test]
     fn test_hndl_to_desc() {
         operate_on_file(&hndl_to_desc_cb, &DATA)
+    }
+    fn serde_cb(paths: &[&Path]) {
+        let mut io = RIO::new();
+        io.open_at(&paths[0].to_string_lossy(), IoMode::READ, 0x1000).unwrap();
+        io.open_at(&paths[1].to_string_lossy(), IoMode::READ, 0x2000).unwrap();
+        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, 0x3000).unwrap();
+        io.map(0x1000, 0x400, DATA.len() as u64).unwrap();
+        io.map(0x2000, 0x400 + DATA.len() as u64, DATA.len() as u64).unwrap();
+        io.map(0x3000, 0x400 + DATA.len() as u64 * 2, DATA.len() as u64).unwrap();
+        let serialized = serde_json::to_string(&io).unwrap();
+        drop(io);
+        io = serde_json::from_str(&serialized).unwrap();
+        let mut fillme: Vec<u8> = vec![0; 8];
+        io.vread(0x400, &mut fillme).unwrap();
+        assert_eq!(fillme, &DATA[0..8]);
+    }
+    #[test]
+    fn test_serde() {
+        operate_on_files(&serde_cb, &[DATA, DATA, DATA]);
     }
 }

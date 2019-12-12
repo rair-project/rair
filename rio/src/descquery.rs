@@ -17,11 +17,13 @@
 use desc::RIODesc;
 use plugin::RIOPlugin;
 use rtrees::ist::IST;
+use serde::{Deserialize, Serialize};
 use std::cmp::{min, Reverse};
 use std::collections::BinaryHeap;
 use std::mem;
 use utils::{IoError, IoMode};
-#[derive(Default)]
+
+#[derive(Default, Serialize, Deserialize)]
 pub(crate) struct RIODescQuery {
     hndl_to_descs: Vec<Option<RIODesc>>,  // key = hndl, value = RIODesc Should it exist
     paddr_to_hndls: IST<u64, u64>,        // key = closed range, value = hndl
@@ -177,6 +179,14 @@ impl<'a> IntoIterator for &'a RIODescQuery {
     type IntoIter = Box<dyn Iterator<Item = &'a RIODesc> + 'a>;
     fn into_iter(self) -> Box<dyn Iterator<Item = &'a RIODesc> + 'a> {
         return Box::new(self.hndl_to_descs.iter().filter_map(|desc| desc.as_ref()));
+    }
+}
+
+impl<'a> IntoIterator for &'a mut RIODescQuery {
+    type Item = &'a mut RIODesc;
+    type IntoIter = Box<dyn Iterator<Item = &'a mut RIODesc> + 'a>;
+    fn into_iter(self) -> Box<dyn Iterator<Item = &'a mut RIODesc> + 'a> {
+        return Box::new(self.hndl_to_descs.iter_mut().filter_map(|desc| desc.as_mut()));
     }
 }
 
