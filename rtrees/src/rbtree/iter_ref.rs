@@ -62,12 +62,12 @@ impl<'a, K: Ord + Copy, A: Copy, V> Iterator for TreeRefIterator<'a, K, A, V>
 where
     RBTree<K, A, V>: Augment<A>,
 {
-    type Item = (K, &'a V);
+    type Item = (K, A, &'a V);
 
-    fn next(&mut self) -> Option<(K, &'a V)> {
+    fn next(&mut self) -> Option<(K, A, &'a V)> {
         let result;
         if let Some(node) = self.current.take() {
-            result = Some((node.key(), node.data_ref()));
+            result = Some((node.key(), node.aug_data(), node.data_ref()));
         } else {
             return None;
         }

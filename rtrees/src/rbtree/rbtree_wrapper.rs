@@ -507,7 +507,7 @@ impl<K: Ord + Copy, A: Copy, V> IntoIterator for RBTree<K, A, V>
 where
     RBTree<K, A, V>: Augment<A>,
 {
-    type Item = (K, V);
+    type Item = (K, A, V);
     type IntoIter = TreeIterator<K, A, V>;
     fn into_iter(self) -> TreeIterator<K, A, V> {
         TreeIterator::new(self)
@@ -518,7 +518,7 @@ impl<'a, K: Ord + Copy, A: Copy, V> IntoIterator for &'a RBTree<K, A, V>
 where
     RBTree<K, A, V>: Augment<A>,
 {
-    type Item = (K, &'a V);
+    type Item = (K, A, &'a V);
     type IntoIter = TreeRefIterator<'a, K, A, V>;
     fn into_iter(self) -> TreeRefIterator<'a, K, A, V> {
         TreeRefIterator::new(self)
@@ -663,7 +663,7 @@ mod rbtree_tests {
         // The point here is that at some point in time, iterating over
         // empty tree, triggered a bug that crashed.
         let rbtree: RBTree<u64, PlaceHolder, u64> = RBTree::new();
-        for (key, value) in rbtree.into_iter() {
+        for (key, _, value) in rbtree.into_iter() {
             assert_eq!(key, 5);
             assert_eq!(value, 5);
         }
@@ -674,7 +674,7 @@ mod rbtree_tests {
         // The point here is that at some point in time, iterating over
         // empty tree, triggered a bug that crashed.
         let rbtree: RBTree<u64, PlaceHolder, u64> = RBTree::new();
-        for (key, value) in (&rbtree).into_iter() {
+        for (key, _, value) in (&rbtree).into_iter() {
             assert_eq!(key, 5);
             assert_eq!(*value, 5);
         }

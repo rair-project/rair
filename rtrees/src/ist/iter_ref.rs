@@ -40,7 +40,7 @@ impl<'a, K: Ord + Copy, V> Iterator for ISTRefIterator<'a, K, V> {
         if let Some(data) = self.current_iter.next() {
             return Some(data);
         }
-        if let Some((_, v)) = self.tree_iter.next() {
+        if let Some((_, _, v)) = self.tree_iter.next() {
             self.current_iter = v.iter();
         } else {
             return None;
