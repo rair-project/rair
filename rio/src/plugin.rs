@@ -42,3 +42,19 @@ pub trait RIOPluginOperations {
     fn read(&mut self, raddr: usize, buffer: &mut [u8]) -> Result<(), IoError>;
     fn write(&mut self, raddr: usize, buffer: &[u8]) -> Result<(), IoError>;
 }
+
+struct DefPluginOperations();
+impl RIOPluginOperations for DefPluginOperations {
+    fn read(&mut self, _raddr: usize, _buffer: &mut [u8]) -> Result<(), IoError> {
+        Ok(())
+    }
+    fn write(&mut self, _raddr: usize, _buffer: &[u8]) -> Result<(), IoError> {
+        Ok(())
+    }
+}
+
+impl Default for Box<dyn RIOPluginOperations> {
+    fn default() -> Self {
+        return Box::new(DefPluginOperations());
+    }
+}

@@ -22,13 +22,14 @@
 extern crate bitflags;
 #[macro_use]
 extern crate nom;
-
 extern crate base64;
 extern crate memmap;
 extern crate rtrees;
+extern crate serde;
+#[cfg(test)]
+extern crate serde_json;
 #[cfg(test)]
 extern crate test_file;
-
 mod desc;
 mod descquery;
 mod io;

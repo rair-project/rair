@@ -15,8 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use plugin::*;
+use serde::{Deserialize, Serialize};
 use utils::*;
-
+#[derive(Serialize, Deserialize)]
 pub struct RIODesc {
     pub(crate) name: String,
     pub(crate) perm: IoMode,
@@ -24,6 +25,9 @@ pub struct RIODesc {
     pub(crate) paddr: u64, //padd is simulated physical address
     pub(crate) size: u64,
     raddr: u64, // raddr is the IO descriptor address, general rule of interaction paddr is high level lie, while raddr is the real thing.
+    // Since we are skiping files operation structures .. after deserializing RIO .. we must
+    // reopen the files again and make sure that they are in the right place
+    #[serde(skip)]
     plugin_operations: Box<dyn RIOPluginOperations>,
 }
 
@@ -43,6 +47,12 @@ impl RIODesc {
             raddr: plugin_desc.raddr,
         };
         return Ok(desc);
+    }
+    pub(crate) fn reopen(&mut self, plugin: &mut dyn RIOPlugin) -> Result<(), IoError> {
+        let plugin_desc = plugin.open(&self.name, self.perm)?;
+        self.plugin_operations = plugin_desc.plugin_operations;
+        self.raddr = plugin_desc.raddr;
+        return Ok(());
     }
     pub(crate) fn read(&mut self, paddr: usize, buffer: &mut [u8]) -> Result<(), IoError> {
         return self.plugin_operations.read(paddr - self.paddr as usize + self.raddr as usize as usize, buffer);
