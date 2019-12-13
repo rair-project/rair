@@ -17,12 +17,15 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+extern crate flate2;
 extern crate rio;
 extern crate rtrees;
-extern crate yansi;
-
+extern crate serde;
+extern crate serde_cbor;
 #[cfg(test)]
 extern crate test_file;
+extern crate yansi;
+
 mod commands;
 mod core;
 mod helper;

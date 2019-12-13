@@ -16,6 +16,7 @@
  */
 
 use core::*;
+use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::fmt;
 use std::fmt::Display;
@@ -104,7 +105,7 @@ pub trait Cmd {
     fn run(&mut self, &mut Core, &[String]);
     fn help(&self, &mut Core);
 }
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub enum AddrMode {
     Vir,
     Phy,
