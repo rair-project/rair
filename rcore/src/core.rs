@@ -20,6 +20,7 @@ use helper::*;
 use io::*;
 use loc::*;
 use rio::*;
+use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::io;
 use std::io::Write;
@@ -28,12 +29,17 @@ use std::rc::Rc;
 use utils::register_utils;
 use writer::Writer;
 use yansi::Paint;
+
+#[derive(Serialize, Deserialize)]
 pub struct Core {
+    #[serde(skip)]
     pub stdout: Writer,
+    #[serde(skip)]
     pub stderr: Writer,
     pub mode: AddrMode,
     pub io: RIO,
     loc: u64,
+    #[serde(skip)]
     commands: Rc<RefCell<Commands>>,
     pub color_palette: Vec<(u8, u8, u8)>,
 }
@@ -52,11 +58,12 @@ impl Default for Core {
     }
 }
 impl Core {
-    fn load_commands(&mut self) {
+    pub(crate) fn load_commands(&mut self) {
         register_io(self);
         register_loc(self);
         register_utils(self);
     }
+    /// Returns list of all available commands in [Core].
     pub fn commands(&mut self) -> Rc<RefCell<Commands>> {
         return self.commands.clone();
     }
@@ -73,15 +80,7 @@ impl Core {
     }
     pub fn new() -> Self {
         let mut core: Core = Default::default();
-        //let config = Config::builder()
-        //    .completion_type(CompletionType::Circular)
-        //    .edit_mode(EditMode::Emacs)
-        //    .output_stream(OutputStreamType::Stdout)
-        //    .build();
-        //core.rl = Editor::with_config(config);
-        //core.rl.set_helper(Some(LineFormatter::new(core.commands.clone())));
         core.load_commands();
-        //drop(core.rl.load_history(&core.hist_file()));
         core.init_colors();
         return core;
     }

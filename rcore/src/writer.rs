@@ -41,7 +41,11 @@ impl Write for Writer {
         }
     }
 }
-
+impl Default for Writer {
+    fn default() -> Self {
+        Writer::new_buf()
+    }
+}
 impl Writer {
     /// Creates a new [Writer] backed by object that implements [Write].
     pub fn new_write(out: Box<dyn Write>) -> Self {
