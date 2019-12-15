@@ -1,6 +1,4 @@
-# RAIR  
-
-
+# RAIR-CORE
 
 
 |      |    Badge     |
@@ -12,34 +10,12 @@
 |**Chat**| ![Discord](https://img.shields.io/discord/634133396439695382?style=plastic)|
 
 
-RAIR is a work in progress rewrite of [radare2](https://github.com/radare/radare2) in rust with these goals:
-- Native speed.
-- Extremely flexible and modern analysis.
-- Simpler building system.
-- Worry less about undefined behavior.
-- Smooth translation to multithreading.
-- Extremely stable and well documented API.
-- Focusing on correctiness more than focusing on features.
-- Avoid legacy systems compatiability.
 
-It was hard to decide how to start this project and there was mainly two approaches:
+If you are looking for the command line interface check [rair](https://github.com/rair-project/rair)
 
-A) start rair completely from scratch.
-
-B) replacing parts from radare till it all becomes written in rust.
-
-Ufortunately idiomatic rust is slightly different from idiomatic C. In rust you need to respect a very strict ownership/lifetime model that is almost non existent in C. Also radare2 is moving target and keeping compatiability with such huge system is very hard task on its own.
-## Get started
-
-``` bash
-$ git clone https://github.com/oddcoder/rair.git
-$ cd rair
-$ cargo install
-```
 ## Current status
 |   Module  	|   Rust Porting   |                                            Documentation                                           |
 |:-------------:|:----------------:|:--------------------------------------------------------------------------------------------------:|
-|    Rair       |:heavy_check_mark:|NA|
 |   rcore  	|:heavy_check_mark:|[![API](https://img.shields.io/badge/api-master-purple.svg)](https://rair-project.github.io/rair-core/rcore/index.html)|
 |   rtrees      |:heavy_check_mark:|[![API](https://img.shields.io/badge/api-master-purple.svg)](https://rair-project.github.io/rair-core/rtrees)|
 |   rio       	|:heavy_check_mark:|[![API](https://img.shields.io/badge/api-master-purple.svg)](https://rair-project.github.io/rair-core/rio/index.html)|
@@ -62,8 +38,6 @@ $ cargo install
 |   r_cons  	|        NA        |NA|
 |  r_crypto 	|        NA        |NA|
 |   r_egg   	|        NA        |NA|
-|   r_flag  	|        NA        |NA|
-|    r_fs   	|        NA        |NA|
 |   r_hash  	|        NA        |NA|
 |   r_lang  	|        NA        |NA|
 |  r_magic  	|        NA        |NA|
@@ -71,25 +45,3 @@ $ cargo install
 |   r_reg   	|        NA        |NA|
 |  r_search 	|        NA        |NA|
 | r_syscall 	|        NA        |NA|
-|   r_util  	|        NA        |NA|
-
-## Get involved
-
-Regardless to how skilled/unskilled you are, there will always be something for you to do! I always try to keep the code base clean.
-This is list of what you can do from easy to the more challenging:
-
-- Improve this readme.
-- Add support for code coverage / travis / and other CI systems
-- Document already exisiting functions.
-- fix one of `cargo clippy` warnings.
-- Refactor the current codebase, there are many long functions and breaking them down is really usefull.
-- Write unit tests/ fuzz rair
-- imlement one or more of these:
-	* rabin2
-	* radiff2
-	* ragg2
-	* rasm2
-	* radare2
-	* ragg2-cc
-	* rarun2
-	* rax2
