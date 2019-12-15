@@ -1,0 +1,29 @@
+[workspace]
+members = [
+  "rcmd",
+]
+[package]
+name = "rair"
+description = "Reverse Engineering framework written in rust."
+version = "0.1.0"
+authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
+license = "LGPL"
+repository = "https://github.com/oddcoder/rair"
+readme = "README.md"
+keywords = ["Reverse Engineering", "Assembly", "Disassembly", "Malware", "Static Analysis"]
+categories = ["command-line-utilities", "Reverse-Engineering"]
+
+[[bin]]
+name = "rair"
+path = "src/rair.rs"
+
+[dependencies]
+clap = "2.33"
+rustyline = "5.0"
+rustyline-derive = "0.2"
+app_dirs = "1.2"
+yansi = "0.5"
+rtrees = {path = "../rair-core/rtrees"}
+rio = {path = "../rair-core/rio"}
+rcmd = {path = "rcmd"}
+rcore = {path = "../rair-core"}
