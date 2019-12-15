@@ -1036,7 +1036,7 @@ mod test_print_hex {
         let mut pb = PrintBase::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io.open("../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
         pb.run(&mut core, &["2".to_string(), "16".to_string()]);
         core.io.map(0, 0x500, 16).unwrap();
         assert_eq!(
@@ -1067,7 +1067,7 @@ mod test_print_hex {
         let mut pb = PrintBase::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io.open("../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
         core.io.map(0, 0x500, 16).unwrap();
         pb.run(&mut core, &["16".to_string(), "16".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "5647686c4948463161574e7249474a79\n");
@@ -1088,7 +1088,7 @@ mod test_print_hex {
         let mut pb = PrintBase::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io.open("../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
         pb.run(&mut core, &["16".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 2 argument(s), found 1.\n");
@@ -1117,7 +1117,7 @@ mod test_print_hex {
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io.open("../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
         core.io.map(0, 0x500, 35).unwrap();
         pcsv.run(&mut core, &["8".to_string(), "35".to_string()]);
         assert_eq!(
@@ -1146,7 +1146,7 @@ mod test_print_hex {
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io.open("../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
         core.io.map(0, 0x500, 52).unwrap();
         pcsv.run(&mut core, &["16".to_string(), "26".to_string()]);
         assert_eq!(
@@ -1176,7 +1176,7 @@ mod test_print_hex {
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io.open("../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
         core.io.map(0, 0x500, 60).unwrap();
         pcsv.run(&mut core, &["32".to_string(), "15".to_string()]);
         assert_eq!(
@@ -1204,7 +1204,7 @@ mod test_print_hex {
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
+        core.io.open("../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
         core.io.map(0, 0x500, 700).unwrap();
         pcsv.run(&mut core, &["64".to_string(), "15".to_string()]);
         assert_eq!(
@@ -1235,7 +1235,7 @@ mod test_print_hex {
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
+        core.io.open("../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
         core.io.map(0, 0x500, 700).unwrap();
         pcsv.run(&mut core, &["128".to_string(), "7".to_string()]);
         assert_eq!(
@@ -1266,7 +1266,7 @@ mod test_print_hex {
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
+        core.io.open("../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
         core.io.map(0, 0x500, 700).unwrap();
         pcsv.run(&mut core, &["256".to_string(), "5".to_string()]);
         assert_eq!(
@@ -1296,7 +1296,7 @@ mod test_print_hex {
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
+        core.io.open("../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
         core.io.map(0, 0x500, 700).unwrap();
         pcsv.run(&mut core, &["512".to_string(), "3".to_string()]);
         assert_eq!(
@@ -1326,7 +1326,7 @@ mod test_print_hex {
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
+        core.io.open("../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
         pcsv.run(&mut core, &["512".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 2 argument(s), found 1.\n");
@@ -1362,7 +1362,7 @@ mod test_print_hex {
         let mut pscsv = PrintSignedCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
+        core.io.open("../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
         pscsv.run(&mut core, &["128".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 2 argument(s), found 1.\n");
@@ -1398,7 +1398,7 @@ mod test_print_hex {
         let mut pscsv = PrintSignedCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io.open("../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
         core.io.map(0, 0x500, 35).unwrap();
         pscsv.run(&mut core, &["8".to_string(), "35".to_string()]);
         assert_eq!(
@@ -1427,7 +1427,7 @@ mod test_print_hex {
         let mut pscsv = PrintSignedCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io.open("../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
         core.io.map(0, 0x500, 52).unwrap();
         pscsv.run(&mut core, &["16".to_string(), "26".to_string()]);
         assert_eq!(
@@ -1457,7 +1457,7 @@ mod test_print_hex {
         let mut pscsv = PrintSignedCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io.open("../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
         core.io.map(0, 0x500, 60).unwrap();
         pscsv.run(&mut core, &["32".to_string(), "15".to_string()]);
         assert_eq!(
@@ -1485,7 +1485,7 @@ mod test_print_hex {
         let mut pscsv = PrintSignedCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
+        core.io.open("../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
         core.io.map(0, 0x500, 700).unwrap();
         pscsv.run(&mut core, &["64".to_string(), "15".to_string()]);
         assert_eq!(
@@ -1516,7 +1516,7 @@ mod test_print_hex {
         let mut pscsv = PrintSignedCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
+        core.io.open("../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
         core.io.map(0, 0x500, 700).unwrap();
         pscsv.run(&mut core, &["128".to_string(), "7".to_string()]);
         assert_eq!(
