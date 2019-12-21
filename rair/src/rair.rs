@@ -57,7 +57,7 @@ fn main() {
         .version_short("v")
         .arg(
             Arg::with_name("Permission")
-                .help("File permision: Permission can be R or RW case insensitive, the default is R")
+                .help("File permision: Permission can be R, C, or RW case insensitive, the default is R")
                 .short("p")
                 .long("perm")
                 .takes_value(true),
