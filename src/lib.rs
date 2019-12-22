@@ -28,6 +28,7 @@ extern crate yansi;
 
 mod commands;
 mod core;
+mod environment;
 mod helper;
 mod io;
 mod loc;
@@ -36,6 +37,7 @@ mod writer;
 
 pub use commands::*;
 pub use core::*;
+pub use environment::*;
 pub use helper::*;
 pub use io::*;
 pub use writer::*;
