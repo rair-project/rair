@@ -463,6 +463,9 @@ mod test_environment {
     fn negative_i64(_: &str, value: i64, _: &Environment<Option<()>>, _: &mut Option<()>) -> bool {
         return value < 0;
     }
+    fn always_false(_: &str, value: bool, _: &Environment<Option<()>>, _: &mut Option<()>) -> bool {
+        return !value;
+    }
     fn prep_env() -> Environment<Option<()>> {
         let mut data = None;
         let mut env = Environment::new();
@@ -472,6 +475,8 @@ mod test_environment {
         env.add_u64_with_cb("u2", 2, &mut data, even_u64).unwrap();
         env.add_i64("i1", 1).unwrap();
         env.add_i64_with_cb("i2", -1, &mut data, negative_i64).unwrap();
+        env.add_bool("b1", true).unwrap();
+        env.add_bool_with_cb("b2", false, &mut data, always_false).unwrap();
 
         return env;
     }
@@ -545,4 +550,26 @@ mod test_environment {
         assert_eq!(env.set_i64("s1", 3, &mut data).err().unwrap(), EnvErr::DifferentType);
         assert_eq!(env.get("i1").unwrap(), EnvData::I64(8));
     }
+    #[test]
+    fn test_bool() {
+        let mut env = prep_env();
+        let mut data = None;
+        assert_eq!(env.add_bool_with_cb("b3", true, &mut data, always_false).err().unwrap(), EnvErr::CbFailed);
+        assert_eq!(env.add_bool("b2", true).err().unwrap(), EnvErr::AlreadyExist);
+        assert_eq!(env.add_bool_with_cb("b1", false, &mut data, always_false).err().unwrap(), EnvErr::AlreadyExist);
+        assert_eq!(env.is_bool("b1"), true);
+        assert_eq!(env.is_bool("u1"), false);
+        assert_eq!(env.get_bool("b1").unwrap(), true);
+        assert_eq!(env.get_bool("b2").unwrap(), false);
+        assert_eq!(env.get_bool("u3").err().unwrap(), EnvErr::NotFound);
+        assert_eq!(env.get_bool("s1").err().unwrap(), EnvErr::DifferentType);
+        env.set_bool("b1", false, &mut data).unwrap();
+        assert_eq!(env.get_bool("b1").unwrap(), false);
+        assert_eq!(env.set_bool("b2", true, &mut data).err().unwrap(), EnvErr::CbFailed);
+        assert_eq!(env.get_bool("b2").unwrap(), false);
+        assert_eq!(env.set_bool("b3", true, &mut data).err().unwrap(), EnvErr::NotFound);
+        assert_eq!(env.set_bool("s1", false, &mut data).err().unwrap(), EnvErr::DifferentType);
+        assert_eq!(env.get("b1").unwrap(), EnvData::Bool(false));
+    }
+
 }
