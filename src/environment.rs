@@ -500,4 +500,28 @@ mod test_environment {
         assert_eq!(env.get("s1").unwrap(), EnvData::Str("newvalue1"));
         assert_eq!(env.get("s3"), None);
     }
+    #[test]
+    fn test_u64() {
+        let mut env = prep_env();
+        let mut data = None;
+        assert_eq!(env.add_u64_with_cb("u3", 3, &mut data, even_u64).err().unwrap(), EnvErr::CbFailed);
+        assert_eq!(env.add_u64("u2", 5).err().unwrap(), EnvErr::AlreadyExist);
+        assert_eq!(env.add_u64_with_cb("s1", 4, &mut data, even_u64).err().unwrap(), EnvErr::AlreadyExist);
+        assert_eq!(env.is_u64("u1"), true);
+        assert_eq!(env.is_u64("s1"), false);
+        assert_eq!(env.get_u64("u1").unwrap(), 1);
+        assert_eq!(env.get_u64("u2").unwrap(), 2);
+        assert_eq!(env.get_u64("u3").err().unwrap(), EnvErr::NotFound);
+        assert_eq!(env.get_u64("s1").err().unwrap(), EnvErr::DifferentType);
+        env.set_u64("u1", 8, &mut data).unwrap();
+        assert_eq!(env.get_u64("u1").unwrap(), 8);
+        env.set_u64("u2", 4, &mut data).unwrap();
+        assert_eq!(env.get_u64("u2").unwrap(), 4);
+        assert_eq!(env.set_u64("u2", 7, &mut data).err().unwrap(), EnvErr::CbFailed);
+        assert_eq!(env.get_u64("u2").unwrap(), 4);
+        assert_eq!(env.set_u64("u3", 5, &mut data).err().unwrap(), EnvErr::NotFound);
+        assert_eq!(env.set_u64("s1", 3, &mut data).err().unwrap(), EnvErr::DifferentType);
+        assert_eq!(env.get("u1").unwrap(), EnvData::U64(8));
+        assert_eq!(env.get("s3"), None);
+    }
 }
