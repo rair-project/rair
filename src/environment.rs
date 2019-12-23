@@ -115,6 +115,8 @@ pub enum EnvData<'a> {
     I64(i64),
     Bool(bool),
 }
+
+#[derive(Default)]
 pub struct Environment<T> {
     data: HashMap<String, EnvMetaData<T>>,
 }
@@ -182,8 +184,6 @@ impl<T> Environment<T> {
         let mut tmp = value.to_string();
         if let Some(s) = meta.mut_str() {
             mem::swap(&mut tmp, &mut s.data);
-            drop(s);
-            drop(meta);
             if !self.exec_str_cb(key, data) {
                 //restore old data
                 let meta = self.data.get_mut(key).unwrap();
@@ -258,8 +258,6 @@ impl<T> Environment<T> {
         let mut tmp = value;
         if let Some(s) = meta.mut_u64() {
             mem::swap(&mut tmp, &mut s.data);
-            drop(s);
-            drop(meta);
             if !self.exec_u64_cb(key, data) {
                 //restore old data
                 let meta = self.data.get_mut(key).unwrap();
@@ -334,8 +332,6 @@ impl<T> Environment<T> {
         let mut tmp = value;
         if let Some(s) = meta.mut_i64() {
             mem::swap(&mut tmp, &mut s.data);
-            drop(s);
-            drop(meta);
             if !self.exec_i64_cb(key, data) {
                 //restore old data
                 let meta = self.data.get_mut(key).unwrap();
@@ -410,8 +406,6 @@ impl<T> Environment<T> {
         let mut tmp = value;
         if let Some(s) = meta.mut_bool() {
             mem::swap(&mut tmp, &mut s.data);
-            drop(s);
-            drop(meta);
             if !self.exec_bool_cb(key, data) {
                 //restore old data
                 let meta = self.data.get_mut(key).unwrap();
@@ -466,6 +460,9 @@ mod test_environment {
     fn even_u64(_: &str, value: u64, _: &Environment<Option<()>>, _: &mut Option<()>) -> bool {
         return value % 2 == 0;
     }
+    fn negative_i64(_: &str, value: i64, _: &Environment<Option<()>>, _: &mut Option<()>) -> bool {
+        return value < 0;
+    }
     fn prep_env() -> Environment<Option<()>> {
         let mut data = None;
         let mut env = Environment::new();
@@ -473,6 +470,8 @@ mod test_environment {
         env.add_str_with_cb("s2", "value2", &mut data, even_str).unwrap();
         env.add_u64("u1", 1).unwrap();
         env.add_u64_with_cb("u2", 2, &mut data, even_u64).unwrap();
+        env.add_i64("i1", 1).unwrap();
+        env.add_i64_with_cb("i2", -1, &mut data, negative_i64).unwrap();
 
         return env;
     }
@@ -522,6 +521,28 @@ mod test_environment {
         assert_eq!(env.set_u64("u3", 5, &mut data).err().unwrap(), EnvErr::NotFound);
         assert_eq!(env.set_u64("s1", 3, &mut data).err().unwrap(), EnvErr::DifferentType);
         assert_eq!(env.get("u1").unwrap(), EnvData::U64(8));
-        assert_eq!(env.get("s3"), None);
+    }
+    #[test]
+    fn test_i64() {
+        let mut env = prep_env();
+        let mut data = None;
+        assert_eq!(env.add_i64_with_cb("i3", 3, &mut data, negative_i64).err().unwrap(), EnvErr::CbFailed);
+        assert_eq!(env.add_i64("i2", 5).err().unwrap(), EnvErr::AlreadyExist);
+        assert_eq!(env.add_i64_with_cb("s1", 4, &mut data, negative_i64).err().unwrap(), EnvErr::AlreadyExist);
+        assert_eq!(env.is_i64("i1"), true);
+        assert_eq!(env.is_i64("u1"), false);
+        assert_eq!(env.get_i64("i1").unwrap(), 1);
+        assert_eq!(env.get_i64("i2").unwrap(), -1);
+        assert_eq!(env.get_i64("u3").err().unwrap(), EnvErr::NotFound);
+        assert_eq!(env.get_i64("s1").err().unwrap(), EnvErr::DifferentType);
+        env.set_i64("i1", 8, &mut data).unwrap();
+        assert_eq!(env.get_i64("i1").unwrap(), 8);
+        env.set_i64("i2", -4, &mut data).unwrap();
+        assert_eq!(env.get_i64("i2").unwrap(), -4);
+        assert_eq!(env.set_i64("i2", 7, &mut data).err().unwrap(), EnvErr::CbFailed);
+        assert_eq!(env.get_i64("i2").unwrap(), -4);
+        assert_eq!(env.set_i64("i3", 5, &mut data).err().unwrap(), EnvErr::NotFound);
+        assert_eq!(env.set_i64("s1", 3, &mut data).err().unwrap(), EnvErr::DifferentType);
+        assert_eq!(env.get("i1").unwrap(), EnvData::I64(8));
     }
 }
