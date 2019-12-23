@@ -1,5 +1,5 @@
 /*
- * core.rs: Linking all rair parts together into 1 module.
+ * environment.rs: Linking all rair parts together into 1 module.
  * Copyright (C) 2019  Oddcoder
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -14,14 +14,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use core::Core;
 use std::collections::HashMap;
 use std::mem;
 
-pub type StrFn = fn(&str, &str, &Environment, &mut Core) -> bool;
-pub type U64Fn = fn(&str, u64, &Environment, &mut Core) -> bool;
-pub type I64Fn = fn(&str, i64, &Environment, &mut Core) -> bool;
-pub type BoolFn = fn(&str, bool, &Environment, &mut Core) -> bool;
+pub type StrFn<T> = fn(&str, &str, &Environment<T>, &mut T) -> bool;
+pub type U64Fn<T> = fn(&str, u64, &Environment<T>, &mut T) -> bool;
+pub type I64Fn<T> = fn(&str, i64, &Environment<T>, &mut T) -> bool;
+pub type BoolFn<T> = fn(&str, bool, &Environment<T>, &mut T) -> bool;
 
 #[derive(Debug, PartialEq)]
 pub enum EnvErr {
@@ -30,79 +29,79 @@ pub enum EnvErr {
     CbFailed,
     AlreadyExist,
 }
-struct EnvStr {
+struct EnvStr<T> {
     data: String,
     default: String,
-    cb: Option<StrFn>,
+    cb: Option<StrFn<T>>,
 }
 
-struct EnvU64 {
+struct EnvU64<T> {
     data: u64,
     default: u64,
-    cb: Option<U64Fn>,
+    cb: Option<U64Fn<T>>,
 }
-struct EnvI64 {
+struct EnvI64<T> {
     data: i64,
     default: i64,
-    cb: Option<I64Fn>,
+    cb: Option<I64Fn<T>>,
 }
-struct EnvBool {
+struct EnvBool<T> {
     data: bool,
     default: bool,
-    cb: Option<BoolFn>,
+    cb: Option<BoolFn<T>>,
 }
-enum EnvMetaData {
-    Str(EnvStr),
-    U64(EnvU64),
-    I64(EnvI64),
-    Bool(EnvBool),
+enum EnvMetaData<T> {
+    Str(EnvStr<T>),
+    U64(EnvU64<T>),
+    I64(EnvI64<T>),
+    Bool(EnvBool<T>),
 }
 
-impl EnvMetaData {
-    fn as_str(&self) -> Option<&EnvStr> {
+impl<T> EnvMetaData<T> {
+    fn as_str(&self) -> Option<&EnvStr<T>> {
         if let EnvMetaData::Str(s) = self {
             return Some(s);
         }
         return None;
     }
-    fn as_u64(&self) -> Option<&EnvU64> {
+    fn as_u64(&self) -> Option<&EnvU64<T>> {
         if let EnvMetaData::U64(u) = self {
             return Some(u);
         }
         return None;
     }
-    fn as_i64(&self) -> Option<&EnvI64> {
+    fn as_i64(&self) -> Option<&EnvI64<T>> {
         if let EnvMetaData::I64(i) = self {
             return Some(i);
         }
         return None;
     }
-    fn as_bool(&self) -> Option<&EnvBool> {
+    fn as_bool(&self) -> Option<&EnvBool<T>> {
         if let EnvMetaData::Bool(b) = self {
             return Some(b);
         }
         return None;
     }
 
-    fn mut_str(&mut self) -> Option<&mut EnvStr> {
+    fn mut_str(&mut self) -> Option<&mut EnvStr<T>> {
         if let EnvMetaData::Str(s) = self {
             return Some(s);
         }
         return None;
     }
-    fn mut_u64(&mut self) -> Option<&mut EnvU64> {
+    fn mut_u64(&mut self) -> Option<&mut EnvU64<T>> {
         if let EnvMetaData::U64(u) = self {
             return Some(u);
         }
         return None;
     }
-    fn mut_i64(&mut self) -> Option<&mut EnvI64> {
+    fn mut_i64(&mut self) -> Option<&mut EnvI64<T>> {
         if let EnvMetaData::I64(i) = self {
             return Some(i);
         }
         return None;
     }
-    fn mut_bool(&mut self) -> Option<&mut EnvBool> {
+    fn mut_bool(&mut self) -> Option<&mut EnvBool<T>> {
         if let EnvMetaData::Bool(b) = self {
             return Some(b);
         }
@@ -116,26 +115,25 @@ pub enum EnvData<'a> {
     I64(i64),
     Bool(bool),
 }
-#[derive(Default)]
-pub struct Environment {
-    data: HashMap<String, EnvMetaData>,
+pub struct Environment<T> {
+    data: HashMap<String, EnvMetaData<T>>,
 }
 
-impl Environment {
+impl<T> Environment<T> {
     pub fn new() -> Self {
-        Default::default()
+        Environment { data: HashMap::new() }
     }
     // All exec_*_cb function are guaranteed to be running on the correct type
-    fn exec_str_cb(&self, key: &str, core: &mut Core) -> bool {
+    fn exec_str_cb(&self, key: &str, data: &mut T) -> bool {
         let meta = self.data.get(key).unwrap().as_str().unwrap();
         let val = &meta.data;
         if let Some(cb) = meta.cb {
-            return cb(key, val, self, core);
+            return cb(key, val, self, data);
         }
         return true;
     }
 
-    pub fn add_str_with_cb(&mut self, key: &str, val: &str, core: &mut Core, cb: StrFn) -> Result<(), EnvErr> {
+    pub fn add_str_with_cb(&mut self, key: &str, val: &str, data: &mut T, cb: StrFn<T>) -> Result<(), EnvErr> {
         if self.data.contains_key(key) {
             return Err(EnvErr::AlreadyExist);
         }
@@ -145,7 +143,7 @@ impl Environment {
             cb: Some(cb),
         };
         self.data.insert(key.to_string(), EnvMetaData::Str(meta));
-        if !self.exec_str_cb(key, core) {
+        if !self.exec_str_cb(key, data) {
             self.data.remove(key).unwrap();
             return Err(EnvErr::CbFailed);
         }
@@ -176,7 +174,7 @@ impl Environment {
         };
     }
 
-    pub fn set_str(&mut self, key: &str, value: &str, core: &mut Core) -> Result<(), EnvErr> {
+    pub fn set_str(&mut self, key: &str, value: &str, data: &mut T) -> Result<(), EnvErr> {
         let meta = match self.data.get_mut(key) {
             Some(meta) => meta,
             None => return Err(EnvErr::NotFound),
@@ -186,7 +184,7 @@ impl Environment {
             mem::swap(&mut tmp, &mut s.data);
             drop(s);
             drop(meta);
-            if !self.exec_str_cb(key, core) {
+            if !self.exec_str_cb(key, data) {
                 //restore old data
                 let meta = self.data.get_mut(key).unwrap();
                 let s = meta.mut_str().unwrap();
@@ -207,15 +205,15 @@ impl Environment {
         return meta.as_str().is_some();
     }
 
-    fn exec_u64_cb(&self, key: &str, core: &mut Core) -> bool {
+    fn exec_u64_cb(&self, key: &str, data: &mut T) -> bool {
         let meta = self.data.get(key).unwrap().as_u64().unwrap();
         if let Some(cb) = meta.cb {
-            return cb(key, meta.data, self, core);
+            return cb(key, meta.data, self, data);
         }
         return true;
     }
 
-    pub fn add_u64_with_cb(&mut self, key: &str, val: u64, core: &mut Core, cb: U64Fn) -> Result<(), EnvErr> {
+    pub fn add_u64_with_cb(&mut self, key: &str, val: u64, data: &mut T, cb: U64Fn<T>) -> Result<(), EnvErr> {
         if self.data.contains_key(key) {
             return Err(EnvErr::AlreadyExist);
         }
@@ -225,7 +223,7 @@ impl Environment {
             cb: Some(cb),
         };
         self.data.insert(key.to_string(), EnvMetaData::U64(meta));
-        if !self.exec_u64_cb(key, core) {
+        if !self.exec_u64_cb(key, data) {
             self.data.remove(key).unwrap();
             return Err(EnvErr::CbFailed);
         }
@@ -252,7 +250,7 @@ impl Environment {
         };
     }
 
-    pub fn set_u64(&mut self, key: &str, value: u64, core: &mut Core) -> Result<(), EnvErr> {
+    pub fn set_u64(&mut self, key: &str, value: u64, data: &mut T) -> Result<(), EnvErr> {
         let meta = match self.data.get_mut(key) {
             Some(meta) => meta,
             None => return Err(EnvErr::NotFound),
@@ -262,7 +260,7 @@ impl Environment {
             mem::swap(&mut tmp, &mut s.data);
             drop(s);
             drop(meta);
-            if !self.exec_u64_cb(key, core) {
+            if !self.exec_u64_cb(key, data) {
                 //restore old data
                 let meta = self.data.get_mut(key).unwrap();
                 let s = meta.mut_u64().unwrap();
@@ -283,15 +281,15 @@ impl Environment {
         return meta.as_u64().is_some();
     }
 
-    fn exec_i64_cb(&self, key: &str, core: &mut Core) -> bool {
+    fn exec_i64_cb(&self, key: &str, data: &mut T) -> bool {
         let meta = self.data.get(key).unwrap().as_i64().unwrap();
         if let Some(cb) = meta.cb {
-            return cb(key, meta.data, self, core);
+            return cb(key, meta.data, self, data);
         }
         return true;
     }
 
-    pub fn add_i64_with_cb(&mut self, key: &str, val: i64, core: &mut Core, cb: I64Fn) -> Result<(), EnvErr> {
+    pub fn add_i64_with_cb(&mut self, key: &str, val: i64, data: &mut T, cb: I64Fn<T>) -> Result<(), EnvErr> {
         if self.data.contains_key(key) {
             return Err(EnvErr::AlreadyExist);
         }
@@ -301,7 +299,7 @@ impl Environment {
             cb: Some(cb),
         };
         self.data.insert(key.to_string(), EnvMetaData::I64(meta));
-        if !self.exec_i64_cb(key, core) {
+        if !self.exec_i64_cb(key, data) {
             self.data.remove(key).unwrap();
             return Err(EnvErr::CbFailed);
         }
@@ -328,7 +326,7 @@ impl Environment {
         };
     }
 
-    pub fn set_i64(&mut self, key: &str, value: i64, core: &mut Core) -> Result<(), EnvErr> {
+    pub fn set_i64(&mut self, key: &str, value: i64, data: &mut T) -> Result<(), EnvErr> {
         let meta = match self.data.get_mut(key) {
             Some(meta) => meta,
             None => return Err(EnvErr::NotFound),
@@ -338,7 +336,7 @@ impl Environment {
             mem::swap(&mut tmp, &mut s.data);
             drop(s);
             drop(meta);
-            if !self.exec_i64_cb(key, core) {
+            if !self.exec_i64_cb(key, data) {
                 //restore old data
                 let meta = self.data.get_mut(key).unwrap();
                 let s = meta.mut_i64().unwrap();
@@ -359,15 +357,15 @@ impl Environment {
         return meta.as_i64().is_some();
     }
 
-    fn exec_bool_cb(&self, key: &str, core: &mut Core) -> bool {
+    fn exec_bool_cb(&self, key: &str, data: &mut T) -> bool {
         let meta = self.data.get(key).unwrap().as_bool().unwrap();
         if let Some(cb) = meta.cb {
-            return cb(key, meta.data, self, core);
+            return cb(key, meta.data, self, data);
         }
         return true;
     }
 
-    pub fn add_bool_with_cb(&mut self, key: &str, val: bool, core: &mut Core, cb: BoolFn) -> Result<(), EnvErr> {
+    pub fn add_bool_with_cb(&mut self, key: &str, val: bool, data: &mut T, cb: BoolFn<T>) -> Result<(), EnvErr> {
         if self.data.contains_key(key) {
             return Err(EnvErr::AlreadyExist);
         }
@@ -377,7 +375,7 @@ impl Environment {
             cb: Some(cb),
         };
         self.data.insert(key.to_string(), EnvMetaData::Bool(meta));
-        if !self.exec_bool_cb(key, core) {
+        if !self.exec_bool_cb(key, data) {
             self.data.remove(key).unwrap();
             return Err(EnvErr::CbFailed);
         }
@@ -404,7 +402,7 @@ impl Environment {
         };
     }
 
-    pub fn set_bool(&mut self, key: &str, value: bool, core: &mut Core) -> Result<(), EnvErr> {
+    pub fn set_bool(&mut self, key: &str, value: bool, data: &mut T) -> Result<(), EnvErr> {
         let meta = match self.data.get_mut(key) {
             Some(meta) => meta,
             None => return Err(EnvErr::NotFound),
@@ -414,7 +412,7 @@ impl Environment {
             mem::swap(&mut tmp, &mut s.data);
             drop(s);
             drop(meta);
-            if !self.exec_bool_cb(key, core) {
+            if !self.exec_bool_cb(key, data) {
                 //restore old data
                 let meta = self.data.get_mut(key).unwrap();
                 let s = meta.mut_bool().unwrap();
@@ -462,44 +460,44 @@ impl Environment {
 #[cfg(test)]
 mod test_environment {
     use super::*;
-    fn even_str(_: &str, value: &str, _: &Environment, _: &mut Core) -> bool {
+    fn even_str(_: &str, value: &str, _: &Environment<Option<()>>, _: &mut Option<()>) -> bool {
         return value.len() % 2 == 0;
     }
-    fn even_u64(_: &str, value: u64, _: &Environment, _: &mut Core) -> bool {
+    fn even_u64(_: &str, value: u64, _: &Environment<Option<()>>, _: &mut Option<()>) -> bool {
         return value % 2 == 0;
     }
-    fn prep_env() -> Environment {
-        let mut core = Core::new();
+    fn prep_env() -> Environment<Option<()>> {
+        let mut data = None;
         let mut env = Environment::new();
         env.add_str("s1", "value1").unwrap();
-        env.add_str_with_cb("s2", "value2", &mut core, even_str).unwrap();
+        env.add_str_with_cb("s2", "value2", &mut data, even_str).unwrap();
         env.add_u64("u1", 1).unwrap();
-        env.add_u64_with_cb("u2", 2, &mut core, even_u64).unwrap();
+        env.add_u64_with_cb("u2", 2, &mut data, even_u64).unwrap();
 
         return env;
     }
     #[test]
     fn test_str() {
         let mut env = prep_env();
-        let mut core = Core::new();
-        assert_eq!(env.add_str_with_cb("s03", "value02", &mut core, even_str).err().unwrap(), EnvErr::CbFailed);
+        let mut data = None;
+        assert_eq!(env.add_str_with_cb("s03", "value02", &mut data, even_str).err().unwrap(), EnvErr::CbFailed);
         assert_eq!(env.add_str("s1", "v3").err().unwrap(), EnvErr::AlreadyExist);
-        assert_eq!(env.add_str_with_cb("s1", "value1", &mut core, even_str).err().unwrap(), EnvErr::AlreadyExist);
+        assert_eq!(env.add_str_with_cb("s1", "value1", &mut data, even_str).err().unwrap(), EnvErr::AlreadyExist);
         assert_eq!(env.is_str("s1"), true);
         assert_eq!(env.is_str("u1"), false);
         assert_eq!(env.get_str("s1").unwrap(), "value1");
         assert_eq!(env.get_str("s2").unwrap(), "value2");
         assert_eq!(env.get_str("s3").err().unwrap(), EnvErr::NotFound);
         assert_eq!(env.get_str("u1").err().unwrap(), EnvErr::DifferentType);
-        env.set_str("s1", "newvalue1", &mut core).unwrap();
+        env.set_str("s1", "newvalue1", &mut data).unwrap();
         assert_eq!(env.get_str("s1").unwrap(), "newvalue1");
-        env.set_str("s2", "newvalue02", &mut core).unwrap();
+        env.set_str("s2", "newvalue02", &mut data).unwrap();
         assert_eq!(env.get_str("s2").unwrap(), "newvalue02");
-        assert_eq!(env.set_str("s2", "tmp", &mut core).err().unwrap(), EnvErr::CbFailed);
+        assert_eq!(env.set_str("s2", "tmp", &mut data).err().unwrap(), EnvErr::CbFailed);
         assert_eq!(env.get_str("s2").unwrap(), "newvalue02");
-        assert_eq!(env.set_str("s3", "tmp", &mut core).err().unwrap(), EnvErr::NotFound);
-        assert_eq!(env.set_str("u1", "tmp", &mut core).err().unwrap(), EnvErr::DifferentType);
+        assert_eq!(env.set_str("s3", "tmp", &mut data).err().unwrap(), EnvErr::NotFound);
+        assert_eq!(env.set_str("u1", "tmp", &mut data).err().unwrap(), EnvErr::DifferentType);
         assert_eq!(env.get("s1").unwrap(), EnvData::Str("newvalue1"));
-        assert_eq!(env.get("s3"), None);       
+        assert_eq!(env.get("s3"), None);
     }
 }
