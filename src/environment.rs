@@ -18,11 +18,12 @@ use core::Core;
 use std::collections::HashMap;
 use std::mem;
 
-type StrFn = fn(&str, &str, &Environment, &mut Core) -> bool;
-type U64Fn = fn(&str, u64, &Environment, &mut Core) -> bool;
-type I64Fn = fn(&str, i64, &Environment, &mut Core) -> bool;
-type BoolFn = fn(&str, bool, &Environment, &mut Core) -> bool;
+pub type StrFn = fn(&str, &str, &Environment, &mut Core) -> bool;
+pub type U64Fn = fn(&str, u64, &Environment, &mut Core) -> bool;
+pub type I64Fn = fn(&str, i64, &Environment, &mut Core) -> bool;
+pub type BoolFn = fn(&str, bool, &Environment, &mut Core) -> bool;
 
+#[derive(Debug, PartialEq)]
 pub enum EnvErr {
     NotFound,
     DifferentType,
@@ -108,6 +109,7 @@ impl EnvMetaData {
         return None;
     }
 }
+#[derive(PartialEq, Debug)]
 pub enum EnvData<'a> {
     Str(&'a str),
     U64(u64),
@@ -193,7 +195,7 @@ impl Environment {
             }
             return Ok(());
         } else {
-            return Err(EnvErr::NotFound);
+            return Err(EnvErr::DifferentType);
         }
     }
 
@@ -269,7 +271,7 @@ impl Environment {
             }
             return Ok(());
         } else {
-            return Err(EnvErr::NotFound);
+            return Err(EnvErr::DifferentType);
         }
     }
 
@@ -345,7 +347,7 @@ impl Environment {
             }
             return Ok(());
         } else {
-            return Err(EnvErr::NotFound);
+            return Err(EnvErr::DifferentType);
         }
     }
 
@@ -421,7 +423,7 @@ impl Environment {
             }
             return Ok(());
         } else {
-            return Err(EnvErr::NotFound);
+            return Err(EnvErr::DifferentType);
         }
     }
 
@@ -454,5 +456,50 @@ impl Environment {
             EnvMetaData::U64(u) => Some(EnvData::U64(u.data)),
             EnvMetaData::Str(s) => Some(EnvData::Str(&s.data)),
         };
+    }
+}
+
+#[cfg(test)]
+mod test_environment {
+    use super::*;
+    fn even_str(_: &str, value: &str, _: &Environment, _: &mut Core) -> bool {
+        return value.len() % 2 == 0;
+    }
+    fn even_u64(_: &str, value: u64, _: &Environment, _: &mut Core) -> bool {
+        return value % 2 == 0;
+    }
+    fn prep_env() -> Environment {
+        let mut core = Core::new();
+        let mut env = Environment::new();
+        env.add_str("s1", "value1").unwrap();
+        env.add_str_with_cb("s2", "value2", &mut core, even_str).unwrap();
+        env.add_u64("u1", 1).unwrap();
+        env.add_u64_with_cb("u2", 2, &mut core, even_u64).unwrap();
+
+        return env;
+    }
+    #[test]
+    fn test_str() {
+        let mut env = prep_env();
+        let mut core = Core::new();
+        assert_eq!(env.add_str_with_cb("s03", "value02", &mut core, even_str).err().unwrap(), EnvErr::CbFailed);
+        assert_eq!(env.add_str("s1", "v3").err().unwrap(), EnvErr::AlreadyExist);
+        assert_eq!(env.add_str_with_cb("s1", "value1", &mut core, even_str).err().unwrap(), EnvErr::AlreadyExist);
+        assert_eq!(env.is_str("s1"), true);
+        assert_eq!(env.is_str("u1"), false);
+        assert_eq!(env.get_str("s1").unwrap(), "value1");
+        assert_eq!(env.get_str("s2").unwrap(), "value2");
+        assert_eq!(env.get_str("s3").err().unwrap(), EnvErr::NotFound);
+        assert_eq!(env.get_str("u1").err().unwrap(), EnvErr::DifferentType);
+        env.set_str("s1", "newvalue1", &mut core).unwrap();
+        assert_eq!(env.get_str("s1").unwrap(), "newvalue1");
+        env.set_str("s2", "newvalue02", &mut core).unwrap();
+        assert_eq!(env.get_str("s2").unwrap(), "newvalue02");
+        assert_eq!(env.set_str("s2", "tmp", &mut core).err().unwrap(), EnvErr::CbFailed);
+        assert_eq!(env.get_str("s2").unwrap(), "newvalue02");
+        assert_eq!(env.set_str("s3", "tmp", &mut core).err().unwrap(), EnvErr::NotFound);
+        assert_eq!(env.set_str("u1", "tmp", &mut core).err().unwrap(), EnvErr::DifferentType);
+        assert_eq!(env.get("s1").unwrap(), EnvData::Str("newvalue1"));
+        assert_eq!(env.get("s3"), None);       
     }
 }
