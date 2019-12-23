@@ -1,5 +1,5 @@
 /*
- * environment.rs: Linking all rair parts together into 1 module.
+ * environment.rs: Linking all rair configuration parts together into place.
  * Copyright (C) 2019  Oddcoder
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -14,100 +14,12 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+use super::metadata::*;
+use super::err::*;
 use std::collections::HashMap;
 use std::mem;
 
-pub type StrFn<T> = fn(&str, &str, &Environment<T>, &mut T) -> bool;
-pub type U64Fn<T> = fn(&str, u64, &Environment<T>, &mut T) -> bool;
-pub type I64Fn<T> = fn(&str, i64, &Environment<T>, &mut T) -> bool;
-pub type BoolFn<T> = fn(&str, bool, &Environment<T>, &mut T) -> bool;
 
-#[derive(Debug, PartialEq)]
-pub enum EnvErr {
-    NotFound,
-    DifferentType,
-    CbFailed,
-    AlreadyExist,
-}
-struct EnvStr<T> {
-    data: String,
-    default: String,
-    cb: Option<StrFn<T>>,
-}
-
-struct EnvU64<T> {
-    data: u64,
-    default: u64,
-    cb: Option<U64Fn<T>>,
-}
-struct EnvI64<T> {
-    data: i64,
-    default: i64,
-    cb: Option<I64Fn<T>>,
-}
-struct EnvBool<T> {
-    data: bool,
-    default: bool,
-    cb: Option<BoolFn<T>>,
-}
-enum EnvMetaData<T> {
-    Str(EnvStr<T>),
-    U64(EnvU64<T>),
-    I64(EnvI64<T>),
-    Bool(EnvBool<T>),
-}
-
-impl<T> EnvMetaData<T> {
-    fn as_str(&self) -> Option<&EnvStr<T>> {
-        if let EnvMetaData::Str(s) = self {
-            return Some(s);
-        }
-        return None;
-    }
-    fn as_u64(&self) -> Option<&EnvU64<T>> {
-        if let EnvMetaData::U64(u) = self {
-            return Some(u);
-        }
-        return None;
-    }
-    fn as_i64(&self) -> Option<&EnvI64<T>> {
-        if let EnvMetaData::I64(i) = self {
-            return Some(i);
-        }
-        return None;
-    }
-    fn as_bool(&self) -> Option<&EnvBool<T>> {
-        if let EnvMetaData::Bool(b) = self {
-            return Some(b);
-        }
-        return None;
-    }
-
-    fn mut_str(&mut self) -> Option<&mut EnvStr<T>> {
-        if let EnvMetaData::Str(s) = self {
-            return Some(s);
-        }
-        return None;
-    }
-    fn mut_u64(&mut self) -> Option<&mut EnvU64<T>> {
-        if let EnvMetaData::U64(u) = self {
-            return Some(u);
-        }
-        return None;
-    }
-    fn mut_i64(&mut self) -> Option<&mut EnvI64<T>> {
-        if let EnvMetaData::I64(i) = self {
-            return Some(i);
-        }
-        return None;
-    }
-    fn mut_bool(&mut self) -> Option<&mut EnvBool<T>> {
-        if let EnvMetaData::Bool(b) = self {
-            return Some(b);
-        }
-        return None;
-    }
-}
 #[derive(PartialEq, Debug)]
 pub enum EnvData<'a> {
     Str(&'a str),

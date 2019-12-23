@@ -1,5 +1,6 @@
 [workspace]
 members = [
+  "renv",
   "rio",
   "rtrees",
   "test_file",
