@@ -1,0 +1,13 @@
+[package]
+name = "renv"
+version = "0.1.0"
+authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
+edition = "2018"
+license = "LGPL"
+repository = "https://github.com/oddcoder/rair"
+keywords = ["Rair", "Core"]
+description = "Core module for Rair"
+categories = ["CLI"]
+readme = "readme.md"
+
+[dependencies]
