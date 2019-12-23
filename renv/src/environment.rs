@@ -339,16 +339,28 @@ impl<T> Environment<T> {
         return meta.as_bool().is_some();
     }
 
-    pub fn reset(&mut self, key: &str) -> Result<(), EnvErr> {
+    pub fn reset(&mut self, key: &str, data: &mut T) -> Result<(), EnvErr> {
         let meta = match self.data.get_mut(key) {
             Some(meta) => meta,
             None => return Err(EnvErr::NotFound),
         };
         match meta {
-            EnvMetaData::Bool(b) => b.data = b.default,
-            EnvMetaData::I64(i) => i.data = i.default,
-            EnvMetaData::U64(u) => u.data = u.default,
-            EnvMetaData::Str(s) => s.data = s.default.clone(),
+            EnvMetaData::Bool(b) => {
+                b.data = b.default;
+                self.exec_bool_cb(key, data);
+            },
+            EnvMetaData::I64(i) => {
+                i.data = i.default;
+                self.exec_i64_cb(key, data);
+            },
+            EnvMetaData::U64(u) => {
+                u.data = u.default;
+                self.exec_u64_cb(key, data);
+            },
+            EnvMetaData::Str(s) => {
+                s.data = s.default.clone();
+                self.exec_str_cb(key, data);
+            },
         }
         return Ok(());
     }
@@ -401,6 +413,7 @@ mod test_environment {
         assert_eq!(env.add_str_with_cb("s1", "value1", &mut data, even_str).err().unwrap(), EnvErr::AlreadyExist);
         assert_eq!(env.is_str("s1"), true);
         assert_eq!(env.is_str("u1"), false);
+        assert_eq!(env.is_str("s3"), false);
         assert_eq!(env.get_str("s1").unwrap(), "value1");
         assert_eq!(env.get_str("s2").unwrap(), "value2");
         assert_eq!(env.get_str("s3").err().unwrap(), EnvErr::NotFound);
@@ -415,6 +428,9 @@ mod test_environment {
         assert_eq!(env.set_str("u1", "tmp", &mut data).err().unwrap(), EnvErr::DifferentType);
         assert_eq!(env.get("s1").unwrap(), EnvData::Str("newvalue1"));
         assert_eq!(env.get("s3"), None);
+        env.reset("s1", &mut data).unwrap();
+        assert_eq!(env.get_str("s1").unwrap(), "value1");
+        assert_eq!(env.reset("s3", &mut data).err().unwrap(), EnvErr::NotFound);
     }
     #[test]
     fn test_u64() {
@@ -425,6 +441,7 @@ mod test_environment {
         assert_eq!(env.add_u64_with_cb("s1", 4, &mut data, even_u64).err().unwrap(), EnvErr::AlreadyExist);
         assert_eq!(env.is_u64("u1"), true);
         assert_eq!(env.is_u64("s1"), false);
+        assert_eq!(env.is_u64("u3"), false);
         assert_eq!(env.get_u64("u1").unwrap(), 1);
         assert_eq!(env.get_u64("u2").unwrap(), 2);
         assert_eq!(env.get_u64("u3").err().unwrap(), EnvErr::NotFound);
@@ -438,6 +455,8 @@ mod test_environment {
         assert_eq!(env.set_u64("u3", 5, &mut data).err().unwrap(), EnvErr::NotFound);
         assert_eq!(env.set_u64("s1", 3, &mut data).err().unwrap(), EnvErr::DifferentType);
         assert_eq!(env.get("u1").unwrap(), EnvData::U64(8));
+        env.reset("u1", &mut data).unwrap();
+        assert_eq!(env.get_u64("u1").unwrap(), 1);
     }
     #[test]
     fn test_i64() {
@@ -448,6 +467,7 @@ mod test_environment {
         assert_eq!(env.add_i64_with_cb("s1", 4, &mut data, negative_i64).err().unwrap(), EnvErr::AlreadyExist);
         assert_eq!(env.is_i64("i1"), true);
         assert_eq!(env.is_i64("u1"), false);
+        assert_eq!(env.is_i64("i3"), false);
         assert_eq!(env.get_i64("i1").unwrap(), 1);
         assert_eq!(env.get_i64("i2").unwrap(), -1);
         assert_eq!(env.get_i64("u3").err().unwrap(), EnvErr::NotFound);
@@ -461,6 +481,8 @@ mod test_environment {
         assert_eq!(env.set_i64("i3", 5, &mut data).err().unwrap(), EnvErr::NotFound);
         assert_eq!(env.set_i64("s1", 3, &mut data).err().unwrap(), EnvErr::DifferentType);
         assert_eq!(env.get("i1").unwrap(), EnvData::I64(8));
+        env.reset("i1", &mut data).unwrap();
+        assert_eq!(env.get_i64("i1").unwrap(), 1);
     }
     #[test]
     fn test_bool() {
@@ -471,6 +493,7 @@ mod test_environment {
         assert_eq!(env.add_bool_with_cb("b1", false, &mut data, always_false).err().unwrap(), EnvErr::AlreadyExist);
         assert_eq!(env.is_bool("b1"), true);
         assert_eq!(env.is_bool("u1"), false);
+        assert_eq!(env.is_bool("b3"), false);
         assert_eq!(env.get_bool("b1").unwrap(), true);
         assert_eq!(env.get_bool("b2").unwrap(), false);
         assert_eq!(env.get_bool("u3").err().unwrap(), EnvErr::NotFound);
@@ -482,6 +505,8 @@ mod test_environment {
         assert_eq!(env.set_bool("b3", true, &mut data).err().unwrap(), EnvErr::NotFound);
         assert_eq!(env.set_bool("s1", false, &mut data).err().unwrap(), EnvErr::DifferentType);
         assert_eq!(env.get("b1").unwrap(), EnvData::Bool(false));
+        env.reset("b1", &mut data).unwrap();
+        assert_eq!(env.get_bool("b1").unwrap(), true);
     }
 
 }
