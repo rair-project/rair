@@ -423,7 +423,7 @@ mod test_environment {
         let mut env = Environment::new();
         env.add_str("s1", "value1", "First String").unwrap();
         env.add_str_with_cb("s2", "value2", "Second String", &mut data, even_str).unwrap();
-        env.add_u64("u1", 1, "First u64").unwrap();
+        env.add_u64("u1", 1, "First U64").unwrap();
         env.add_u64_with_cb("u2", 2, "Second U64", &mut data, even_u64).unwrap();
         env.add_i64("i1", 1, "First I64").unwrap();
         env.add_i64_with_cb("i2", -1, "Second I64", &mut data, negative_i64).unwrap();
@@ -459,6 +459,8 @@ mod test_environment {
         env.reset("s1", &mut data).unwrap();
         assert_eq!(env.get_str("s1").unwrap(), "value1");
         assert_eq!(env.reset("s3", &mut data).err().unwrap(), EnvErr::NotFound);
+        assert_eq!(env.get_help("s3"), None);
+        assert_eq!(env.get_help("s1").unwrap(), "First String");
     }
     #[test]
     fn test_u64() {
@@ -485,6 +487,7 @@ mod test_environment {
         assert_eq!(env.get("u1").unwrap(), EnvData::U64(8));
         env.reset("u1", &mut data).unwrap();
         assert_eq!(env.get_u64("u1").unwrap(), 1);
+        assert_eq!(env.get_help("u1").unwrap(), "First U64");
     }
     #[test]
     fn test_i64() {
@@ -511,6 +514,7 @@ mod test_environment {
         assert_eq!(env.get("i1").unwrap(), EnvData::I64(8));
         env.reset("i1", &mut data).unwrap();
         assert_eq!(env.get_i64("i1").unwrap(), 1);
+        assert_eq!(env.get_help("i1").unwrap(), "First I64");
     }
     #[test]
     fn test_bool() {
@@ -535,5 +539,6 @@ mod test_environment {
         assert_eq!(env.get("b1").unwrap(), EnvData::Bool(false));
         env.reset("b1", &mut data).unwrap();
         assert_eq!(env.get_bool("b1").unwrap(), true);
+        assert_eq!(env.get_help("b1").unwrap(), "First Bool");
     }
 }
