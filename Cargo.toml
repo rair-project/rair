@@ -16,16 +16,14 @@ description = "Core module for Rair"
 categories = ["CLI"]
 readme = "readme.md"
 
-
-
 [dependencies]
-yansi = "0.5"
-
+flate2 = "1.0"
+renv = {path = "renv"}
 rio = {path = "rio"}
 rtrees = {path = "rtrees"}
 serde = { version = "1.0", features = ["derive"]}
 serde_cbor = "0.10"
-flate2 = "1.0"
-[dev-dependencies]
+yansi = "0.5"
 
+[dev-dependencies]
 test_file = {path = "test_file"}

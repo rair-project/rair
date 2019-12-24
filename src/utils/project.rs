@@ -98,6 +98,7 @@ impl Cmd for Load {
         };
         mem::swap(&mut core.stdout, &mut core2.stdout);
         mem::swap(&mut core.stderr, &mut core2.stderr);
+        mem::swap(&mut core.env, &mut core2.env);
         *core = core2;
         core.load_commands();
     }

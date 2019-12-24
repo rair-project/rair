@@ -20,6 +20,7 @@ use helper::*;
 use io::*;
 use loc::*;
 use rio::*;
+use renv::*;
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::io;
@@ -32,16 +33,20 @@ use yansi::Paint;
 
 #[derive(Serialize, Deserialize)]
 pub struct Core {
+    pub mode: AddrMode,
+    pub io: RIO,
+    loc: u64,
+    // Every time you add some new serde(skip) variable
+    // make sure that this variable is well initialized
+    // in the projects commands.
     #[serde(skip)]
     pub stdout: Writer,
     #[serde(skip)]
     pub stderr: Writer,
-    pub mode: AddrMode,
-    pub io: RIO,
-    loc: u64,
     #[serde(skip)]
     commands: Rc<RefCell<Commands>>,
-    pub color_palette: Vec<(u8, u8, u8)>,
+    #[serde(skip)]
+    pub env: Environment<Core>,
 }
 
 impl Default for Core {
@@ -53,7 +58,7 @@ impl Default for Core {
             io: RIO::new(),
             loc: 0,
             commands: Default::default(),
-            color_palette: Vec::new(),
+            env: Environment::new(),
         }
     }
 }
@@ -68,15 +73,15 @@ impl Core {
         return self.commands.clone();
     }
     fn init_colors(&mut self) {
-        self.color_palette.push((0x58, 0x68, 0x75));
-        self.color_palette.push((0xb5, 0x89, 0x00));
-        self.color_palette.push((0xcb, 0x4b, 0x16));
-        self.color_palette.push((0xdc, 0x32, 0x2f));
-        self.color_palette.push((0xd3, 0x36, 0x82));
-        self.color_palette.push((0x6c, 0x71, 0xc4));
-        self.color_palette.push((0x26, 0x8b, 0xd2));
-        self.color_palette.push((0x2a, 0xa1, 0x98));
-        self.color_palette.push((0x85, 0x99, 0x00));
+        self.env.add_color("color.1", (0x58, 0x68, 0x75), "").unwrap();
+        self.env.add_color("color.2", (0xb5, 0x89, 0x00), "").unwrap();
+        self.env.add_color("color.3", (0xcb, 0x4b, 0x16), "").unwrap();
+        self.env.add_color("color.4", (0xdc, 0x32, 0x2f), "").unwrap();
+        self.env.add_color("color.5", (0xd3, 0x36, 0x82), "").unwrap();
+        self.env.add_color("color.6", (0x6c, 0x71, 0xc4), "").unwrap();
+        self.env.add_color("color.7", (0x26, 0x8b, 0xd2), "").unwrap();
+        self.env.add_color("color.8", (0x2a, 0xa1, 0x98), "").unwrap();
+        self.env.add_color("color.9", (0x85, 0x99, 0x00), "").unwrap();
     }
     pub fn new() -> Self {
         let mut core: Core = Default::default();
@@ -111,7 +116,7 @@ impl Core {
         let similar = commands.suggest(&command.to_string(), 2);
         let mut s = similar.iter();
         if let Some(suggestion) = s.next() {
-            let (r, g, b) = self.color_palette[5];
+            let (r, g, b) = self.env.get_color("color.6").unwrap();
             write!(self.stderr, "Similar command: {}", Paint::rgb(r, g, b, suggestion)).unwrap();
             for suggestion in s {
                 write!(self.stderr, ", {}", Paint::rgb(r, g, b, suggestion)).unwrap();

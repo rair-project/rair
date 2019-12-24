@@ -61,8 +61,9 @@ impl Cmd for PrintHex {
             Ok(d) => d,
             Err(e) => return error_msg(core, "Read Failed", &e.to_string()),
         };
-        let banner = core.color_palette[5];
-        let na = core.color_palette[4];
+        let banner = core.env.get_color("color.6").unwrap();
+        let na = core.env.get_color("color.5").unwrap();
+
         writeln!(
             core.stdout,
             "{}",

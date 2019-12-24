@@ -122,7 +122,7 @@ impl Cmd for ListMap {
             expect(core, args.len() as u64, 0);
             return;
         }
-        let (r, g, b) = core.color_palette[5];
+        let (r, g, b) = core.env.get_color("color.6").unwrap();
         writeln!(
             core.stdout,
             "{: <20}{: <20}{}",
