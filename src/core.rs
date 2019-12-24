@@ -46,7 +46,7 @@ pub struct Core {
     #[serde(skip)]
     commands: Rc<RefCell<Commands>>,
     #[serde(skip)]
-    pub env: Environment<Core>,
+    pub env: Rc<RefCell<Environment<Core>>>,
 }
 
 impl Default for Core {
@@ -58,7 +58,7 @@ impl Default for Core {
             io: RIO::new(),
             loc: 0,
             commands: Default::default(),
-            env: Environment::new(),
+            env: Default::default(),
         }
     }
 }
@@ -73,15 +73,15 @@ impl Core {
         return self.commands.clone();
     }
     fn init_colors(&mut self) {
-        self.env.add_color("color.1", (0x58, 0x68, 0x75), "").unwrap();
-        self.env.add_color("color.2", (0xb5, 0x89, 0x00), "").unwrap();
-        self.env.add_color("color.3", (0xcb, 0x4b, 0x16), "").unwrap();
-        self.env.add_color("color.4", (0xdc, 0x32, 0x2f), "").unwrap();
-        self.env.add_color("color.5", (0xd3, 0x36, 0x82), "").unwrap();
-        self.env.add_color("color.6", (0x6c, 0x71, 0xc4), "").unwrap();
-        self.env.add_color("color.7", (0x26, 0x8b, 0xd2), "").unwrap();
-        self.env.add_color("color.8", (0x2a, 0xa1, 0x98), "").unwrap();
-        self.env.add_color("color.9", (0x85, 0x99, 0x00), "").unwrap();
+        self.env.borrow_mut().add_color("color.1", (0x58, 0x68, 0x75), "").unwrap();
+        self.env.borrow_mut().add_color("color.2", (0xb5, 0x89, 0x00), "").unwrap();
+        self.env.borrow_mut().add_color("color.3", (0xcb, 0x4b, 0x16), "").unwrap();
+        self.env.borrow_mut().add_color("color.4", (0xdc, 0x32, 0x2f), "").unwrap();
+        self.env.borrow_mut().add_color("color.5", (0xd3, 0x36, 0x82), "").unwrap();
+        self.env.borrow_mut().add_color("color.6", (0x6c, 0x71, 0xc4), "").unwrap();
+        self.env.borrow_mut().add_color("color.7", (0x26, 0x8b, 0xd2), "").unwrap();
+        self.env.borrow_mut().add_color("color.8", (0x2a, 0xa1, 0x98), "").unwrap();
+        self.env.borrow_mut().add_color("color.9", (0x85, 0x99, 0x00), "").unwrap();
     }
     pub fn new() -> Self {
         let mut core: Core = Default::default();
@@ -116,7 +116,7 @@ impl Core {
         let similar = commands.suggest(&command.to_string(), 2);
         let mut s = similar.iter();
         if let Some(suggestion) = s.next() {
-            let (r, g, b) = self.env.get_color("color.6").unwrap();
+            let (r, g, b) = self.env.borrow().get_color("color.6").unwrap();
             write!(self.stderr, "Similar command: {}", Paint::rgb(r, g, b, suggestion)).unwrap();
             for suggestion in s {
                 write!(self.stderr, ", {}", Paint::rgb(r, g, b, suggestion)).unwrap();
