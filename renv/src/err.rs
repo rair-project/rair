@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- #[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum EnvErr {
     NotFound,
     DifferentType,

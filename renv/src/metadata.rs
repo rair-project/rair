@@ -21,28 +21,31 @@ pub type U64Fn<T> = fn(&str, u64, &Environment<T>, &mut T) -> bool;
 pub type I64Fn<T> = fn(&str, i64, &Environment<T>, &mut T) -> bool;
 pub type BoolFn<T> = fn(&str, bool, &Environment<T>, &mut T) -> bool;
 
-
 pub(crate) struct EnvStr<T> {
     pub(crate) data: String,
     pub(crate) default: String,
+    pub(crate) help: String,
     pub(crate) cb: Option<StrFn<T>>,
 }
 
 pub(crate) struct EnvU64<T> {
     pub(crate) data: u64,
     pub(crate) default: u64,
+    pub(crate) help: String,
     pub(crate) cb: Option<U64Fn<T>>,
 }
 
 pub(crate) struct EnvI64<T> {
     pub(crate) data: i64,
     pub(crate) default: i64,
+    pub(crate) help: String,
     pub(crate) cb: Option<I64Fn<T>>,
 }
 
 pub(crate) struct EnvBool<T> {
     pub(crate) data: bool,
     pub(crate) default: bool,
+    pub(crate) help: String,
     pub(crate) cb: Option<BoolFn<T>>,
 }
 
