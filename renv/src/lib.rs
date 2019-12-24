@@ -17,10 +17,10 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+mod environment;
 mod err;
 mod metadata;
-mod environment;
 
+pub use environment::*;
 pub use err::*;
 pub use metadata::*;
-pub use environment::*;

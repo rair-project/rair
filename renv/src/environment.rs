@@ -14,11 +14,10 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use super::metadata::*;
 use super::err::*;
+use super::metadata::*;
 use std::collections::HashMap;
 use std::mem;
-
 
 #[derive(PartialEq, Debug)]
 pub enum EnvData<'a> {
@@ -47,13 +46,14 @@ impl<T> Environment<T> {
         return true;
     }
 
-    pub fn add_str_with_cb(&mut self, key: &str, val: &str, data: &mut T, cb: StrFn<T>) -> Result<(), EnvErr> {
+    pub fn add_str_with_cb(&mut self, key: &str, val: &str, help: &str, data: &mut T, cb: StrFn<T>) -> Result<(), EnvErr> {
         if self.data.contains_key(key) {
             return Err(EnvErr::AlreadyExist);
         }
         let meta = EnvStr {
             data: val.to_string(),
             default: val.to_string(),
+            help: help.to_string(),
             cb: Some(cb),
         };
         self.data.insert(key.to_string(), EnvMetaData::Str(meta));
@@ -64,13 +64,14 @@ impl<T> Environment<T> {
         return Ok(());
     }
 
-    pub fn add_str(&mut self, key: &str, val: &str) -> Result<(), EnvErr> {
+    pub fn add_str(&mut self, key: &str, val: &str, help: &str) -> Result<(), EnvErr> {
         if self.data.contains_key(key) {
             return Err(EnvErr::AlreadyExist);
         }
         let meta = EnvStr {
             data: val.to_string(),
             default: val.to_string(),
+            help: help.to_string(),
             cb: None,
         };
         self.data.insert(key.to_string(), EnvMetaData::Str(meta));
@@ -125,13 +126,14 @@ impl<T> Environment<T> {
         return true;
     }
 
-    pub fn add_u64_with_cb(&mut self, key: &str, val: u64, data: &mut T, cb: U64Fn<T>) -> Result<(), EnvErr> {
+    pub fn add_u64_with_cb(&mut self, key: &str, val: u64, help: &str, data: &mut T, cb: U64Fn<T>) -> Result<(), EnvErr> {
         if self.data.contains_key(key) {
             return Err(EnvErr::AlreadyExist);
         }
         let meta = EnvU64 {
             data: val,
             default: val,
+            help: help.to_string(),
             cb: Some(cb),
         };
         self.data.insert(key.to_string(), EnvMetaData::U64(meta));
@@ -142,11 +144,16 @@ impl<T> Environment<T> {
         return Ok(());
     }
 
-    pub fn add_u64(&mut self, key: &str, val: u64) -> Result<(), EnvErr> {
+    pub fn add_u64(&mut self, key: &str, val: u64, help: &str) -> Result<(), EnvErr> {
         if self.data.contains_key(key) {
             return Err(EnvErr::AlreadyExist);
         }
-        let meta = EnvU64 { data: val, default: val, cb: None };
+        let meta = EnvU64 {
+            data: val,
+            default: val,
+            help: help.to_string(),
+            cb: None,
+        };
         self.data.insert(key.to_string(), EnvMetaData::U64(meta));
         return Ok(());
     }
@@ -199,13 +206,14 @@ impl<T> Environment<T> {
         return true;
     }
 
-    pub fn add_i64_with_cb(&mut self, key: &str, val: i64, data: &mut T, cb: I64Fn<T>) -> Result<(), EnvErr> {
+    pub fn add_i64_with_cb(&mut self, key: &str, val: i64, help: &str, data: &mut T, cb: I64Fn<T>) -> Result<(), EnvErr> {
         if self.data.contains_key(key) {
             return Err(EnvErr::AlreadyExist);
         }
         let meta = EnvI64 {
             data: val,
             default: val,
+            help: help.to_string(),
             cb: Some(cb),
         };
         self.data.insert(key.to_string(), EnvMetaData::I64(meta));
@@ -216,11 +224,16 @@ impl<T> Environment<T> {
         return Ok(());
     }
 
-    pub fn add_i64(&mut self, key: &str, val: i64) -> Result<(), EnvErr> {
+    pub fn add_i64(&mut self, key: &str, val: i64, help: &str) -> Result<(), EnvErr> {
         if self.data.contains_key(key) {
             return Err(EnvErr::AlreadyExist);
         }
-        let meta = EnvI64 { data: val, default: val, cb: None };
+        let meta = EnvI64 {
+            data: val,
+            default: val,
+            help: help.to_string(),
+            cb: None,
+        };
         self.data.insert(key.to_string(), EnvMetaData::I64(meta));
         return Ok(());
     }
@@ -273,13 +286,14 @@ impl<T> Environment<T> {
         return true;
     }
 
-    pub fn add_bool_with_cb(&mut self, key: &str, val: bool, data: &mut T, cb: BoolFn<T>) -> Result<(), EnvErr> {
+    pub fn add_bool_with_cb(&mut self, key: &str, val: bool, help: &str, data: &mut T, cb: BoolFn<T>) -> Result<(), EnvErr> {
         if self.data.contains_key(key) {
             return Err(EnvErr::AlreadyExist);
         }
         let meta = EnvBool {
             data: val,
             default: val,
+            help: help.to_string(),
             cb: Some(cb),
         };
         self.data.insert(key.to_string(), EnvMetaData::Bool(meta));
@@ -290,11 +304,16 @@ impl<T> Environment<T> {
         return Ok(());
     }
 
-    pub fn add_bool(&mut self, key: &str, val: bool) -> Result<(), EnvErr> {
+    pub fn add_bool(&mut self, key: &str, val: bool, help: &str) -> Result<(), EnvErr> {
         if self.data.contains_key(key) {
             return Err(EnvErr::AlreadyExist);
         }
-        let meta = EnvBool { data: val, default: val, cb: None };
+        let meta = EnvBool {
+            data: val,
+            default: val,
+            help: help.to_string(),
+            cb: None,
+        };
         self.data.insert(key.to_string(), EnvMetaData::Bool(meta));
         return Ok(());
     }
@@ -348,19 +367,19 @@ impl<T> Environment<T> {
             EnvMetaData::Bool(b) => {
                 b.data = b.default;
                 self.exec_bool_cb(key, data);
-            },
+            }
             EnvMetaData::I64(i) => {
                 i.data = i.default;
                 self.exec_i64_cb(key, data);
-            },
+            }
             EnvMetaData::U64(u) => {
                 u.data = u.default;
                 self.exec_u64_cb(key, data);
-            },
+            }
             EnvMetaData::Str(s) => {
                 s.data = s.default.clone();
                 self.exec_str_cb(key, data);
-            },
+            }
         }
         return Ok(());
     }
@@ -371,6 +390,15 @@ impl<T> Environment<T> {
             EnvMetaData::I64(i) => Some(EnvData::I64(i.data)),
             EnvMetaData::U64(u) => Some(EnvData::U64(u.data)),
             EnvMetaData::Str(s) => Some(EnvData::Str(&s.data)),
+        };
+    }
+    pub fn get_help(&self, key: &str) -> Option<&str> {
+        let meta = self.data.get(key)?;
+        return match meta {
+            EnvMetaData::Bool(b) => Some(&b.help),
+            EnvMetaData::I64(i) => Some(&i.help),
+            EnvMetaData::U64(u) => Some(&u.help),
+            EnvMetaData::Str(s) => Some(&s.help),
         };
     }
 }
@@ -393,14 +421,14 @@ mod test_environment {
     fn prep_env() -> Environment<Option<()>> {
         let mut data = None;
         let mut env = Environment::new();
-        env.add_str("s1", "value1").unwrap();
-        env.add_str_with_cb("s2", "value2", &mut data, even_str).unwrap();
-        env.add_u64("u1", 1).unwrap();
-        env.add_u64_with_cb("u2", 2, &mut data, even_u64).unwrap();
-        env.add_i64("i1", 1).unwrap();
-        env.add_i64_with_cb("i2", -1, &mut data, negative_i64).unwrap();
-        env.add_bool("b1", true).unwrap();
-        env.add_bool_with_cb("b2", false, &mut data, always_false).unwrap();
+        env.add_str("s1", "value1", "First String").unwrap();
+        env.add_str_with_cb("s2", "value2", "Second String", &mut data, even_str).unwrap();
+        env.add_u64("u1", 1, "First u64").unwrap();
+        env.add_u64_with_cb("u2", 2, "Second U64", &mut data, even_u64).unwrap();
+        env.add_i64("i1", 1, "First I64").unwrap();
+        env.add_i64_with_cb("i2", -1, "Second I64", &mut data, negative_i64).unwrap();
+        env.add_bool("b1", true, "First Bool").unwrap();
+        env.add_bool_with_cb("b2", false, "Second Bool", &mut data, always_false).unwrap();
 
         return env;
     }
@@ -408,9 +436,9 @@ mod test_environment {
     fn test_str() {
         let mut env = prep_env();
         let mut data = None;
-        assert_eq!(env.add_str_with_cb("s03", "value02", &mut data, even_str).err().unwrap(), EnvErr::CbFailed);
-        assert_eq!(env.add_str("s1", "v3").err().unwrap(), EnvErr::AlreadyExist);
-        assert_eq!(env.add_str_with_cb("s1", "value1", &mut data, even_str).err().unwrap(), EnvErr::AlreadyExist);
+        assert_eq!(env.add_str_with_cb("s03", "value02", "", &mut data, even_str).err().unwrap(), EnvErr::CbFailed);
+        assert_eq!(env.add_str("s1", "v3", "").err().unwrap(), EnvErr::AlreadyExist);
+        assert_eq!(env.add_str_with_cb("s1", "value1", "", &mut data, even_str).err().unwrap(), EnvErr::AlreadyExist);
         assert_eq!(env.is_str("s1"), true);
         assert_eq!(env.is_str("u1"), false);
         assert_eq!(env.is_str("s3"), false);
@@ -436,9 +464,9 @@ mod test_environment {
     fn test_u64() {
         let mut env = prep_env();
         let mut data = None;
-        assert_eq!(env.add_u64_with_cb("u3", 3, &mut data, even_u64).err().unwrap(), EnvErr::CbFailed);
-        assert_eq!(env.add_u64("u2", 5).err().unwrap(), EnvErr::AlreadyExist);
-        assert_eq!(env.add_u64_with_cb("s1", 4, &mut data, even_u64).err().unwrap(), EnvErr::AlreadyExist);
+        assert_eq!(env.add_u64_with_cb("u3", 3, "", &mut data, even_u64).err().unwrap(), EnvErr::CbFailed);
+        assert_eq!(env.add_u64("u2", 5, "").err().unwrap(), EnvErr::AlreadyExist);
+        assert_eq!(env.add_u64_with_cb("s1", 4, "", &mut data, even_u64).err().unwrap(), EnvErr::AlreadyExist);
         assert_eq!(env.is_u64("u1"), true);
         assert_eq!(env.is_u64("s1"), false);
         assert_eq!(env.is_u64("u3"), false);
@@ -462,9 +490,9 @@ mod test_environment {
     fn test_i64() {
         let mut env = prep_env();
         let mut data = None;
-        assert_eq!(env.add_i64_with_cb("i3", 3, &mut data, negative_i64).err().unwrap(), EnvErr::CbFailed);
-        assert_eq!(env.add_i64("i2", 5).err().unwrap(), EnvErr::AlreadyExist);
-        assert_eq!(env.add_i64_with_cb("s1", 4, &mut data, negative_i64).err().unwrap(), EnvErr::AlreadyExist);
+        assert_eq!(env.add_i64_with_cb("i3", 3, "", &mut data, negative_i64).err().unwrap(), EnvErr::CbFailed);
+        assert_eq!(env.add_i64("i2", 5, "").err().unwrap(), EnvErr::AlreadyExist);
+        assert_eq!(env.add_i64_with_cb("s1", 4, "", &mut data, negative_i64).err().unwrap(), EnvErr::AlreadyExist);
         assert_eq!(env.is_i64("i1"), true);
         assert_eq!(env.is_i64("u1"), false);
         assert_eq!(env.is_i64("i3"), false);
@@ -488,9 +516,9 @@ mod test_environment {
     fn test_bool() {
         let mut env = prep_env();
         let mut data = None;
-        assert_eq!(env.add_bool_with_cb("b3", true, &mut data, always_false).err().unwrap(), EnvErr::CbFailed);
-        assert_eq!(env.add_bool("b2", true).err().unwrap(), EnvErr::AlreadyExist);
-        assert_eq!(env.add_bool_with_cb("b1", false, &mut data, always_false).err().unwrap(), EnvErr::AlreadyExist);
+        assert_eq!(env.add_bool_with_cb("b3", true, "", &mut data, always_false).err().unwrap(), EnvErr::CbFailed);
+        assert_eq!(env.add_bool("b2", true, "").err().unwrap(), EnvErr::AlreadyExist);
+        assert_eq!(env.add_bool_with_cb("b1", false, "", &mut data, always_false).err().unwrap(), EnvErr::AlreadyExist);
         assert_eq!(env.is_bool("b1"), true);
         assert_eq!(env.is_bool("u1"), false);
         assert_eq!(env.is_bool("b3"), false);
@@ -508,5 +536,4 @@ mod test_environment {
         env.reset("b1", &mut data).unwrap();
         assert_eq!(env.get_bool("b1").unwrap(), true);
     }
-
 }
