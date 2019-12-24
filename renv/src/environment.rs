@@ -25,6 +25,7 @@ pub enum EnvData<'a> {
     U64(u64),
     I64(i64),
     Bool(bool),
+    Color(u8, u8, u8),
 }
 
 #[derive(Default)]
@@ -358,6 +359,86 @@ impl<T> Environment<T> {
         return meta.as_bool().is_some();
     }
 
+    fn exec_color_cb(&self, key: &str, data: &mut T) -> bool {
+        let meta = self.data.get(key).unwrap().as_color().unwrap();
+        if let Some(cb) = meta.cb {
+            return cb(key, meta.data, self, data);
+        }
+        return true;
+    }
+
+    pub fn add_color_with_cb(&mut self, key: &str, val: (u8, u8, u8), help: &str, data: &mut T, cb: ColorFn<T>) -> Result<(), EnvErr> {
+        if self.data.contains_key(key) {
+            return Err(EnvErr::AlreadyExist);
+        }
+        let meta = EnvColor {
+            data: val,
+            default: val,
+            help: help.to_string(),
+            cb: Some(cb),
+        };
+        self.data.insert(key.to_string(), EnvMetaData::Color(meta));
+        if !self.exec_color_cb(key, data) {
+            self.data.remove(key).unwrap();
+            return Err(EnvErr::CbFailed);
+        }
+        return Ok(());
+    }
+
+    pub fn add_color(&mut self, key: &str, val: (u8, u8, u8), help: &str) -> Result<(), EnvErr> {
+        if self.data.contains_key(key) {
+            return Err(EnvErr::AlreadyExist);
+        }
+        let meta = EnvColor {
+            data: val,
+            default: val,
+            help: help.to_string(),
+            cb: None,
+        };
+        self.data.insert(key.to_string(), EnvMetaData::Color(meta));
+        return Ok(());
+    }
+
+    pub fn get_color(&self, key: &str) -> Result<(u8, u8, u8), EnvErr> {
+        let meta = match self.data.get(key) {
+            Some(meta) => meta,
+            None => return Err(EnvErr::NotFound),
+        };
+        match meta.as_color() {
+            Some(s) => return Ok(s.data),
+            None => return Err(EnvErr::DifferentType),
+        };
+    }
+
+    pub fn set_color(&mut self, key: &str, value: (u8, u8, u8), data: &mut T) -> Result<(), EnvErr> {
+        let meta = match self.data.get_mut(key) {
+            Some(meta) => meta,
+            None => return Err(EnvErr::NotFound),
+        };
+        let mut tmp = value;
+        if let Some(s) = meta.mut_color() {
+            mem::swap(&mut tmp, &mut s.data);
+            if !self.exec_color_cb(key, data) {
+                //restore old data
+                let meta = self.data.get_mut(key).unwrap();
+                let s = meta.mut_color().unwrap();
+                mem::swap(&mut s.data, &mut tmp);
+                return Err(EnvErr::CbFailed);
+            }
+            return Ok(());
+        } else {
+            return Err(EnvErr::DifferentType);
+        }
+    }
+
+    pub fn is_color(&self, key: &str) -> bool {
+        let meta = match self.data.get(key) {
+            Some(meta) => meta,
+            None => return false,
+        };
+        return meta.as_color().is_some();
+    }
+
     pub fn reset(&mut self, key: &str, data: &mut T) -> Result<(), EnvErr> {
         let meta = match self.data.get_mut(key) {
             Some(meta) => meta,
@@ -367,6 +448,10 @@ impl<T> Environment<T> {
             EnvMetaData::Bool(b) => {
                 b.data = b.default;
                 self.exec_bool_cb(key, data);
+            }
+            EnvMetaData::Color(c) => {
+                c.data = c.default;
+                self.exec_color_cb(key, data);
             }
             EnvMetaData::I64(i) => {
                 i.data = i.default;
@@ -390,6 +475,7 @@ impl<T> Environment<T> {
             EnvMetaData::I64(i) => Some(EnvData::I64(i.data)),
             EnvMetaData::U64(u) => Some(EnvData::U64(u.data)),
             EnvMetaData::Str(s) => Some(EnvData::Str(&s.data)),
+            EnvMetaData::Color(c) => Some(EnvData::Color(c.data.0, c.data.1, c.data.2)),
         };
     }
     pub fn get_help(&self, key: &str) -> Option<&str> {
@@ -399,6 +485,7 @@ impl<T> Environment<T> {
             EnvMetaData::I64(i) => Some(&i.help),
             EnvMetaData::U64(u) => Some(&u.help),
             EnvMetaData::Str(s) => Some(&s.help),
+            EnvMetaData::Color(c) => Some(&c.help),
         };
     }
 }
@@ -418,6 +505,10 @@ mod test_environment {
     fn always_false(_: &str, value: bool, _: &Environment<Option<()>>, _: &mut Option<()>) -> bool {
         return !value;
     }
+    fn grayscale(_: &str, color: (u8, u8, u8), _: &Environment<Option<()>>, _: &mut Option<()>) -> bool {
+        let (r, g, b) = color;
+        return r == g && g == b;
+    }
     fn prep_env() -> Environment<Option<()>> {
         let mut data = None;
         let mut env = Environment::new();
@@ -429,7 +520,8 @@ mod test_environment {
         env.add_i64_with_cb("i2", -1, "Second I64", &mut data, negative_i64).unwrap();
         env.add_bool("b1", true, "First Bool").unwrap();
         env.add_bool_with_cb("b2", false, "Second Bool", &mut data, always_false).unwrap();
-
+        env.add_color("c1", (31, 33, 37), "First Color").unwrap();
+        env.add_color_with_cb("c2", (50, 50, 50), "Second Color", &mut data, grayscale).unwrap();
         return env;
     }
     #[test]
@@ -540,5 +632,32 @@ mod test_environment {
         env.reset("b1", &mut data).unwrap();
         assert_eq!(env.get_bool("b1").unwrap(), true);
         assert_eq!(env.get_help("b1").unwrap(), "First Bool");
+    }
+
+    #[test]
+    fn test_color() {
+        let mut env = prep_env();
+        let mut data = None;
+        assert_eq!(env.add_color_with_cb("c3", (50, 60, 70), "", &mut data, grayscale).err().unwrap(), EnvErr::CbFailed);
+        assert_eq!(env.add_color("c2", (20, 30, 40), "").err().unwrap(), EnvErr::AlreadyExist);
+        assert_eq!(env.add_color_with_cb("c1", (100, 100, 100), "", &mut data, grayscale).err().unwrap(), EnvErr::AlreadyExist);
+        assert_eq!(env.is_color("c1"), true);
+        assert_eq!(env.is_color("u1"), false);
+        assert_eq!(env.is_color("c3"), false);
+        /**/
+        assert_eq!(env.get_color("c1").unwrap(), (31, 33, 37));
+        assert_eq!(env.get_color("c2").unwrap(), (50, 50, 50));
+        assert_eq!(env.get_color("c3").err().unwrap(), EnvErr::NotFound);
+        assert_eq!(env.get_color("s1").err().unwrap(), EnvErr::DifferentType);
+        env.set_color("c1", (20, 40, 60), &mut data).unwrap();
+        assert_eq!(env.get_color("c1").unwrap(), (20, 40, 60));
+        assert_eq!(env.set_color("c2", (5, 10, 15), &mut data).err().unwrap(), EnvErr::CbFailed);
+        assert_eq!(env.get_color("c2").unwrap(), (50, 50, 50));
+        assert_eq!(env.set_color("c3", (50, 50, 50), &mut data).err().unwrap(), EnvErr::NotFound);
+        assert_eq!(env.set_color("s1", (50, 50, 50), &mut data).err().unwrap(), EnvErr::DifferentType);
+        assert_eq!(env.get("c1").unwrap(), EnvData::Color(20, 40, 60));
+        env.reset("c1", &mut data).unwrap();
+        assert_eq!(env.get_color("c1").unwrap(), (31, 33, 37));
+        assert_eq!(env.get_help("c1").unwrap(), "First Color");
     }
 }
