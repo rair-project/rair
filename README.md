@@ -17,8 +17,9 @@ If you are looking for the command line interface check [rair](https://github.co
 |   Module  	|   Rust Porting   |                                            Documentation                                           |
 |:-------------:|:----------------:|:--------------------------------------------------------------------------------------------------:|
 |   rcore  	|:heavy_check_mark:|[![API](https://img.shields.io/badge/api-master-purple.svg)](https://rair-project.github.io/rair-core/rcore/index.html)|
-|   rtrees      |:heavy_check_mark:|[![API](https://img.shields.io/badge/api-master-purple.svg)](https://rair-project.github.io/rair-core/rtrees)|
-|   rio       	|:heavy_check_mark:|[![API](https://img.shields.io/badge/api-master-purple.svg)](https://rair-project.github.io/rair-core/rio/index.html)|
+|  renv 	    |:heavy_check_mark:|[![API](https://img.shields.io/badge/api-master-purple.svg)](https://rair-project.github.io/rair-core/renv/index.html)|
+|   rio       |:heavy_check_mark:|[![API](https://img.shields.io/badge/api-master-purple.svg)](https://rair-project.github.io/rair-core/rio/index.html)|
+|   rtrees    |:heavy_check_mark:|[![API](https://img.shields.io/badge/api-master-purple.svg)](https://rair-project.github.io/rair-core/rtrees)|
 |  R2agent  	|        NA        |NA|
 |    R2pm   	|        NA        |NA|
 |   Rabin   	|        NA        |NA|
@@ -34,7 +35,6 @@ If you are looking for the command line interface check [rair](https://github.co
 |   r_asm   	|        NA        |NA|
 |   r_bin   	|        NA        |NA|
 |    r_bp   	|        NA        |NA|
-|  r_config 	|        NA        |NA|
 |   r_cons  	|        NA        |NA|
 |  r_crypto 	|        NA        |NA|
 |   r_egg   	|        NA        |NA|
