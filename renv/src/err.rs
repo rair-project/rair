@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+use std::fmt;
 
 #[derive(Debug, PartialEq)]
 pub enum EnvErr {
@@ -21,4 +22,15 @@ pub enum EnvErr {
     DifferentType,
     CbFailed,
     AlreadyExist,
+}
+
+impl fmt::Display for EnvErr {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            EnvErr::NotFound => write!(f, "Environment variable not found."),
+            EnvErr::DifferentType => write!(f, "Environment variable has different type."),
+            EnvErr::CbFailed => write!(f, "Call back failed."),
+            EnvErr::AlreadyExist => write!(f, "Environment variable already exist."),
+        }
+    }
 }
