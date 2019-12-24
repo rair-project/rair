@@ -104,7 +104,7 @@ fn main() {
 
 fn repl_inners(core: &mut Core, rl: &mut Editor<LineFormatter>) {
     let prelude = &format!("[0x{:08x}]({})> ", core.get_loc(), core.mode);
-    let (r, g, b) = core.color_palette[1];
+    let (r, g, b) = core.env.get_color("color.2").unwrap();
     let input = rl.readline(&format!("{}", Paint::rgb(r, g, b, prelude)));
     match &input {
         Ok(line) => {
