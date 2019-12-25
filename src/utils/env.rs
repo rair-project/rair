@@ -51,7 +51,7 @@ impl Environment {
                 "true" => true,
                 "false" => false,
                 _ => {
-                    let message = format!("Expected `true` or `false`, found `{}`", value);
+                    let message = format!("Expected `true` or `false`, found `{}`.", value);
                     return error_msg(core, "Failed to set variable.", &message);
                 }
             };
@@ -80,7 +80,7 @@ impl Environment {
             }
         } else if env.borrow().is_color(key) {
             if value.len() != 7 || !value.starts_with('#') {
-                let message = format!("Expected color code, found `{}`", value);
+                let message = format!("Expected color code, found `{}`.", value);
                 return error_msg(core, "Failed to set variable.", &message);
             }
             let r = match u8::from_str_radix(&value[1..3], 16) {
@@ -149,7 +149,7 @@ impl Cmd for Environment {
             if args[1] == "=" {
                 self.set(core, &args[0], &args[2]);
             } else {
-                let message = format!("Expected `=` found `{}`", args[1]);
+                let message = format!("Expected `=` found `{}`.", args[1]);
                 return error_msg(core, "Failed to set variable.", &message);
             }
         }
@@ -334,5 +334,27 @@ mod test_env {
         env.run(&mut core, &["b".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "true\n");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
+    }
+
+    #[test]
+    fn test_env_error() {
+        let mut core = Core::new_no_colors();
+        core.env.borrow_mut().add_bool("b", false, "").unwrap();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let mut env = Environment::new();
+        env.run(&mut core, &["b".to_string(), "=".to_string(), "true".to_string(), "extra".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected between 0 and 3 arguments, found 4.\n");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        env.run(&mut core, &["b".to_string(), "true".to_string(), "extra".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to set variable.\nExpected `=` found `true`.\n");
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        env.run(&mut core, &["b".to_string(), "true".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to set variable.\nExpected `=`.\n");
     }
 }
