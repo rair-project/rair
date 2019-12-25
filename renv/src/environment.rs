@@ -18,7 +18,6 @@ use super::err::*;
 use super::metadata::*;
 use std::collections::HashMap;
 use std::mem;
-
 #[derive(PartialEq, Debug)]
 pub enum EnvData<'a> {
     Str(&'a str),
@@ -27,7 +26,17 @@ pub enum EnvData<'a> {
     Bool(bool),
     Color(u8, u8, u8),
 }
-
+impl<'a, T> From<&'a EnvMetaData<T>> for EnvData<'a> {
+    fn from(meta: &'a EnvMetaData<T>) -> Self {
+        match meta {
+            EnvMetaData::Str(s) => EnvData::Str(&s.data),
+            EnvMetaData::I64(i) => EnvData::I64(i.data),
+            EnvMetaData::U64(u) => EnvData::U64(u.data),
+            EnvMetaData::Bool(u) => EnvData::Bool(u.data),
+            EnvMetaData::Color(c) => EnvData::Color(c.data.0, c.data.1, c.data.2),
+        }
+    }
+}
 #[derive(Default)]
 pub struct Environment<T> {
     data: HashMap<String, EnvMetaData<T>>,
@@ -487,6 +496,9 @@ impl<T> Environment<T> {
             EnvMetaData::Str(s) => Some(&s.help),
             EnvMetaData::Color(c) => Some(&c.help),
         };
+    }
+    pub fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = (&str, EnvData)> + 'a> {
+        return Box::new(self.data.iter().map(|(k, v)| (k.as_str(), EnvData::from(v))));
     }
 }
 
