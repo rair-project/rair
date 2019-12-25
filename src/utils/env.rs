@@ -20,7 +20,6 @@ use helper::*;
 use renv::EnvData;
 use std::io::Write;
 use yansi::Paint;
-
 #[derive(Default)]
 pub struct Environment {}
 
@@ -45,6 +44,7 @@ impl Environment {
     }
     fn set(&self, core: &mut Core, key: &str, value: &str) {
         let env = core.env.clone();
+        let mut res = Ok(());
         if env.borrow().is_bool(key) {
             let v_str = value.to_ascii_lowercase();
             let value = match v_str.as_str() {
@@ -55,29 +55,21 @@ impl Environment {
                     return error_msg(core, "Failed to set variable.", &message);
                 }
             };
-            if let Err(e) = env.borrow_mut().set_bool(key, value, core) {
-                return error_msg(core, "Failed to set variable.", &e.to_string());
-            }
+            res = env.borrow_mut().set_bool(key, value, core);
         } else if env.borrow().is_i64(key) {
             let value = match i64::from_str_radix(value, 10) {
                 Ok(value) => value,
                 Err(e) => return error_msg(core, "Failed to set variable.", &e.to_string()),
             };
-            if let Err(e) = env.borrow_mut().set_i64(key, value, core) {
-                return error_msg(core, "Failed to set variable.", &e.to_string());
-            }
+            res = env.borrow_mut().set_i64(key, value, core);
         } else if env.borrow().is_u64(key) {
             let value = match str_to_num(value) {
                 Ok(value) => value,
                 Err(e) => return error_msg(core, "Failed to set variable.", &e.to_string()),
             };
-            if let Err(e) = env.borrow_mut().set_u64(key, value, core) {
-                return error_msg(core, "Failed to set variable.", &e.to_string());
-            }
+            res = env.borrow_mut().set_u64(key, value, core);
         } else if env.borrow().is_str(key) {
-            if let Err(e) = env.borrow_mut().set_str(key, value, core) {
-                return error_msg(core, "Failed to set variable.", &e.to_string());
-            }
+            res = env.borrow_mut().set_str(key, value, core);
         } else if env.borrow().is_color(key) {
             if value.len() != 7 || !value.starts_with('#') {
                 let message = format!("Expected color code, found `{}`.", value);
@@ -95,9 +87,10 @@ impl Environment {
                 Ok(c) => c,
                 Err(e) => return error_msg(core, "Failed to set variable.", &e.to_string()),
             };
-            if let Err(e) = env.borrow_mut().set_color(key, (r, g, b), core) {
-                return error_msg(core, "Failed to set variable.", &e.to_string());
-            }
+            res = env.borrow_mut().set_color(key, (r, g, b), core);
+        }
+        if let Err(e) = res {
+            return error_msg(core, "Failed to set variable.", &e.to_string());
         }
     }
     fn display(&self, core: &mut Core, key: &str) {
@@ -198,6 +191,7 @@ impl Cmd for EnvironmentReset {
 #[cfg(test)]
 mod test_env {
     use super::*;
+    use renv::Environment as Env;
     use writer::*;
     #[test]
     fn test_help() {
@@ -368,5 +362,68 @@ mod test_env {
         env.run(&mut core, &["b".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to display variable.\nVariable `b` doesn't exist.\n");
+    }
+
+    fn always_false(_: &str, value: bool, _: &Env<Core>, _: &mut Core) -> bool {
+        return !value;
+    }
+
+    #[test]
+    fn test_set_error() {
+        let mut core = Core::new_no_colors();
+        let env = core.env.clone();
+        env.borrow_mut().add_bool_with_cb("b", false, "", &mut core, always_false).unwrap();
+        env.borrow_mut().add_u64("u", 500, "").unwrap();
+        env.borrow_mut().add_i64("i", -500, "").unwrap();
+        env.borrow_mut().add_str("s", "hi", "").unwrap();
+        env.borrow_mut().add_color("c", (0xee, 0xee, 0xee), "").unwrap();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let mut env = Environment::new();
+        env.run(&mut core, &["b=no".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to set variable.\nExpected `true` or `false`, found `no`.\n");
+
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        env.run(&mut core, &["b=true".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to set variable.\nCall back failed.\n");
+
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        env.run(&mut core, &["i=x5".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to set variable.\ninvalid digit found in string\n");
+
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        env.run(&mut core, &["u=x5".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to set variable.\ninvalid digit found in string\n");
+
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        env.run(&mut core, &["c=5".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to set variable.\nExpected color code, found `5`.\n");
+
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        env.run(&mut core, &["c=#1x2233".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to set variable.\ninvalid digit found in string\n");
+
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        env.run(&mut core, &["c=#11x233".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to set variable.\ninvalid digit found in string\n");
+
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        env.run(&mut core, &["c=#11223x".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to set variable.\ninvalid digit found in string\n");
     }
 }
