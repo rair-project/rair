@@ -34,7 +34,7 @@ impl Environment {
             match v {
                 EnvData::Bool(b) => writeln!(core.stdout, "{} = {}", k, b).unwrap(),
                 EnvData::I64(i) => writeln!(core.stdout, "{} = {}", k, i).unwrap(),
-                EnvData::U64(u) => writeln!(core.stdout, "{} = 0x{:08x}", k, u).unwrap(),
+                EnvData::U64(u) => writeln!(core.stdout, "{} = 0x{:x}", k, u).unwrap(),
                 EnvData::Str(s) => writeln!(core.stdout, "{} {}", k, s).unwrap(),
                 EnvData::Color(r, g, b) => {
                     let color = format!("#{:02x}{:02x}{:02x}", r, g, b);
@@ -113,7 +113,7 @@ impl Environment {
         match data {
             EnvData::Bool(b) => writeln!(core.stdout, "{}", b).unwrap(),
             EnvData::I64(i) => writeln!(core.stdout, "{}", i).unwrap(),
-            EnvData::U64(u) => writeln!(core.stdout, "{}", u).unwrap(),
+            EnvData::U64(u) => writeln!(core.stdout, "0x{:x}", u).unwrap(),
             EnvData::Str(s) => writeln!(core.stdout, "{}", s).unwrap(),
             EnvData::Color(r, g, b) => {
                 let color = format!("#{:02x}{:02x}{:02x}", r, g, b);
@@ -252,5 +252,61 @@ mod test_env {
         er.run(&mut core, &[]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 1 argument(s), found 0.\n");
+    }
+    fn get_good_core() -> Core {
+        let mut core = Core::new_no_colors();
+        core.env = Default::default();
+        core.env.borrow_mut().add_bool("b", false, "").unwrap();
+        core.env.borrow_mut().add_u64("u", 500, "").unwrap();
+        core.env.borrow_mut().add_i64("i", -500, "").unwrap();
+        core.env.borrow_mut().add_str("s", "hello world", "").unwrap();
+        core.env.borrow_mut().add_color("c", (0xff, 0xee, 0xdd), "").unwrap();
+        return core;
+    }
+    #[test]
+    fn test_env_0() {
+        let mut core = get_good_core();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+
+        let mut env = Environment::new();
+        env.run(&mut core, &[]);
+        let s = core.stdout.utf8_string().unwrap();
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+        assert_eq!(s.len(), 55);
+        assert!(s.contains("i = -500\n"));
+        assert!(s.contains("u = 0x1f4\n"));
+        assert!(s.contains("s hello world\n"));
+        assert!(s.contains("b = false\n"));
+        assert!(s.contains("c = #ffeedd\n"));
+    }
+    #[test]
+    fn test_env_1() {
+        let mut core = get_good_core();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let mut env = Environment::new();
+        env.run(&mut core, &["b".to_string()]);
+        env.run(&mut core, &["u".to_string()]);
+        env.run(&mut core, &["i".to_string()]);
+        env.run(&mut core, &["s".to_string()]);
+        env.run(&mut core, &["c".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "false\n0x1f4\n-500\nhello world\n#ffeedd\n");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        env.run(&mut core, &["b  = true ".to_string()]);
+        env.run(&mut core, &["u= 0x5".to_string()]);
+        env.run(&mut core, &["i=-1".to_string()]);
+        env.run(&mut core, &["s=happy birthday".to_string()]);
+        env.run(&mut core, &["c=#aaaaaa".to_string()]);
+        env.run(&mut core, &["b".to_string()]);
+        env.run(&mut core, &["u".to_string()]);
+        env.run(&mut core, &["i".to_string()]);
+        env.run(&mut core, &["s".to_string()]);
+        env.run(&mut core, &["c".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "true\n0x5\n-1\nhappy birthday\n#aaaaaa\n");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
 }
