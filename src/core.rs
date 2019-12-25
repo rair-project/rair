@@ -62,6 +62,13 @@ impl Default for Core {
         }
     }
 }
+fn set_global_color(_: &str, value: bool, _: &Environment<Core>, _: &mut Core) -> bool {
+    match value {
+        true => Paint::enable(),
+        false => Paint::disable(),
+    }
+    return true;
+}
 impl Core {
     pub(crate) fn load_commands(&mut self) {
         register_io(self);
@@ -73,15 +80,19 @@ impl Core {
         return self.commands.clone();
     }
     fn init_colors(&mut self) {
-        self.env.borrow_mut().add_color("color.1", (0x58, 0x68, 0x75), "").unwrap();
-        self.env.borrow_mut().add_color("color.2", (0xb5, 0x89, 0x00), "").unwrap();
-        self.env.borrow_mut().add_color("color.3", (0xcb, 0x4b, 0x16), "").unwrap();
-        self.env.borrow_mut().add_color("color.4", (0xdc, 0x32, 0x2f), "").unwrap();
-        self.env.borrow_mut().add_color("color.5", (0xd3, 0x36, 0x82), "").unwrap();
-        self.env.borrow_mut().add_color("color.6", (0x6c, 0x71, 0xc4), "").unwrap();
-        self.env.borrow_mut().add_color("color.7", (0x26, 0x8b, 0xd2), "").unwrap();
-        self.env.borrow_mut().add_color("color.8", (0x2a, 0xa1, 0x98), "").unwrap();
-        self.env.borrow_mut().add_color("color.9", (0x85, 0x99, 0x00), "").unwrap();
+        let env = self.env.clone();
+        env.borrow_mut()
+            .add_bool_with_cb("color.enable", true, "Enable/Disable color theme globally", self, set_global_color)
+            .unwrap();
+        env.borrow_mut().add_color("color.1", (0x58, 0x68, 0x75), "").unwrap();
+        env.borrow_mut().add_color("color.2", (0xb5, 0x89, 0x00), "").unwrap();
+        env.borrow_mut().add_color("color.3", (0xcb, 0x4b, 0x16), "").unwrap();
+        env.borrow_mut().add_color("color.4", (0xdc, 0x32, 0x2f), "").unwrap();
+        env.borrow_mut().add_color("color.5", (0xd3, 0x36, 0x82), "").unwrap();
+        env.borrow_mut().add_color("color.6", (0x6c, 0x71, 0xc4), "").unwrap();
+        env.borrow_mut().add_color("color.7", (0x26, 0x8b, 0xd2), "").unwrap();
+        env.borrow_mut().add_color("color.8", (0x2a, 0xa1, 0x98), "").unwrap();
+        env.borrow_mut().add_color("color.9", (0x85, 0x99, 0x00), "").unwrap();
     }
     pub fn new() -> Self {
         let mut core: Core = Default::default();
