@@ -140,7 +140,7 @@ impl Cmd for Environment {
             // either args[0] ends with = or args[1] starts with = but not both!
             if args[0].ends_with('=') ^ args[1].starts_with('=') {
                 let key = args[0].split('=').next().unwrap().trim();
-                let value = args[1].split('=').next().unwrap().trim();
+                let value = args[1].split('=').last().unwrap().trim();
                 self.set(core, key, value);
             } else {
                 return error_msg(core, "Failed to set variable.", &"Expected `=`.");
@@ -307,6 +307,20 @@ mod test_env {
         env.run(&mut core, &["s".to_string()]);
         env.run(&mut core, &["c".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "true\n0x5\n-1\nhappy birthday\n#aaaaaa\n");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+    }
+
+    #[test]
+    fn test_env_2() {
+        let mut core = get_good_core();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let mut env = Environment::new();
+        env.run(&mut core, &["b  =".to_string(), "true ".to_string()]);
+        env.run(&mut core, &["u".to_string(), "= 0x5".to_string()]);
+        env.run(&mut core, &["b".to_string()]);
+        env.run(&mut core, &["u".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "true\n0x5\n");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
 }
