@@ -40,11 +40,9 @@ impl Cmd for Quit {
 mod test_quit {
     use super::*;
     use writer::Writer;
-    use yansi::Paint;
     #[test]
     fn test_quit_docs() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let quit = Quit::new();

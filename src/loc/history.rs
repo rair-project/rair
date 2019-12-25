@@ -49,7 +49,7 @@ mod test_history {
     #[test]
     fn test_history() {
         let mut history = History::new();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         assert_eq!(history.backward(&core), None);
         assert_eq!(history.backward(&core), None);
         history.add(&core);

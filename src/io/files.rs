@@ -164,11 +164,9 @@ impl Cmd for CloseFile {
 mod test_files {
     use super::*;
     use writer::Writer;
-    use yansi::Paint;
     #[test]
     fn test_docs() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let files = ListFiles::new();
@@ -194,8 +192,7 @@ mod test_files {
 
     #[test]
     fn test_open_close_files() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut files = ListFiles::new();
@@ -232,8 +229,7 @@ mod test_files {
 
     #[test]
     fn test_failing_parsing() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut open = OpenFile::new();
@@ -255,8 +251,7 @@ mod test_files {
 
     #[test]
     fn test_arguments_count() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut files = ListFiles::new();
@@ -276,8 +271,7 @@ mod test_files {
 
     #[test]
     fn test_failed_open_close() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut open = OpenFile::new();

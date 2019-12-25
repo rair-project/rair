@@ -63,9 +63,10 @@ impl Default for Core {
     }
 }
 fn set_global_color(_: &str, value: bool, _: &Environment<Core>, _: &mut Core) -> bool {
-    match value {
-        true => Paint::enable(),
-        false => Paint::disable(),
+    if value {
+        Paint::enable();
+    } else {
+        Paint::disable();
     }
     return true;
 }
@@ -79,10 +80,10 @@ impl Core {
     pub fn commands(&mut self) -> Rc<RefCell<Commands>> {
         return self.commands.clone();
     }
-    fn init_colors(&mut self) {
+    fn init_colors(&mut self, enable: bool) {
         let env = self.env.clone();
         env.borrow_mut()
-            .add_bool_with_cb("color.enable", true, "Enable/Disable color theme globally", self, set_global_color)
+            .add_bool_with_cb("color.enable", enable, "Enable/Disable color theme globally", self, set_global_color)
             .unwrap();
         env.borrow_mut().add_color("color.1", (0x58, 0x68, 0x75), "").unwrap();
         env.borrow_mut().add_color("color.2", (0xb5, 0x89, 0x00), "").unwrap();
@@ -94,13 +95,18 @@ impl Core {
         env.borrow_mut().add_color("color.8", (0x2a, 0xa1, 0x98), "").unwrap();
         env.borrow_mut().add_color("color.9", (0x85, 0x99, 0x00), "").unwrap();
     }
-    pub fn new() -> Self {
+    fn new_settings(color: bool) -> Self {
         let mut core: Core = Default::default();
         core.load_commands();
-        core.init_colors();
+        core.init_colors(color);
         return core;
     }
-
+    pub fn new() -> Self {
+        Core::new_settings(true)
+    }
+    pub fn new_no_colors() -> Self {
+        Core::new_settings(false)
+    }
     pub fn set_loc(&mut self, loc: u64) {
         self.loc = loc;
     }
@@ -173,14 +179,13 @@ mod test_core {
     use utils::Quit;
     #[test]
     fn test_loc() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.set_loc(0x500);
         assert_eq!(core.get_loc(), 0x500);
     }
     #[test]
     fn test_add_command() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         core.add_command("a_non_existing_command", "a", Rc::new(RefCell::new(Quit::new())));
@@ -197,8 +202,7 @@ mod test_core {
     }
     #[test]
     fn test_help() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         core.help("seeker");
@@ -207,15 +211,14 @@ mod test_core {
     }
     #[test]
     fn test_run_at() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         core.run_at("mep", &[], 0x500);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
-            "Error: Execution failed\nCommand mep is not found.\nSimilar command: map, maps, m.\n"
+            "Error: Execution failed\nCommand mep is not found.\nSimilar command: map, maps, m, e, er.\n"
         );
     }
 }

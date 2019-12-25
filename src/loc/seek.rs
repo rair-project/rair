@@ -113,11 +113,9 @@ impl Cmd for Seek {
 mod test_seek {
     use super::*;
     use writer::Writer;
-    use yansi::Paint;
     #[test]
     fn test_docs() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let seek: Seek = Default::default();
@@ -138,8 +136,7 @@ mod test_seek {
     }
     #[test]
     fn test_seek() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut seek: Seek = Default::default();
@@ -215,8 +212,7 @@ mod test_seek {
     }
     #[test]
     fn test_seek_overflow() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut seek: Seek = Default::default();
@@ -247,8 +243,7 @@ mod test_seek {
 
     #[test]
     fn test_seek_invalid_arguments() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut seek: Seek = Default::default();

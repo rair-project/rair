@@ -547,12 +547,10 @@ mod test_print_hex {
     use std::path::Path;
     use test_file::*;
     use writer::Writer;
-    use yansi::Paint;
 
     #[test]
     fn test_help() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let px = PrintHex::new();
@@ -584,8 +582,7 @@ mod test_print_hex {
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
     fn test_px_cb(path: &Path) {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         let mut px = PrintHex::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -973,8 +970,7 @@ mod test_print_hex {
     }
 
     fn test_px_vir_cb(path: &Path) {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         let mut px = PrintHex::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -1012,8 +1008,7 @@ mod test_print_hex {
 
     #[test]
     fn test_px_err() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         let mut px = PrintHex::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -1033,7 +1028,7 @@ mod test_print_hex {
 
     #[test]
     fn test_pb_2() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         let mut pb = PrintBase::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -1064,7 +1059,7 @@ mod test_print_hex {
     }
     #[test]
     fn test_pb_16() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         let mut pb = PrintBase::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -1084,8 +1079,7 @@ mod test_print_hex {
 
     #[test]
     fn test_pb_error() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         let mut pb = PrintBase::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -1114,7 +1108,7 @@ mod test_print_hex {
     }
     #[test]
     fn test_pcsv_8() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -1143,7 +1137,7 @@ mod test_print_hex {
     }
     #[test]
     fn test_pcsv_16() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -1173,7 +1167,7 @@ mod test_print_hex {
 
     #[test]
     fn test_pcsv_32() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -1201,7 +1195,7 @@ mod test_print_hex {
 
     #[test]
     fn test_pcsv_64() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -1232,7 +1226,7 @@ mod test_print_hex {
     }
     #[test]
     fn test_pcsv_128() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -1263,7 +1257,7 @@ mod test_print_hex {
     }
     #[test]
     fn test_pcsv_256() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -1293,7 +1287,7 @@ mod test_print_hex {
 
     #[test]
     fn test_pcsv_512() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -1323,7 +1317,7 @@ mod test_print_hex {
 
     #[test]
     fn test_pcsv_errors() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -1359,7 +1353,7 @@ mod test_print_hex {
 
     #[test]
     fn test_pscsv_errors() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         let mut pscsv = PrintSignedCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -1395,7 +1389,7 @@ mod test_print_hex {
 
     #[test]
     fn test_pscsv_8() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         let mut pscsv = PrintSignedCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -1424,7 +1418,7 @@ mod test_print_hex {
     }
     #[test]
     fn test_pscsv_16() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         let mut pscsv = PrintSignedCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -1454,7 +1448,7 @@ mod test_print_hex {
 
     #[test]
     fn test_pscsv_32() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         let mut pscsv = PrintSignedCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -1482,7 +1476,7 @@ mod test_print_hex {
 
     #[test]
     fn test_pscsv_64() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         let mut pscsv = PrintSignedCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -1513,7 +1507,7 @@ mod test_print_hex {
     }
     #[test]
     fn test_pscsv_128() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         let mut pscsv = PrintSignedCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();

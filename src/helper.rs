@@ -138,7 +138,7 @@ mod test_helper {
 
     #[test]
     fn test_except() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         Paint::disable();
         expect(&mut core, 5, 7);
@@ -146,7 +146,7 @@ mod test_helper {
     }
     #[test]
     fn test_expect_range() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         Paint::disable();
         expect_range(&mut core, 5, 7, 10);
@@ -155,7 +155,7 @@ mod test_helper {
 
     #[test]
     fn test_error_msg() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         Paint::disable();
         error_msg(&mut core, "Error Title", "Something might have failed.");
@@ -163,7 +163,7 @@ mod test_helper {
     }
     #[test]
     fn test_help_short() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stdout = Writer::new_buf();
         Paint::disable();
         help(&mut core, "Test", "t", vec![("t1", "test 1"), ("t2", "test 2")]);
@@ -171,7 +171,7 @@ mod test_helper {
     }
     #[test]
     fn test_help_long() {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stdout = Writer::new_buf();
         Paint::disable();
         help(&mut core, "Test", "", vec![("t1", "test 1"), ("t2", "test 2")]);
