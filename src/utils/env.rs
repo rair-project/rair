@@ -306,7 +306,9 @@ mod test_env {
         env.run(&mut core, &["i".to_string()]);
         env.run(&mut core, &["s".to_string()]);
         env.run(&mut core, &["c".to_string()]);
-        assert_eq!(core.stdout.utf8_string().unwrap(), "true\n0x5\n-1\nhappy birthday\n#aaaaaa\n");
+        env.run(&mut core, &["b  = false".to_string()]);
+        env.run(&mut core, &["b".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "true\n0x5\n-1\nhappy birthday\n#aaaaaa\nfalse\n");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
 
