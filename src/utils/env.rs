@@ -106,7 +106,7 @@ impl Environment {
             Some(data) => data,
             None => {
                 drop(env);
-                let message = format!("variable `{}` doesn't exist.", key);
+                let message = format!("Variable `{}` doesn't exist.", key);
                 return error_msg(core, "Failed to display variable.", &message);
             }
         };
@@ -356,5 +356,15 @@ mod test_env {
         env.run(&mut core, &["b".to_string(), "true".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to set variable.\nExpected `=`.\n");
+    }
+    #[test]
+    fn test_display_error() {
+        let mut core = Core::new_no_colors();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let mut env = Environment::new();
+        env.run(&mut core, &["b".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to display variable.\nVariable `b` doesn't exist.\n");
     }
 }
