@@ -80,12 +80,10 @@ mod test_mode {
     use std::path::Path;
     use test_file::*;
     use writer::Writer;
-    use yansi::Paint;
 
     #[test]
     fn test_docs() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mode: Mode = Default::default();
@@ -103,7 +101,7 @@ mod test_mode {
     }
 
     fn test_mode_cb(path: &Path) {
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         let len = DATA.len() as u64;
         let mut mode: Mode = Default::default();
         core.io.open(&path.to_string_lossy(), IoMode::READ).unwrap();
@@ -131,8 +129,7 @@ mod test_mode {
 
     #[test]
     fn test_mode_errors() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut mode: Mode = Default::default();

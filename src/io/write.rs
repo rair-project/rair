@@ -132,11 +132,9 @@ mod test_write {
     use rio::*;
     use std::fs;
     use writer::Writer;
-    use yansi::Paint;
     #[test]
     fn test_help() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let wx = WriteHex::new();
@@ -157,8 +155,7 @@ mod test_write {
 
     #[test]
     fn test_wx() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut wx = WriteHex::new();
@@ -177,8 +174,7 @@ mod test_write {
 
     #[test]
     fn test_wtf() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut wtf = WriteToFile::new();
@@ -206,8 +202,7 @@ mod test_write {
 
     #[test]
     fn test_wx_error() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut wx = WriteHex::new();
@@ -238,8 +233,7 @@ mod test_write {
 
     #[test]
     fn test_wtf_error() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut wtf = WriteToFile::new();

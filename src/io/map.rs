@@ -146,11 +146,9 @@ mod test_mapping {
     use std::path::Path;
     use test_file::*;
     use writer::Writer;
-    use yansi::Paint;
     #[test]
     fn test_map_docs() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let map = Map::new();
@@ -163,8 +161,7 @@ mod test_mapping {
     }
     #[test]
     fn test_unmap_docs() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let unmap = UnMap::new();
@@ -177,8 +174,7 @@ mod test_mapping {
     }
     #[test]
     fn test_list_map_docs() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let maps = ListMap::new();
@@ -187,8 +183,7 @@ mod test_mapping {
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
     fn test_map_cb(path: &Path) {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut map = Map::new();
@@ -237,8 +232,7 @@ mod test_mapping {
     }
     #[test]
     fn test_map_error() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut map = Map::new();

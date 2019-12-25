@@ -114,11 +114,9 @@ mod test_project {
     use rio::*;
     use std::fs;
     use writer::*;
-    use yansi::Paint;
     #[test]
     fn test_project_help() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let load = Load::new();
@@ -138,8 +136,7 @@ mod test_project {
     }
     #[test]
     fn test_project() {
-        Paint::disable();
-        let mut core = Core::new();
+        let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut load = Load::new();
