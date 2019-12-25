@@ -147,7 +147,7 @@ impl Cmd for Environment {
             }
         } else if args.len() == 3 {
             if args[1] == "=" {
-                self.set(core, &args[0], &args[1]);
+                self.set(core, &args[0], &args[2]);
             } else {
                 let message = format!("Expected `=` found `{}`", args[1]);
                 return error_msg(core, "Failed to set variable.", &message);
@@ -321,6 +321,18 @@ mod test_env {
         env.run(&mut core, &["b".to_string()]);
         env.run(&mut core, &["u".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "true\n0x5\n");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+    }
+
+    #[test]
+    fn test_env_3() {
+        let mut core = get_good_core();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let mut env = Environment::new();
+        env.run(&mut core, &["b".to_string(), "=".to_string(), "true".to_string()]);
+        env.run(&mut core, &["b".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "true\n");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
 }
