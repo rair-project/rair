@@ -184,7 +184,8 @@ impl Cmd for EnvironmentReset {
             return;
         }
         let env = core.env.clone();
-        if let Err(e) = env.borrow_mut().reset(&args[0], core) {
+        let res = env.borrow_mut().reset(&args[0], core);
+        if let Err(e) = res {
             return error_msg(core, "Failed to reset variable.", &e.to_string());
         }
         return;
@@ -219,5 +220,37 @@ mod test_env {
              e [var]=[value]\tSet [var] to be [value]\n"
         );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
+    }
+
+    #[test]
+    fn test_env_reset() {
+        let mut core = Core::new_no_colors();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let mut er = EnvironmentReset::new();
+        let env = core.env.clone();
+        let (r, g, b) = env.borrow().get_color("color.1").unwrap();
+        env.borrow_mut().set_color("color.1", (r + 1, g + 1, b + 1), &mut core).unwrap();
+        er.run(&mut core, &["color.1".to_string()]);
+        let (r2, g2, b2) = env.borrow().get_color("color.1").unwrap();
+        assert_eq!(r, r2);
+        assert_eq!(g, g2);
+        assert_eq!(b, b2);
+    }
+    #[test]
+    fn test_env_reset_err() {
+        let mut core = Core::new_no_colors();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let mut er = EnvironmentReset::new();
+        er.run(&mut core, &["doest.exist".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to reset variable.\nEnvironment variable not found.\n");
+
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        er.run(&mut core, &[]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 1 argument(s), found 0.\n");
     }
 }
