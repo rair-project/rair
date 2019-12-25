@@ -193,3 +193,31 @@ impl Cmd for EnvironmentReset {
         help(core, &"environmentReset", &"er", vec![("[var]", "Reset [var] environment variable.")]);
     }
 }
+
+#[cfg(test)]
+mod test_env {
+    use super::*;
+    use writer::*;
+    #[test]
+    fn test_help() {
+        let mut core = Core::new_no_colors();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        let er = EnvironmentReset::new();
+        let env = Environment::new();
+        er.help(&mut core);
+        env.help(&mut core);
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "Commands: [environmentReset | er]\n\n\
+             Usage:\n\
+             er [var]\tReset [var] environment variable.\n\
+             Commands: [environment | e]\n\n\
+             Usage:\n\
+             e\tList all environment variables.\n\
+             e [var]\tDisplay the value of [var] environment variables.\n\
+             e [var]=[value]\tSet [var] to be [value]\n"
+        );
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+    }
+}
