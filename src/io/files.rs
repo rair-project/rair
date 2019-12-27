@@ -19,12 +19,17 @@ use core::*;
 use helper::*;
 use rio::*;
 use std::io::Write;
+use yansi::Paint;
 
 #[derive(Default)]
 pub struct ListFiles {}
 
 impl ListFiles {
-    pub fn new() -> Self {
+    pub fn new(core: &mut Core) -> Self {
+        let env = core.env.clone();
+        env.borrow_mut()
+            .add_str_with_cb("files.headerColor", "color.6", "Color used in the header of `files` command", core, is_color)
+            .unwrap();
         Default::default()
     }
 }
@@ -35,7 +40,11 @@ impl Cmd for ListFiles {
             expect(core, args.len() as u64, 0);
             return;
         }
-        writeln!(core.stdout, "Handle\tStart address\tsize\t\tPermissions\tURI").unwrap();
+        let env = core.env.borrow();
+        let color = env.get_str("maps.headerColor").unwrap();
+        let (r, g, b) = env.get_color(color).unwrap();
+
+        writeln!(core.stdout, "{}", Paint::rgb(r, g, b, "Handle\tStart address\tsize\t\tPermissions\tURI")).unwrap();
         for file in core.io.uri_iter() {
             let perm = format!("{:?}", file.perm());
             write!(core.stdout, "{}\t0x{:08x}\t0x{:08x}\t{}", file.hndl(), file.paddr_base(), file.size(), perm).unwrap();
@@ -169,10 +178,9 @@ mod test_files {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let files = ListFiles::new();
         let open = OpenFile::new();
         let close = CloseFile::new();
-        files.help(&mut core);
+        core.help("files");
         open.help(&mut core);
         close.help(&mut core);
         assert_eq!(
@@ -195,7 +203,6 @@ mod test_files {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut files = ListFiles::new();
         let mut open = OpenFile::new();
         let mut close = CloseFile::new();
         open.run(&mut core, &["b64://../testing_binaries/rio/base64/no_padding.b64".to_string()]);
@@ -203,7 +210,7 @@ mod test_files {
         open.run(&mut core, &["c".to_string(), "../testing_binaries/rio/base64/one_pad.b64".to_string(), "0x5000".to_string()]);
         open.run(&mut core, &["b64://../testing_binaries/rio/base64/no_padding.b64".to_string(), "0xa000".to_string()]);
 
-        files.run(&mut core, &[]);
+        core.run("files", &[]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "Handle\tStart address\tsize\t\tPermissions\tURI\n\
@@ -216,7 +223,7 @@ mod test_files {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         close.run(&mut core, &["1".to_string()]);
-        files.run(&mut core, &[]);
+        core.run("files", &[]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "Handle\tStart address\tsize\t\tPermissions\tURI\n\
@@ -254,11 +261,10 @@ mod test_files {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut files = ListFiles::new();
         let mut open = OpenFile::new();
         let mut close = CloseFile::new();
         open.run(&mut core, &[]);
-        files.run(&mut core, &["test".to_string()]);
+        core.run("files", &["test".to_string()]);
         close.run(&mut core, &[]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(

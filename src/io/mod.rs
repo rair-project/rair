@@ -29,6 +29,8 @@ use std::rc::Rc;
 
 pub fn register_io(core: &mut Core) {
     let maps = Rc::new(RefCell::new(ListMap::new(core)));
+    let files = Rc::new(RefCell::new(ListFiles::new(core)));
+
     core.add_command("map", "", Rc::new(RefCell::new(Map::new())));
     core.add_command("maps", "", maps);
     core.add_command("printHex", "px", Rc::new(RefCell::new(PrintHex::new())));
@@ -36,7 +38,7 @@ pub fn register_io(core: &mut Core) {
     core.add_command("PrintCSV", "pcsv", Rc::new(RefCell::new(PrintCSV::new())));
     core.add_command("PrintSignedCSV", "pscsv", Rc::new(RefCell::new(PrintSignedCSV::new())));
     core.add_command("unmap", "um", Rc::new(RefCell::new(UnMap::new())));
-    core.add_command("files", "", Rc::new(RefCell::new(ListFiles::new())));
+    core.add_command("files", "", files);
     core.add_command("open", "o", Rc::new(RefCell::new(OpenFile::new())));
     core.add_command("close", "", Rc::new(RefCell::new(CloseFile::new())));
     core.add_command("writeHex", "wx", Rc::new(RefCell::new(WriteHex::new())));
