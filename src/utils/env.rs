@@ -238,6 +238,7 @@ mod test_env {
         let env = Environment::new();
         er.help(&mut core);
         env.help(&mut core);
+        core.help("eh");
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "Commands: [environmentReset | er]\n\n\
@@ -247,11 +248,29 @@ mod test_env {
              Usage:\n\
              e\tList all environment variables.\n\
              e [var]\tDisplay the value of [var] environment variables.\n\
-             e [var]=[value]\tSet [var] to be [value]\n"
+             e [var]=[value]\tSet [var] to be [value]\n\
+             Commands: [environmentHelp | eh]\n\n\
+             Usage:\n\
+             eh [var]\tPrint help for [var] environment variable.\n"
         );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
 
+    #[test]
+    fn test_env_help() {
+        let mut core = Core::new_no_colors();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.run("eh", &["environmentHelp.envColor".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "environmentHelp.envColor:\tColor used in the environment variable\n");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "");
+
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.run("eh", &["doesnt.exist".to_string()]);
+        assert_eq!(core.stdout.utf8_string().unwrap(), "");
+        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to display help.\nVariable Not found\n");
+    }
     #[test]
     fn test_env_reset() {
         let mut core = Core::new_no_colors();
