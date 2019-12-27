@@ -7,7 +7,7 @@
 |**Travis CI**|  [![Build Status](https://travis-ci.org/Rair-Project/rair-core.svg?branch=master)](https://travis-ci.org/Rair-Project/rair-core)|
 |**Code Coverage**|[![codecov](https://codecov.io/gh/Rair-Project/rair-core/branch/master/graph/badge.svg)](https://codecov.io/gh/Rair-Project/rair-core)|
 |**API**| [![API](https://img.shields.io/badge/api-master-purple.svg)](https://rair-project.github.io/rair-core/)|
-|**Chat**| ![Discord](https://img.shields.io/discord/634133396439695382?style=plastic)|
+|**Chat**| [![Discord](https://img.shields.io/discord/634133396439695382?style=plastic)](https://discord.gg/Ce5fXmX)|
 
 
 
