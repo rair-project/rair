@@ -99,8 +99,8 @@ impl Cmd for Load {
         mem::swap(&mut core.stdout, &mut core2.stdout);
         mem::swap(&mut core.stderr, &mut core2.stderr);
         mem::swap(&mut core.env, &mut core2.env);
+        core2.set_commands(core.commands());
         *core = core2;
-        core.load_commands();
     }
     fn help(&self, core: &mut Core) {
         help(core, &"load", &"", vec![("[file_path]", "load project from given path.")]);

@@ -34,7 +34,7 @@ impl Environment {
                 EnvData::Bool(b) => writeln!(core.stdout, "{} = {}", k, b).unwrap(),
                 EnvData::I64(i) => writeln!(core.stdout, "{} = {}", k, i).unwrap(),
                 EnvData::U64(u) => writeln!(core.stdout, "{} = 0x{:x}", k, u).unwrap(),
-                EnvData::Str(s) => writeln!(core.stdout, "{} {}", k, s).unwrap(),
+                EnvData::Str(s) => writeln!(core.stdout, "{} = {}", k, s).unwrap(),
                 EnvData::Color(r, g, b) => {
                     let color = format!("#{:02x}{:02x}{:02x}", r, g, b);
                     writeln!(core.stdout, "{} = {}", k, Paint::rgb(r, g, b, color)).unwrap();
@@ -188,6 +188,42 @@ impl Cmd for EnvironmentReset {
     }
 }
 
+#[derive(Default)]
+pub struct EnvironmentHelp {}
+
+impl EnvironmentHelp {
+    pub fn new(core: &mut Core) -> Self {
+        let env = core.env.clone();
+        env.borrow_mut()
+            .add_str_with_cb("environmentHelp.envColor", "color.6", "Color used in the environment variable", core, is_color)
+            .unwrap();
+        return Default::default();
+    }
+}
+
+impl Cmd for EnvironmentHelp {
+    fn run(&mut self, core: &mut Core, args: &[String]) {
+        if args.len() != 1 {
+            expect(core, args.len() as u64, 1);
+            return;
+        }
+        let env = core.env.borrow();
+        let res = env.get_help(&args[0]);
+        if let Some(help) = res {
+            let color = env.get_str("environmentHelp.envColor").unwrap();
+            let (r, g, b) = env.get_color(color).unwrap();
+            writeln!(core.stdout, "{}:\t{}", Paint::rgb(r, g, b, &args[0]), help).unwrap();
+        } else {
+            drop(env);
+            error_msg(core, "Failed to display help.", "Variable Not found");
+        }
+        return;
+    }
+    fn help(&self, core: &mut Core) {
+        help(core, &"environmentHelp", &"eh", vec![("[var]", "Print help for [var] environment variable.")]);
+    }
+}
+
 #[cfg(test)]
 mod test_env {
     use super::*;
@@ -267,10 +303,10 @@ mod test_env {
         env.run(&mut core, &[]);
         let s = core.stdout.utf8_string().unwrap();
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
-        assert_eq!(s.len(), 55);
+        assert_eq!(s.len(), 57);
         assert!(s.contains("i = -500\n"));
         assert!(s.contains("u = 0x1f4\n"));
-        assert!(s.contains("s hello world\n"));
+        assert!(s.contains("s = hello world\n"));
         assert!(s.contains("b = false\n"));
         assert!(s.contains("c = #ffeedd\n"));
     }
