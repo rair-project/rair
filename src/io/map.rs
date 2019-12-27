@@ -111,7 +111,11 @@ impl Cmd for UnMap {
 pub struct ListMap {}
 
 impl ListMap {
-    pub fn new() -> Self {
+    pub fn new(core: &mut Core) -> Self {
+        let env = core.env.clone();
+        env.borrow_mut()
+            .add_str_with_cb("maps.headerColor", "color.6", "Color used in the header of `maps` command", core, is_color)
+            .unwrap();
         Default::default()
     }
 }
@@ -122,7 +126,9 @@ impl Cmd for ListMap {
             expect(core, args.len() as u64, 0);
             return;
         }
-        let (r, g, b) = core.env.borrow().get_color("color.6").unwrap();
+        let env = core.env.borrow();
+        let color = env.get_str("maps.headerColor").unwrap();
+        let (r, g, b) = env.get_color(color).unwrap();
         writeln!(
             core.stdout,
             "{: <20}{: <20}{}",
@@ -177,8 +183,7 @@ mod test_mapping {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let maps = ListMap::new();
-        maps.help(&mut core);
+        core.help("maps");
         assert_eq!(core.stdout.utf8_string().unwrap(), "Command: [maps]\n\nUsage:\nmaps\tList all memory maps.\n");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
@@ -188,7 +193,6 @@ mod test_mapping {
         core.stdout = Writer::new_buf();
         let mut map = Map::new();
         let mut unmap = UnMap::new();
-        let mut maps = ListMap::new();
         core.io.open(&path.to_string_lossy(), IoMode::READ).unwrap();
         map.run(&mut core, &["0x0".to_string(), "0x500".to_string(), "0x20".to_string()]);
         map.run(&mut core, &["0x10".to_string(), "0x520".to_string(), "0x20".to_string()]);
@@ -198,7 +202,7 @@ mod test_mapping {
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        maps.run(&mut core, &[]);
+        core.run("maps", &[]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "Virtual Address     Physical Address    Size\n\
@@ -216,7 +220,7 @@ mod test_mapping {
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        maps.run(&mut core, &[]);
+        core.run("maps", &[]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "Virtual Address     Physical Address    Size\n\
@@ -237,7 +241,6 @@ mod test_mapping {
         core.stdout = Writer::new_buf();
         let mut map = Map::new();
         let mut unmap = UnMap::new();
-        let mut maps = ListMap::new();
         map.run(&mut core, &[]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 3 argument(s), found 0.\n");
@@ -266,7 +269,7 @@ mod test_mapping {
         assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to map memory\nCannot resolve address.\n");
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        maps.run(&mut core, &["0xff".to_string()]);
+        core.run("maps", &["0xff".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 0 argument(s), found 1.\n");
         core.stderr = Writer::new_buf();
