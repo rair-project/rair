@@ -17,6 +17,7 @@
 
 use core::*;
 use helper::*;
+use renv::Environment;
 use std::cmp;
 use std::io::Write;
 use writer::*;
@@ -25,8 +26,38 @@ use yansi::Paint;
 #[derive(Default)]
 pub struct PrintHex {}
 
+fn one_byte(_: &str, value: &str, _: &Environment<Core>, _: &mut Core) -> bool {
+    return value.len() == 1;
+}
+
 impl PrintHex {
-    pub fn new() -> Self {
+    pub fn new(core: &mut Core) -> Self {
+        let env = core.env.clone();
+        env.borrow_mut()
+            .add_str_with_cb("printHex.headerColor", "color.6", "Color used in the header of `printHex` command", core, is_color)
+            .unwrap();
+        env.borrow_mut()
+            .add_str_with_cb(
+                "printHex.nonPrintColor",
+                "color.5",
+                "Color used in the Ascii section for non printable ASCII when using the `printHex` command",
+                core,
+                is_color,
+            )
+            .unwrap();
+        env.borrow_mut()
+            .add_str_with_cb(
+                "printHex.nonPrintReplace",
+                ".",
+                "Text used in the Ascii section to replace non printable ASCII when using the `printHex` command",
+                core,
+                one_byte,
+            )
+            .unwrap();
+        env.borrow_mut()
+            .add_str_with_cb("printHex.gapReplace", "#", "Text used to replace gaps when using the `printHex` command", core, one_byte)
+            .unwrap();
+
         Default::default()
     }
 }
@@ -61,8 +92,13 @@ impl Cmd for PrintHex {
             Ok(d) => d,
             Err(e) => return error_msg(core, "Read Failed", &e.to_string()),
         };
-        let banner = core.env.borrow().get_color("color.6").unwrap();
-        let na = core.env.borrow().get_color("color.5").unwrap();
+        let env = core.env.borrow();
+        let color = env.get_str("printHex.headerColor").unwrap();
+        let banner = env.get_color(color).unwrap();
+        let color = env.get_str("printHex.nonPrintColor").unwrap();
+        let na = core.env.borrow().get_color(color).unwrap();
+        let gap = env.get_str("printHex.gapReplace").unwrap();
+        let no_print = env.get_str("printHex.nonPrintReplace").unwrap();
 
         writeln!(
             core.stdout,
@@ -84,15 +120,15 @@ impl Cmd for PrintHex {
                     if *c >= 0x21 && *c <= 0x7E {
                         write!(ascii, "{}", *c as char).unwrap()
                     } else {
-                        write!(ascii, "{}", Paint::rgb(na.0, na.1, na.2, ".")).unwrap();
+                        write!(ascii, "{}", Paint::rgb(na.0, na.1, na.2, no_print)).unwrap();
                     }
                 } else {
                     if j % 2 == 0 {
-                        write!(hex, "##").unwrap();
+                        write!(hex, "{}{}", gap, gap).unwrap();
                     } else {
-                        write!(hex, "## ").unwrap();
+                        write!(hex, "{}{} ", gap, gap).unwrap();
                     }
-                    write!(ascii, "{}", Paint::rgb(na.0, na.1, na.2, "#")).unwrap();
+                    write!(ascii, "{}", Paint::rgb(na.0, na.1, na.2, gap)).unwrap();
                 }
             }
             writeln!(core.stdout, "{: <40} {}", hex.utf8_string().unwrap(), ascii.utf8_string().unwrap()).unwrap();
@@ -553,11 +589,10 @@ mod test_print_hex {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let px = PrintHex::new();
         let pb = PrintBase::new();
         let pcsv = PrintCSV::new();
         let pscsv = PrintSignedCSV::new();
-        px.help(&mut core);
+        core.help("px");
         pb.help(&mut core);
         pcsv.help(&mut core);
         pscsv.help(&mut core);
@@ -583,17 +618,16 @@ mod test_print_hex {
     }
     fn test_px_cb(path: &Path) {
         let mut core = Core::new_no_colors();
-        let mut px = PrintHex::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         core.io.open(&path.to_string_lossy(), IoMode::READ).unwrap();
-        px.run(&mut core, &["0x0".to_string()]);
+        core.run("px", &["0x0".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x1".to_string()]);
+        core.run("px", &["0x1".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -603,7 +637,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x2".to_string()]);
+        core.run("px", &["0x2".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -613,7 +647,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x3".to_string()]);
+        core.run("px", &["0x3".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -623,7 +657,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x4".to_string()]);
+        core.run("px", &["0x4".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -633,7 +667,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x5".to_string()]);
+        core.run("px", &["0x5".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -643,7 +677,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x6".to_string()]);
+        core.run("px", &["0x6".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -653,7 +687,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x7".to_string()]);
+        core.run("px", &["0x7".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -663,7 +697,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x8".to_string()]);
+        core.run("px", &["0x8".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -673,7 +707,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x9".to_string()]);
+        core.run("px", &["0x9".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -683,7 +717,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0xa".to_string()]);
+        core.run("px", &["0xa".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -693,7 +727,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0xb".to_string()]);
+        core.run("px", &["0xb".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -703,7 +737,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0xc".to_string()]);
+        core.run("px", &["0xc".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -713,7 +747,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0xd".to_string()]);
+        core.run("px", &["0xd".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -723,7 +757,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0xe".to_string()]);
+        core.run("px", &["0xe".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -733,7 +767,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0xf".to_string()]);
+        core.run("px", &["0xf".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -743,7 +777,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x10".to_string()]);
+        core.run("px", &["0x10".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -753,7 +787,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x11".to_string()]);
+        core.run("px", &["0x11".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -764,7 +798,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x12".to_string()]);
+        core.run("px", &["0x12".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -775,7 +809,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x13".to_string()]);
+        core.run("px", &["0x13".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -786,7 +820,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x14".to_string()]);
+        core.run("px", &["0x14".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -797,7 +831,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x15".to_string()]);
+        core.run("px", &["0x15".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -808,7 +842,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x16".to_string()]);
+        core.run("px", &["0x16".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -819,7 +853,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x17".to_string()]);
+        core.run("px", &["0x17".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -830,7 +864,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x18".to_string()]);
+        core.run("px", &["0x18".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -841,7 +875,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x19".to_string()]);
+        core.run("px", &["0x19".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -852,7 +886,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x1a".to_string()]);
+        core.run("px", &["0x1a".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -863,7 +897,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x1b".to_string()]);
+        core.run("px", &["0x1b".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -874,7 +908,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x1c".to_string()]);
+        core.run("px", &["0x1c".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -885,7 +919,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x1d".to_string()]);
+        core.run("px", &["0x1d".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -896,7 +930,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x1e".to_string()]);
+        core.run("px", &["0x1e".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -907,7 +941,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x1f".to_string()]);
+        core.run("px", &["0x1f".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -918,7 +952,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x20".to_string()]);
+        core.run("px", &["0x20".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -929,7 +963,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x21".to_string()]);
+        core.run("px", &["0x21".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -941,7 +975,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x22".to_string()]);
+        core.run("px", &["0x22".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -953,7 +987,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x23".to_string()]);
+        core.run("px", &["0x23".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -971,11 +1005,10 @@ mod test_print_hex {
 
     fn test_px_vir_cb(path: &Path) {
         let mut core = Core::new_no_colors();
-        let mut px = PrintHex::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         core.io.open(&path.to_string_lossy(), IoMode::READ).unwrap();
-        px.run(&mut core, &["0x0".to_string()]);
+        core.run("px", &["0x0".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
@@ -986,7 +1019,7 @@ mod test_print_hex {
         core.io.map(0x10, 0x520, 0x20).unwrap();
         core.io.map(0x20, 0x540, 0x20).unwrap();
         core.set_loc(0x500);
-        px.run(&mut core, &["0x65".to_string()]);
+        core.run("px", &["0x65".to_string()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -1009,16 +1042,15 @@ mod test_print_hex {
     #[test]
     fn test_px_err() {
         let mut core = Core::new_no_colors();
-        let mut px = PrintHex::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        px.run(&mut core, &[]);
+        core.run("px", &[]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 1 argument(s), found 0.\n");
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        px.run(&mut core, &["0x".to_string()]);
+        core.run("px", &["0x".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
