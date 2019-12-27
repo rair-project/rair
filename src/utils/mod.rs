@@ -31,4 +31,6 @@ pub fn register_utils(core: &mut Core) {
     core.add_command("load", "", Rc::new(RefCell::new(Load::new())));
     core.add_command("environment", "e", Rc::new(RefCell::new(Environment::new())));
     core.add_command("environmentReset", "er", Rc::new(RefCell::new(EnvironmentReset::new())));
+    let eh = Rc::new(RefCell::new(EnvironmentHelp::new(core)));
+    core.add_command("environmentHelp", "eh", eh);
 }

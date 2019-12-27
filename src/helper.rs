@@ -16,6 +16,7 @@
  */
 
 use core::*;
+use renv::Environment;
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::fmt;
@@ -118,6 +119,10 @@ impl Display for AddrMode {
             AddrMode::Vir => write!(f, "Vir"),
         }
     }
+}
+
+pub fn is_color<Core>(_: &str, value: &str, env: &Environment<Core>, _: &mut Core) -> bool {
+    return env.is_color(value);
 }
 
 #[cfg(test)]

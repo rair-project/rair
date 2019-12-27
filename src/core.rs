@@ -80,6 +80,9 @@ impl Core {
     pub fn commands(&mut self) -> Rc<RefCell<Commands>> {
         return self.commands.clone();
     }
+    pub fn set_commands(&mut self, commands: Rc<RefCell<Commands>>) {
+        self.commands = commands
+    }
     fn init_colors(&mut self, enable: bool) {
         let env = self.env.clone();
         env.borrow_mut()
@@ -97,8 +100,8 @@ impl Core {
     }
     fn new_settings(color: bool) -> Self {
         let mut core: Core = Default::default();
-        core.load_commands();
         core.init_colors(color);
+        core.load_commands();
         return core;
     }
     pub fn new() -> Self {
@@ -218,7 +221,7 @@ mod test_core {
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
-            "Error: Execution failed\nCommand mep is not found.\nSimilar command: map, maps, m, e, er.\n"
+            "Error: Execution failed\nCommand mep is not found.\nSimilar command: map, maps, m, e, er, eh.\n"
         );
     }
 }
