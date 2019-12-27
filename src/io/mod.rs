@@ -30,10 +30,11 @@ use std::rc::Rc;
 pub fn register_io(core: &mut Core) {
     let maps = Rc::new(RefCell::new(ListMap::new(core)));
     let files = Rc::new(RefCell::new(ListFiles::new(core)));
+    let px = Rc::new(RefCell::new(PrintHex::new(core)));
 
     core.add_command("map", "", Rc::new(RefCell::new(Map::new())));
     core.add_command("maps", "", maps);
-    core.add_command("printHex", "px", Rc::new(RefCell::new(PrintHex::new())));
+    core.add_command("printHex", "px", px);
     core.add_command("printBase", "pb", Rc::new(RefCell::new(PrintBase::new())));
     core.add_command("printCSV", "pcsv", Rc::new(RefCell::new(PrintCSV::new())));
     core.add_command("printSignedCSV", "pscsv", Rc::new(RefCell::new(PrintSignedCSV::new())));
