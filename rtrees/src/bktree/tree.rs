@@ -18,8 +18,8 @@ use std::cmp::min;
 use std::collections::HashMap;
 
 /// Generic BK-Tree Template used to store dictionary like
-/// structures and perform fuzzy search on them. [K] must implement trait
-/// [Distance] before it can be used as key here.
+/// structures and perform fuzzy search on them. *K* must implement trait
+/// distance before it can be used as key here.
 #[derive(Default)]
 pub struct BKTree<K, V>
 where
@@ -71,7 +71,7 @@ where
     }
 }
 /// This trait used by [BKTree] to tell how close are 2 objects when fuzzy searching.
-/// In case of strings, the [distance] function could be something like Levenshtein distance,
+/// In case of strings, the distance function could be something like Levenshtein distance,
 /// Damerau–Levenshtein distance, Optimal string alignment distance or anything similar.
 pub trait Distance {
     fn distance(&self, other: &Self) -> u64;
@@ -144,7 +144,7 @@ impl Distance for String {
     }
 }
 
-/// a BKTree with string based Key and [Distance] trait optimized for
+/// a BKTree with string based Key and distance trait optimized for
 /// capturing spelling and typing mistakes.
 ///
 /// # Example
