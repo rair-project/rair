@@ -148,7 +148,7 @@ impl Cmd for ListMap {
 #[cfg(test)]
 mod test_mapping {
     use super::*;
-    use rio::*;
+    use rair_io::*;
     use std::path::Path;
     use test_file::*;
     use writer::Writer;

@@ -579,7 +579,7 @@ impl Cmd for PrintSignedCSV {
 #[cfg(test)]
 mod test_print_hex {
     use super::*;
-    use rio::*;
+    use rair_io::*;
     use std::path::Path;
     use test_file::*;
     use writer::Writer;

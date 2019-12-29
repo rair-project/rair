@@ -129,7 +129,7 @@ impl Cmd for WriteToFile {
 
 mod test_write {
     use super::*;
-    use rio::*;
+    use rair_io::*;
     use std::fs;
     use writer::Writer;
     #[test]

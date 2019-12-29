@@ -17,7 +17,7 @@
 
 use core::*;
 use helper::*;
-use rio::*;
+use rair_io::*;
 use std::io::Write;
 use yansi::Paint;
 
