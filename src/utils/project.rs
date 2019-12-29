@@ -111,7 +111,7 @@ impl Cmd for Load {
 
 mod test_project {
     use super::*;
-    use rio::*;
+    use rair_io::*;
     use std::fs;
     use writer::*;
     #[test]

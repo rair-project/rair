@@ -76,7 +76,7 @@ impl Cmd for Mode {
 #[cfg(test)]
 mod test_mode {
     use super::*;
-    use rio::*;
+    use rair_io::*;
     use std::path::Path;
     use test_file::*;
     use writer::Writer;

@@ -1,10 +1,11 @@
 [workspace]
 members = [
   "renv",
-  "rio",
+  "rair-io",
   "rtrees",
   "test_file",
 ]
+
 [package]
 name = "rcore"
 version = "0.1.0"
@@ -19,7 +20,7 @@ readme = "readme.md"
 [dependencies]
 flate2 = "1.0"
 renv = {path = "renv"}
-rio = {path = "rio"}
+rair-io = {path = "rair-io"}
 rtrees = {path = "rtrees"}
 serde = { version = "1.0", features = ["derive"]}
 serde_cbor = "0.10"

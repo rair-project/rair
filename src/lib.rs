@@ -19,7 +19,7 @@
  */
 extern crate flate2;
 extern crate renv;
-extern crate rio;
+extern crate rair_io;
 extern crate rtrees;
 extern crate serde;
 extern crate serde_cbor;

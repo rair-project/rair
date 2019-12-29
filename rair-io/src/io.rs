@@ -80,7 +80,7 @@ impl RIO {
     ///
     /// # Example
     /// ````
-    /// use rair_rio::RIO;
+    /// use rair_io::RIO;
     /// let mut io = RIO::new();
     /// ````
     pub fn new() -> RIO {
@@ -107,8 +107,8 @@ impl RIO {
     /// # Example
     ///
     /// ```
-    /// use rair_rio::RIO;
-    /// use rair_rio::IoMode;
+    /// use rair_io::RIO;
+    /// use rair_io::IoMode;
     /// let mut io = RIO::new();
     /// io.open("hello.txt", IoMode::READ);
     /// ```
@@ -137,7 +137,7 @@ impl RIO {
     /// # Example
     ///
     /// ```no_run
-    /// use rair_rio::{RIO, IoMode, IoError};
+    /// use rair_io::{RIO, IoMode, IoError};
     /// fn main() -> Result<(), IoError> {
     ///     let mut io = RIO::new();
     ///     io.open_at("hello.txt", IoMode::READ | IoMode::WRITE, 0x4000)?;
@@ -159,9 +159,9 @@ impl RIO {
     /// # Example
     ///
     /// ```no_run
-    /// use rair_rio::RIO;
-    /// use rair_rio::IoMode;
-    /// use rair_rio::IoError;
+    /// use rair_io::RIO;
+    /// use rair_io::IoMode;
+    /// use rair_io::IoError;
     /// fn main() -> Result<(), IoError> {
     ///     let mut io = RIO::new();
     ///     let hndl = io.open("hello.txt", IoMode::READ)?;
@@ -181,9 +181,9 @@ impl RIO {
     /// # Example
     ///
     /// ```no_run
-    /// use rair_rio::RIO;
-    /// use rair_rio::IoMode;
-    /// use rair_rio::IoError;
+    /// use rair_io::RIO;
+    /// use rair_io::IoMode;
+    /// use rair_io::IoError;
     /// fn main() -> Result<(), IoError> {
     ///     let mut io = RIO::new();
     ///     io.open("foo.txt", IoMode::READ)?;
@@ -204,8 +204,8 @@ impl RIO {
     /// # Example
     ///
     /// ```
-    /// use rair_rio::RIO;
-    /// use rair_rio::IoMode;
+    /// use rair_io::RIO;
+    /// use rair_io::IoMode;
     /// let mut io = RIO::new();
     /// io.open_at("foo.txt", IoMode::READ, 0x20);
     /// let mut fillme: Vec<u8> = vec![0; 8];
@@ -231,8 +231,8 @@ impl RIO {
     /// # Example
     ///
     /// ```
-    /// use rair_rio::RIO;
-    /// use rair_rio::IoMode;
+    /// use rair_io::RIO;
+    /// use rair_io::IoMode;
     /// let mut io = RIO::new();
     /// io.open_at("foo.txt", IoMode::READ, 0x20);
     /// let data = io.pread_sparce(0x20, 0x50); //reads at most 0x50 bytes from foo.txt
@@ -256,8 +256,8 @@ impl RIO {
     /// # Example
     ///
     /// ```
-    /// use rair_rio::RIO;
-    /// use rair_rio::IoMode;
+    /// use rair_io::RIO;
+    /// use rair_io::IoMode;
     /// let mut io = RIO::new();
     /// io.open_at("foo.txt", IoMode::READ, 0x20);
     /// let fillme: Vec<u8> = vec![0; 8];
