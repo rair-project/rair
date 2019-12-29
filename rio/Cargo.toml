@@ -1,5 +1,5 @@
 [package]
-name = "rio"
+name = "rair-rio"
 version = "0.1.0"
 authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
 license = " LGPL-3.0-or-later"
