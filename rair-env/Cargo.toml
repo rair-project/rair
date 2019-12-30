@@ -1,5 +1,5 @@
 [package]
-name = "renv"
+name = "rair-env"
 version = "0.1.0"
 authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
 edition = "2018"
