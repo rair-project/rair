@@ -18,7 +18,7 @@ name = "rair"
 path = "src/rair.rs"
 
 [dependencies]
-clap = "2.33"
+clap = {version = "2.33", features = ["yaml"]}
 rustyline = "5.0"
 rustyline-derive = "0.2"
 app_dirs = "1.2"

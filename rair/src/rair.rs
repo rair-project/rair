@@ -8,21 +8,21 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #[macro_use]
 extern crate clap;
 extern crate app_dirs;
+extern crate rair_io;
 extern crate rcmd;
 extern crate rcore;
-extern crate rair_io;
 extern crate rtrees;
 extern crate rustyline;
 extern crate rustyline_derive;
@@ -31,11 +31,11 @@ extern crate yansi;
 mod lineformatter;
 
 use app_dirs::*;
-use clap::{App, Arg};
+use clap::App;
 use lineformatter::LineFormatter;
+use rair_io::*;
 use rcmd::*;
 use rcore::{panic_msg, str_to_num, Core, Writer};
-use rair_io::*;
 use rustyline::error::ReadlineError;
 use rustyline::{CompletionType, Config, EditMode, Editor, OutputStreamType};
 use std::fs::{File, OpenOptions};
@@ -52,19 +52,8 @@ pub fn hist_file() -> PathBuf {
 }
 
 fn main() {
-    let matches = App::new("rair")
-        .version(crate_version!())
-        .version_short("v")
-        .arg(
-            Arg::with_name("Permission")
-                .help("File permision: Permission can be R, C, or RW case insensitive, the default is R")
-                .short("p")
-                .long("perm")
-                .takes_value(true),
-        )
-        .arg(Arg::with_name("Paddr").help("Physical Base address").short("P").long("phy").takes_value(true))
-        .arg(Arg::with_name("File").help("Binary file to be loaded").takes_value(true).required(true))
-        .get_matches();
+    let yaml = load_yaml!("cli.yaml");
+    let matches = App::from_yaml(yaml).version(crate_version!()).version_short("v").get_matches();
     let mut core = Core::new();
     let mut perm: IoMode = IoMode::READ;
     let mut paddr = None;
