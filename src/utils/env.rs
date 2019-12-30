@@ -17,7 +17,7 @@
 
 use core::*;
 use helper::*;
-use renv::EnvData;
+use rair_env::EnvData;
 use std::io::Write;
 use yansi::Paint;
 #[derive(Default)]
@@ -227,7 +227,7 @@ impl Cmd for EnvironmentHelp {
 #[cfg(test)]
 mod test_env {
     use super::*;
-    use renv::Environment as Env;
+    use rair_env::Environment as Env;
     use writer::*;
     #[test]
     fn test_help() {

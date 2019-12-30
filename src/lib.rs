@@ -18,7 +18,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 extern crate flate2;
-extern crate renv;
+extern crate rair_env;
 extern crate rair_io;
 extern crate rtrees;
 extern crate serde;

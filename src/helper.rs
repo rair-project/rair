@@ -16,7 +16,7 @@
  */
 
 use core::*;
-use renv::Environment;
+use rair_env::Environment;
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::fmt;
