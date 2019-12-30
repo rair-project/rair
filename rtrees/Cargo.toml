@@ -2,7 +2,7 @@
 name = "rtrees"
 version = "0.1.0"
 authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
-license = " LGPL-3.0-or-later"
+license = "LGPL-3.0-or-later"
 repository = "https://github.com/oddcoder/rair"
 keywords = ["Trees", "Intervals", "BST", "BK"]
 description = "A Bunch of completely safe augmented tree implementation in rust"

@@ -10,11 +10,11 @@ members = [
 name = "rcore"
 version = "0.1.0"
 authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
-license = "LGPL"
+license = "LGPL-3.0-or-later"
 repository = "https://github.com/oddcoder/rair"
 keywords = ["Rair", "Core"]
 description = "Core module for Rair"
-categories = ["CLI"]
+categories = ["cli"]
 readme = "readme.md"
 
 [dependencies]
