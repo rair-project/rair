@@ -25,7 +25,7 @@ app_dirs = "1.2"
 yansi = "0.5"
 rcmd = {path = "rcmd"}
 rtrees = {git = "https://github.com/rair-project/rair-core"}
-rio = {git = "https://github.com/rair-project/rair-core"}
+rair-io = {git = "https://github.com/rair-project/rair-core"}
 rcore = {git = "https://github.com/rair-project/rair-core"}
 #rtrees = {path = "../rair-core/rtrees"}
 #rio = {path = "../rair-core/rio"}
