@@ -2,14 +2,15 @@
 members = [
   "rcmd",
 ]
+
 [package]
 name = "rair"
 description = "Reverse Engineering framework written in rust."
 version = "0.1.0"
 authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
-license = "GPL"
+license = "GPL-3.0-or-later"
 repository = "https://github.com/oddcoder/rair"
-readme = "README.md"
+readme = "readme.md"
 keywords = ["Reverse Engineering", "Assembly", "Disassembly", "Malware", "Static Analysis"]
 categories = ["command-line-utilities", "Reverse-Engineering"]
 
