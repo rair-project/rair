@@ -3,7 +3,19 @@ name = "rbdl"
 version = "0.1.0"
 authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
 edition = "2018"
+autotests = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "rbdl"
+proc-macro = true
 
 [dependencies]
+syn = {version = "1.0", features=["extra-traits", "full"]}
+quote = "1.0"
+[[test]]
+name = "rbdl_testing"
+path = "tests/run_tests.rs"
+
+[dev-dependencies]
+trybuild = "1.0"
