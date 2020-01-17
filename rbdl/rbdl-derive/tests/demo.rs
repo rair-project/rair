@@ -16,7 +16,7 @@
 
 use rbdl::*;
 
-rbdl!(
+rbdl_inline!(
     FileType: enum {
         #[static='0']
         Regular: char,

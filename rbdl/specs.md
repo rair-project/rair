@@ -437,7 +437,7 @@ FullFile: struct {
 
 grammar.rs
 ```rust
-rbdl_file!("grammar.rdbl")
+rbdl_include!("grammar.rdbl")
 
 fn version_sel(version: &Version) -> DataShadow {
  match version {

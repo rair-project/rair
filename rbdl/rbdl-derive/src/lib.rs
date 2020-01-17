@@ -1,8 +1,6 @@
 extern crate proc_macro;
-extern crate quote;
-extern crate syn;
 /*
- * rbdl: rair binary descriptor language impelementation
+ * rbdl-derive: rair binary descriptor language derive macros.
  * Copyright (C) 2019  Oddcoder
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,9 +15,10 @@ extern crate syn;
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+extern crate rbdl_syn;
+extern crate syn;
 
-mod rbdl_syn;
-
+// extern crate quote;
 use proc_macro::TokenStream;
 use rbdl_syn::*;
 use std::fs::File as FsFile;
@@ -28,7 +27,7 @@ use std::path::PathBuf;
 use syn::{parse_macro_input, LitStr};
 
 #[proc_macro]
-pub fn rbdl_file(input: TokenStream) -> TokenStream {
+pub fn rbdl_include(input: TokenStream) -> TokenStream {
     let definition_file = parse_macro_input!(input as LitStr);
     let mut path = PathBuf::new();
     path.push(env!("CARGO_MANIFEST_DIR"));
@@ -42,11 +41,11 @@ pub fn rbdl_file(input: TokenStream) -> TokenStream {
         panic!(format!("{}: {}", &definition_file.value(), e));
     }
     let stream: proc_macro::TokenStream = definitions.parse().unwrap();
-    return rbdl(stream);
+    return rbdl_inline(stream);
 }
 
 #[proc_macro]
-pub fn rbdl(input: TokenStream) -> TokenStream {
+pub fn rbdl_inline(input: TokenStream) -> TokenStream {
     let _parse_tree = parse_macro_input!(input as RBDLFile);
     //println!("{:#?}", parse_tree);
     return TokenStream::new();

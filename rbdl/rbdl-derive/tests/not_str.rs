@@ -14,9 +14,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use rbdl::rbdl_file;
+use rbdl::*;
 
-rbdl_file!("tests/rbdl/binary.rbdl");
+rbdl_include!(2 + 2);
 
 fn main() {
 

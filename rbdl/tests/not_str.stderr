@@ -1,5 +1,0 @@
-error: expected string literal
-  --> $DIR/not_str.rs:19:12
-   |
-19 | rbdl_file!(2 + 2);
-   |            ^
