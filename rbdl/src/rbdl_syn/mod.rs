@@ -193,6 +193,7 @@ pub enum RBDLLit {
     Int(LitInt),
     Float(LitFloat),
     Bool(LitBool),
+    Ident(Ident),
     StrVec(LitVec<LitStr>),
     ByteStrVec(LitVec<LitByteStr>),
     ByteVec(LitVec<LitByte>),
@@ -200,6 +201,7 @@ pub enum RBDLLit {
     IntVec(LitVec<LitInt>),
     FloatVec(LitVec<LitFloat>),
     BoolVec(LitVec<LitBool>),
+    IdentVec(LitVec<Ident>)
 }
 
 impl RBDLLit {
@@ -207,30 +209,43 @@ impl RBDLLit {
         let ahead = input.fork();
         let content;
         bracketed!(content in ahead);
-        let vec = match content.parse::<Lit>()? {
-            Lit::Str(_) => RBDLLit::StrVec(input.parse::<LitVec<LitStr>>()?),
-            Lit::ByteStr(_) => RBDLLit::ByteStrVec(input.parse::<LitVec<LitByteStr>>()?),
-            Lit::Byte(_) => RBDLLit::ByteVec(input.parse::<LitVec<LitByte>>()?),
-            Lit::Char(_) => RBDLLit::CharVec(input.parse::<LitVec<LitChar>>()?),
-            Lit::Int(_) => RBDLLit::IntVec(input.parse::<LitVec<LitInt>>()?),
-            Lit::Float(_) => RBDLLit::FloatVec(input.parse::<LitVec<LitFloat>>()?),
-            Lit::Bool(_) => RBDLLit::BoolVec(input.parse::<LitVec<LitBool>>()?),
-            _ => panic!("Unknown literal type"),
-        };
+        let vec;
+        if content.peek(Lit) {
+            vec = match content.parse::<Lit>()? {
+                Lit::Str(_) => RBDLLit::StrVec(input.parse::<LitVec<LitStr>>()?),
+                Lit::ByteStr(_) => RBDLLit::ByteStrVec(input.parse::<LitVec<LitByteStr>>()?),
+                Lit::Byte(_) => RBDLLit::ByteVec(input.parse::<LitVec<LitByte>>()?),
+                Lit::Char(_) => RBDLLit::CharVec(input.parse::<LitVec<LitChar>>()?),
+                Lit::Int(_) => RBDLLit::IntVec(input.parse::<LitVec<LitInt>>()?),
+                Lit::Float(_) => RBDLLit::FloatVec(input.parse::<LitVec<LitFloat>>()?),
+                Lit::Bool(_) => RBDLLit::BoolVec(input.parse::<LitVec<LitBool>>()?),
+                _ => panic!("Unknown literal type"),
+            };
+        } else if content.peek(Ident) {
+            vec = RBDLLit::IdentVec(input.parse::<LitVec<Ident>>()?);
+        } else {
+            panic!("Expected Idenitifier or Literal.");
+        }
         Ok(vec)
     }
     fn parse_lit(input: ParseStream) -> Result<Self> {
-        let lit = match input.parse::<Lit>()? {
-            Lit::Str(s) => RBDLLit::Str(s),
-            Lit::ByteStr(bs) => RBDLLit::ByteStr(bs),
-            Lit::Byte(b) => RBDLLit::Byte(b),
-            Lit::Char(c) => RBDLLit::Char(c),
-            Lit::Int(i) => RBDLLit::Int(i),
-            Lit::Float(f) => RBDLLit::Float(f),
-            Lit::Bool(b) => RBDLLit::Bool(b),
-            _ => panic!("Unknown literal type"),
-        };
-        Ok(lit)
+        if input.peek(Lit) {
+            let lit = match input.parse::<Lit>()? {
+                Lit::Str(s) => RBDLLit::Str(s),
+                Lit::ByteStr(bs) => RBDLLit::ByteStr(bs),
+                Lit::Byte(b) => RBDLLit::Byte(b),
+                Lit::Char(c) => RBDLLit::Char(c),
+                Lit::Int(i) => RBDLLit::Int(i),
+                Lit::Float(f) => RBDLLit::Float(f),
+                Lit::Bool(b) => RBDLLit::Bool(b),
+                _ => panic!("Unknown literal type"),
+            };
+            return Ok(lit);
+        } else if input.peek(Ident) {
+            return Ok(RBDLLit::Ident(input.parse::<Ident>()?));
+        } else {
+            panic!("Expected Idenitifier or Literal.");
+        }
     }
 }
 impl Parse for RBDLLit {
