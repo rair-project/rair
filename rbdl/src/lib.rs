@@ -31,7 +31,7 @@ pub fn rbdl_file(input: TokenStream) -> TokenStream {
 
 #[proc_macro]
 pub fn rbdl(input: TokenStream) -> TokenStream {
-    let parse_tree = parse_macro_input!(input as RBDLFile);
-    println!("{:#?}", parse_tree);
+    let _parse_tree = parse_macro_input!(input as RBDLFile);
+    //println!("{:#?}", parse_tree);
     return TokenStream::new();
 }
