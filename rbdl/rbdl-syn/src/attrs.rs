@@ -21,6 +21,7 @@ use syn::punctuated::Punctuated;
 use syn::token::{Bracket, Comma, Eq, Pound};
 use syn::{bracketed, Ident, Result, Token};
 
+/// Attributes are defined as `#[key1, key2=value2, ..]`
 #[derive(Debug)]
 pub struct Attributes {
     pub pound_token: Pound,
@@ -31,7 +32,7 @@ pub struct Attributes {
 impl Attributes {
     pub fn parse_outer(input: ParseStream) -> Result<Option<Self>> {
         if input.peek(Token!(#)) {
-            Attributes::parse(input).map(|ok| Some(ok))
+            Attributes::parse(input).map(Some)
         } else {
             Ok(None)
         }
@@ -41,9 +42,11 @@ impl Attributes {
 impl Parse for Attributes {
     fn parse(input: ParseStream) -> Result<Self> {
         let content;
+        let pound = input.parse()?;
+        let bracket = bracketed!(content in input);
         Ok(Attributes {
-            pound_token: input.parse()?,
-            bracket_token: bracketed!(content in input),
+            pound_token: pound,
+            bracket_token: bracket,
             attrs: content.parse_terminated(Attribute::parse)?,
         })
     }
@@ -90,5 +93,70 @@ impl Parse for ValuedAttribute {
             equal_token: input.parse()?,
             value: input.parse()?,
         })
+    }
+}
+
+#[cfg(test)]
+mod test_rbdl_syn_attrs {
+    use super::*;
+    use syn::parse_str;
+    #[test]
+    fn test_attribute_unvalued() {
+        let attrs: Attributes = parse_str("#[key]").unwrap();
+        assert_eq!(attrs.attrs.len(), 1);
+        let attr = attrs.attrs.first().unwrap();
+        if let Attribute::Unvalued(uv) = attr {
+            assert_eq!(uv.ident, "key");
+        } else {
+            panic!("Expected unvalued Attribute");
+        }
+    }
+
+    #[test]
+    fn test_attribute_valued() {
+        let attrs: Attributes = parse_str("#[key=value]").unwrap();
+        assert_eq!(attrs.attrs.len(), 1);
+        let attr = attrs.attrs.first().unwrap();
+        if let Attribute::Valued(v) = attr {
+            assert_eq!(v.ident, "key");
+            match &v.value {
+                RBDLValue::Ident(i) => assert_eq!(i, "value"),
+                _ => panic!("Expected Ident value"),
+            }
+        } else {
+            panic!("Expected valued Attribute");
+        }
+    }
+
+    #[test]
+    fn test_attributes_multi() {
+        let attrs: Attributes = parse_str("#[key=value, key2, key3=[\"a\", \"b\", \"c\"]]").unwrap();
+        assert_eq!(attrs.attrs.len(), 3);
+        let mut iter = attrs.attrs.iter();
+        let attr = iter.next().unwrap();
+        if let Attribute::Valued(v) = attr {
+            assert_eq!(v.ident, "key");
+            match &v.value {
+                RBDLValue::Ident(i) => assert_eq!(i, "value"),
+                _ => panic!("Expected Ident value"),
+            }
+        } else {
+            panic!("Expected valued Attribute");
+        }
+        let attr = iter.next().unwrap();
+        if let Attribute::Unvalued(uv) = attr {
+            assert_eq!(uv.ident, "key2");
+        } else {
+            panic!("Expected unvalued Attribute");
+        }
+        let attr = iter.next().unwrap();
+        if let Attribute::Valued(v) = attr {
+            assert_eq!(v.ident, "key3");
+            match &v.value {
+                RBDLValue::Vec(_) => (),
+                _ => panic!("Expected Vec value"),
+            }
+        }
+        assert!(iter.next().is_none());
     }
 }
