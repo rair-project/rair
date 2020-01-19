@@ -16,13 +16,17 @@
  */
 extern crate syn;
 mod attrs;
+mod fields;
+mod types;
 mod value;
 mod vec;
+
 pub use attrs::*;
+pub use fields::*;
 use syn::parse::{Parse, ParseStream};
-use syn::punctuated::Punctuated;
-use syn::token::{Brace, Colon, Comma, Enum, Struct};
-use syn::{braced, Ident, Result, Token, Type};
+use syn::token::{Colon, Enum, Struct};
+use syn::{Ident, Result, Token};
+pub use types::*;
 pub use value::*;
 pub use vec::*;
 
@@ -106,41 +110,6 @@ impl Parse for RBDLEnum {
             colon_token: input.parse()?,
             enum_token: input.parse()?,
             fields: input.parse()?,
-        })
-    }
-}
-
-#[derive(Debug)]
-pub struct RBDLFields {
-    pub brace_token: Brace,
-    pub named: Punctuated<RBDLField, Comma>,
-}
-
-impl Parse for RBDLFields {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let content;
-        Ok(RBDLFields {
-            brace_token: braced!(content in input),
-            named: content.parse_terminated(RBDLField::parse)?,
-        })
-    }
-}
-
-#[derive(Debug)]
-pub struct RBDLField {
-    pub attrs: Option<Attributes>,
-    pub ident: Ident,
-    pub colon_token: Colon,
-    pub ty: Type,
-}
-
-impl Parse for RBDLField {
-    fn parse(input: ParseStream) -> Result<Self> {
-        Ok(RBDLField {
-            attrs: input.call(Attributes::parse_outer)?,
-            ident: input.parse()?,
-            colon_token: input.parse()?,
-            ty: input.parse()?,
         })
     }
 }
