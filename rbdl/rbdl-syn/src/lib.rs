@@ -18,6 +18,7 @@ extern crate syn;
 mod attrs;
 mod enums;
 mod fields;
+mod file;
 mod structs;
 mod types;
 mod value;
@@ -26,53 +27,8 @@ mod vec;
 pub use attrs::*;
 pub use enums::*;
 pub use fields::*;
+pub use file::*;
 pub use structs::*;
-use syn::parse::{Parse, ParseStream};
-use syn::token::Colon;
-use syn::{Ident, Result, Token};
 pub use types::*;
 pub use value::*;
 pub use vec::*;
-
-
-#[derive(Debug)]
-pub struct RBDLFile {
-    pub items: Vec<RBDLItem>,
-}
-
-impl Parse for RBDLFile {
-    fn parse(input: ParseStream) -> Result<Self> {
-        Ok(RBDLFile {
-            items: {
-                let mut items = Vec::new();
-                while !input.is_empty() {
-                    items.push(input.parse()?);
-                }
-                items
-            },
-        })
-    }
-}
-
-#[derive(Debug)]
-pub enum RBDLItem {
-    Struct(RBDLStruct),
-    Enum(RBDLEnum),
-}
-
-impl Parse for RBDLItem {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let ahead = input.fork();
-        ahead.call::<Option<Attributes>>(Attributes::parse_outer)?;
-        ahead.parse::<Ident>()?;
-        ahead.parse::<Colon>()?;
-        let lookahead = ahead.lookahead1();
-        if lookahead.peek(Token!(struct)) {
-            Ok(RBDLItem::Struct(input.parse()?))
-        } else if lookahead.peek(Token!(enum)) {
-            Ok(RBDLItem::Enum(input.parse()?))
-        } else {
-            Err(lookahead.error())
-        }
-    }
-}
