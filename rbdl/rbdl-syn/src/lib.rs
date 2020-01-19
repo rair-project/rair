@@ -16,15 +16,17 @@
  */
 extern crate syn;
 mod attrs;
+mod enums;
 mod fields;
 mod types;
 mod value;
 mod vec;
 
 pub use attrs::*;
+pub use enums::*;
 pub use fields::*;
 use syn::parse::{Parse, ParseStream};
-use syn::token::{Colon, Enum, Struct};
+use syn::token::{Colon, Struct};
 use syn::{Ident, Result, Token};
 pub use types::*;
 pub use value::*;
@@ -88,27 +90,6 @@ impl Parse for RBDLStruct {
             ident: input.parse()?,
             colon_token: input.parse()?,
             struct_token: input.parse()?,
-            fields: input.parse()?,
-        })
-    }
-}
-
-#[derive(Debug)]
-pub struct RBDLEnum {
-    pub attrs: Option<Attributes>,
-    pub ident: Ident,
-    pub colon_token: Colon,
-    pub enum_token: Enum,
-    pub fields: RBDLFields,
-}
-
-impl Parse for RBDLEnum {
-    fn parse(input: ParseStream) -> Result<Self> {
-        Ok(RBDLEnum {
-            attrs: input.call(Attributes::parse_outer)?,
-            ident: input.parse()?,
-            colon_token: input.parse()?,
-            enum_token: input.parse()?,
             fields: input.parse()?,
         })
     }
