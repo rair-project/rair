@@ -4,7 +4,8 @@ members = [
   "rair-io",
   "rtrees",
   "test_file",
-  "rbdl/rbdl-syn"
+  "rbdl/rbdl-syn",
+  "rbdl/rbdl-ast"
 ]
 
 [package]

@@ -27,6 +27,15 @@ pub struct RBDLVec<T> {
     pub content: Punctuated<T, Comma>,
 }
 
+impl<T, U> From<RBDLVec<T>> for Vec<U>
+where
+    U: From<T>,
+{
+    fn from(parse_tree: RBDLVec<T>) -> Vec<U> {
+        parse_tree.content.into_iter().map(|t| t.into()).collect()
+    }
+}
+
 impl<T> Parse for RBDLVec<T>
 where
     T: Parse,
