@@ -18,6 +18,7 @@
 use rbdl_syn::RBDLType;
 use syn::Ident;
 
+// AST representation for RBDL Types.
 #[derive(Debug, PartialEq)]
 pub struct AstType {
     pub ty: Ident,
@@ -32,5 +33,32 @@ impl From<RBDLType> for AstType {
                 Some(types) => types.args.into_iter().map(|t| t.into()).collect(),
             },
         }
+    }
+}
+
+#[cfg(test)]
+
+mod test_types {
+    use super::*;
+    use syn::parse_str;
+    #[test]
+    fn test_type() {
+        let ty: RBDLType = parse_str("bla").unwrap();
+        let ast = AstType::from(ty);
+        assert_eq!(ast.ty, "bla");
+        assert_eq!(ast.args.len(), 0);
+    }
+    #[test]
+    fn test_type_with_args() {
+        let ty: RBDLType = parse_str("bla<abc, def<xyz>>").unwrap();
+        let ast = AstType::from(ty);
+        assert_eq!(ast.ty, "bla");
+        assert_eq!(ast.args.len(), 2);
+        assert_eq!(ast.args[0].ty, "abc");
+        assert_eq!(ast.args[0].args.len(), 0);
+        assert_eq!(ast.args[1].ty, "def");
+        assert_eq!(ast.args[1].args.len(), 1);
+        assert_eq!(ast.args[1].args[0].ty, "xyz");
+        assert_eq!(ast.args[1].args[0].args.len(), 0);
     }
 }
