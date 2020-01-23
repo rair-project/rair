@@ -44,7 +44,7 @@ impl TryFrom<RBDLField> for AstField {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AstAttrValue {
     Str(LitStr),
     ByteStr(LitByteStr),
