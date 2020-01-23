@@ -55,3 +55,16 @@ impl TryFrom<Attributes> for Table {
         }
     }
 }
+
+#[cfg(test)]
+mod test_table {
+    use super::*;
+    use syn::parse_str;
+    //use std::error::Error;
+    #[test]
+    fn test_duplicate() {
+        let parse_tree: Attributes = parse_str("#[a, a=x, a = y]").unwrap();
+        let ast = Table::try_from(parse_tree);
+        assert!(ast.is_err());
+    }
+}

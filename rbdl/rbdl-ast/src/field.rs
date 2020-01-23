@@ -73,3 +73,16 @@ impl From<RBDLValue> for AstAttrValue {
         }
     }
 }
+
+#[cfg(test)]
+mod test_field {
+    use super::*;
+    use syn::parse_str;
+    //use std::error::Error;
+    #[test]
+    fn test_duplicate() {
+        let parse_tree: RBDLField = parse_str("#[a, a=x, a = y]x: A").unwrap();
+        let ast = AstField::try_from(parse_tree);
+        assert!(ast.is_err());
+    }
+}

@@ -114,3 +114,24 @@ impl TryFrom<RBDLItem> for FullItem {
         }
     }
 }
+
+#[cfg(test)]
+mod test_item {
+    use super::*;
+    use syn::parse_str;
+    //use std::error::Error;
+    #[test]
+    fn test_duplicate() {
+        let parse_tree: RBDLItem = parse_str(
+            "\
+        x: struct{ \
+            #[a, a=x, a = y]
+            x: A\
+        }\
+        ",
+        )
+        .unwrap();
+        let ast = FullItem::try_from(parse_tree);
+        assert!(ast.is_err());
+    }
+}
