@@ -78,9 +78,39 @@ impl From<RBDLValue> for AstAttrValue {
 mod test_field {
     use super::*;
     use syn::parse_str;
-    //use std::error::Error;
+
     #[test]
-    fn test_duplicate() {
+    fn test_simple_field() {
+        let parse_tree: RBDLField = parse_str("x: A").unwrap();
+        let ast = AstField::try_from(parse_tree).unwrap();
+        assert_eq!(ast.ident, "x");
+        assert!(ast.attrs.is_empty());
+        let ty = ast.ty;
+        assert_eq!(ty.ty, "A");
+        assert_eq!(ty.args.len(), 0);
+    }
+    #[test]
+    fn test_meta_field() {
+        let parse_tree: RBDLField = parse_str("x: Vec<u8>").unwrap();
+        let ast = AstField::try_from(parse_tree).unwrap();
+        assert_eq!(ast.ident, "x");
+        assert!(ast.attrs.is_empty());
+        let ty = ast.ty;
+        assert_eq!(ty.ty, "Vec");
+        assert_eq!(ty.args.len(), 1);
+    }
+    #[test]
+    fn test_field_attributes() {
+        let parse_tree: RBDLField = parse_str("#[a, b]x: u8").unwrap();
+        let ast = AstField::try_from(parse_tree).unwrap();
+        assert_eq!(ast.ident, "x");
+        assert_eq!(ast.attrs.len(), 2);
+        let ty = ast.ty;
+        assert_eq!(ty.ty, "u8");
+        assert_eq!(ty.args.len(), 0);
+    }
+    #[test]
+    fn test_duplicate_attribute() {
         let parse_tree: RBDLField = parse_str("#[a, a=x, a = y]x: A").unwrap();
         let ast = AstField::try_from(parse_tree);
         assert!(ast.is_err());

@@ -63,10 +63,10 @@ mod test_table {
     #[test]
     fn test_unvalued() {
         let parse_tree: Attributes = parse_str("#[a, b, c]").unwrap();
-        let a : Ident = parse_str("a").unwrap();
-        let b : Ident = parse_str("b").unwrap();
-        let c : Ident = parse_str("c").unwrap();
-        let d : Ident = parse_str("d").unwrap();
+        let a: Ident = parse_str("a").unwrap();
+        let b: Ident = parse_str("b").unwrap();
+        let c: Ident = parse_str("c").unwrap();
+        let d: Ident = parse_str("d").unwrap();
         let ast = Table::try_from(parse_tree).unwrap().unwrap();
         assert_eq!(ast.get(&a).unwrap(), &AstAttrValue::None);
         assert_eq!(ast.get(&b).unwrap(), &AstAttrValue::None);
@@ -76,10 +76,10 @@ mod test_table {
     #[test]
     fn test_valued() {
         let parse_tree: Attributes = parse_str("#[a=a, b=b, c=c]").unwrap();
-        let a : Ident = parse_str("a").unwrap();
-        let b : Ident = parse_str("b").unwrap();
-        let c : Ident = parse_str("c").unwrap();
-        let d : Ident = parse_str("d").unwrap();
+        let a: Ident = parse_str("a").unwrap();
+        let b: Ident = parse_str("b").unwrap();
+        let c: Ident = parse_str("c").unwrap();
+        let d: Ident = parse_str("d").unwrap();
         let ast = Table::try_from(parse_tree).unwrap().unwrap();
         assert_eq!(ast.get(&a).unwrap(), &AstAttrValue::Ident(a.clone()));
         assert_eq!(ast.get(&b).unwrap(), &AstAttrValue::Ident(b.clone()));
@@ -90,10 +90,10 @@ mod test_table {
     #[test]
     fn test_mixed() {
         let parse_tree: Attributes = parse_str("#[a, b=b, c]").unwrap();
-        let a : Ident = parse_str("a").unwrap();
-        let b : Ident = parse_str("b").unwrap();
-        let c : Ident = parse_str("c").unwrap();
-        let d : Ident = parse_str("d").unwrap();
+        let a: Ident = parse_str("a").unwrap();
+        let b: Ident = parse_str("b").unwrap();
+        let c: Ident = parse_str("c").unwrap();
+        let d: Ident = parse_str("d").unwrap();
         let ast = Table::try_from(parse_tree).unwrap().unwrap();
         assert_eq!(ast.get(&a).unwrap(), &AstAttrValue::None);
         assert_eq!(ast.get(&b).unwrap(), &AstAttrValue::Ident(b.clone()));
