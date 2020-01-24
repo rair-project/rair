@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use super::AstAttrValue;
+use super::ErrorList;
 use rbdl_syn::{Attribute, Attributes};
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -32,24 +33,19 @@ impl TryFrom<Attributes> for Table {
 
     fn try_from(parse_tree: Attributes) -> Result<Table> {
         let mut tbl = HashMap::new();
-        let mut errs: Option<Error> = None;
+        let mut errs = ErrorList::new();
         for attr in parse_tree.attrs {
             let (k, v): (Ident, AstAttrValue) = match attr {
                 Attribute::Valued(v) => (v.ident, v.value.into()),
                 Attribute::Unvalued(u) => (u.ident, AstAttrValue::None),
             };
             if tbl.contains_key(&k) {
-                let err = Error::new(k.span(), format!("Attribute `{}` has been already set before", k));
-                if errs.is_some() {
-                    errs.as_mut().unwrap().combine(err);
-                } else {
-                    errs = Some(err);
-                }
+                errs.push(k.span(), format!("Attribute `{}` has been already set before", k));
             } else {
                 tbl.insert(k, v);
             }
         }
-        match errs {
+        match errs.collapse() {
             Some(e) => Err(e),
             None => Ok(Table(tbl)),
         }

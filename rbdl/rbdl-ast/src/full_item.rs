@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+use super::ErrorList;
 use super::{AstField, AstItem, AstItemContent, Table};
 use rbdl_syn::{RBDLEnum, RBDLFields, RBDLItem, RBDLStruct};
 use std::collections::{HashMap, HashSet};
@@ -27,30 +28,19 @@ impl FullItem {
         (self.0, self.1)
     }
 }
-fn prep_fields(rbdl_fields: RBDLFields) -> (Vec<AstField>, Option<Error>) {
+fn prep_fields(rbdl_fields: RBDLFields) -> (Vec<AstField>, ErrorList) {
     let mut set = HashSet::new();
     let mut fields = Vec::new();
-    let mut err = None;
+    let mut err = ErrorList::new();
     for field in rbdl_fields.named {
         if set.contains(&field.ident) {
-            let e = Error::new(field.ident.span(), format!("Field `{}` is already declared before", &field.ident));
-            if err.is_none() {
-                err = Some(e);
-            } else {
-                err.as_mut().unwrap().combine(e);
-            }
+            err.push(field.ident.span(), format!("Field `{}` is already declared before", &field.ident));
         } else {
             set.insert(field.ident.clone());
         }
         match AstField::try_from(field) {
             Ok(f) => fields.push(f),
-            Err(e) => {
-                if err.is_none() {
-                    err = Some(e);
-                } else {
-                    err.as_mut().unwrap().combine(e);
-                }
-            }
+            Err(e) => err.push_err(e),
         }
     }
     (fields, err)
@@ -65,16 +55,10 @@ impl TryFrom<RBDLStruct> for FullItem {
         if let Some(rbdl_attrs) = parse_tree.attrs {
             match Table::try_from(rbdl_attrs) {
                 Ok(table) => attrs = table.unwrap(),
-                Err(e) => {
-                    if err.is_none() {
-                        err = Some(e);
-                    } else {
-                        err.as_mut().unwrap().combine(e);
-                    }
-                }
+                Err(e) => err.push_err(e),
             }
         }
-        match err {
+        match err.collapse() {
             Some(e) => Err(e),
             None => Ok(FullItem(ident, AstItem::Struct(AstItemContent { fields, attrs }))),
         }
@@ -89,16 +73,10 @@ impl TryFrom<RBDLEnum> for FullItem {
         if let Some(rbdl_attrs) = parse_tree.attrs {
             match Table::try_from(rbdl_attrs) {
                 Ok(table) => attrs = table.unwrap(),
-                Err(e) => {
-                    if err.is_none() {
-                        err = Some(e);
-                    } else {
-                        err.as_mut().unwrap().combine(e);
-                    }
-                }
+                Err(e) => err.push_err(e),
             }
         }
-        match err {
+        match err.collapse() {
             Some(e) => Err(e),
             None => Ok(FullItem(ident, AstItem::Enum(AstItemContent { fields, attrs }))),
         }
@@ -119,7 +97,6 @@ impl TryFrom<RBDLItem> for FullItem {
 mod test_item {
     use super::*;
     use syn::parse_str;
-    //use std::error::Error;
     #[test]
     fn test_duplicate() {
         let parse_tree: RBDLItem = parse_str(

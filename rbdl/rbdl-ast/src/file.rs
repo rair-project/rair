@@ -1,4 +1,4 @@
-use super::{AstAttrValue, AstField, FullItem};
+use super::{AstAttrValue, AstField, ErrorList, FullItem};
 use rbdl_syn::RBDLFile;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
@@ -8,30 +8,20 @@ use syn::{Error, Ident, Result};
 pub struct AstFile {
     pub items: HashMap<Ident, AstItem>,
 }
+
 impl TryFrom<RBDLFile> for AstFile {
     type Error = Error;
     fn try_from(parse_tree: RBDLFile) -> Result<AstFile> {
         let mut set = HashSet::new();
-        let mut err = None;
+        let mut err = ErrorList::new();
         let mut items = HashMap::with_capacity(parse_tree.items.len());
         for item in parse_tree.items {
             match FullItem::try_from(item) {
-                Err(e) => {
-                    if err.is_none() {
-                        err = Some(e);
-                    } else {
-                        err.as_mut().unwrap().combine(e);
-                    }
-                }
+                Err(e) => err.push_err(e),
                 Ok(full_item) => {
                     let (ident, ast_item) = full_item.unwrap();
                     if set.contains(&ident) {
-                        let e = Error::new(ident.span(), format!("`{}` is already defined before.", &ident));
-                        if err.is_none() {
-                            err = Some(e);
-                        } else {
-                            err.as_mut().unwrap().combine(e);
-                        }
+                        err.push(ident.span(), format!("`{}` is already defined before.", &ident));
                     } else {
                         set.insert(ident.clone());
                         items.insert(ident, ast_item);
@@ -39,7 +29,7 @@ impl TryFrom<RBDLFile> for AstFile {
                 }
             }
         }
-        match err {
+        match err.collapse() {
             Some(e) => Err(e),
             None => Ok(AstFile { items }),
         }
@@ -52,6 +42,33 @@ pub enum AstItem {
     Enum(AstItemContent),
 }
 
+impl AstItem {
+    pub fn unwrap(self) -> AstItemContent {
+        match self {
+            AstItem::Struct(s) => s,
+            AstItem::Enum(e) => e,
+        }
+    }
+    pub fn unwrap_ref(&self) -> &AstItemContent {
+        match self {
+            AstItem::Struct(s) => s,
+            AstItem::Enum(e) => e,
+        }
+    }
+    pub fn is_struct(&self) -> bool {
+        match self {
+            AstItem::Struct(_) => true,
+            AstItem::Enum(_) => false,
+        }
+    }
+    pub fn is_enum(&self) -> bool {
+        match self {
+            AstItem::Struct(_) => false,
+            AstItem::Enum(_) => true,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct AstItemContent {
     pub attrs: HashMap<Ident, AstAttrValue>,
@@ -62,7 +79,6 @@ pub struct AstItemContent {
 mod test_item {
     use super::*;
     use syn::parse_str;
-    //use std::error::Error;
     #[test]
     fn test_duplicate() {
         let parse_tree: RBDLFile = parse_str(
