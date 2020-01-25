@@ -70,7 +70,7 @@ mod enums_test {
     use super::*;
     use syn::parse_str;
     #[test]
-    fn test_enums() {
+    fn test_file() {
         let file: RBDLFile = parse_str(
             "\
         #[align=128]
