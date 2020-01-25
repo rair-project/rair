@@ -98,4 +98,16 @@ mod enums_test {
             panic!("Expected Enum found struct for item2");
         }
     }
+
+    #[test]
+    fn test_error() {
+        let err: Result<RBDLFile> = parse_str(
+            "\
+        Data: Struct {
+            x: i32\
+        }\
+        ",
+        );
+        assert!(err.is_err());
+    }
 }
