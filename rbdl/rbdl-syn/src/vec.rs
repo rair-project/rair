@@ -18,7 +18,6 @@ use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
 use syn::token::{Bracket, Comma};
 use syn::{bracketed, Result};
-
 /// Vector is defined as `[V1, V2, V3,..., Vn]` where `Vi` can be of type vector as well.
 
 #[derive(Debug)]
@@ -27,12 +26,12 @@ pub struct RBDLVec<T> {
     pub content: Punctuated<T, Comma>,
 }
 
-impl<T, U> From<RBDLVec<T>> for Vec<U>
+impl<T, U> Into<Vec<U>> for RBDLVec<T>
 where
     U: From<T>,
 {
-    fn from(parse_tree: RBDLVec<T>) -> Vec<U> {
-        parse_tree.content.into_iter().map(|t| t.into()).collect()
+    fn into(self) -> Vec<U> {
+        self.content.into_iter().map(|t| t.into()).collect()
     }
 }
 
