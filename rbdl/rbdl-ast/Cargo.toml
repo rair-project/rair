@@ -13,3 +13,4 @@ name = "rbdl_ast"
 rbdl-syn={path="../rbdl-syn"}
 syn = {version = "1.0", features=["extra-traits", "full"]}
 proc-macro2="1.0"
+lazy_static="1.4"

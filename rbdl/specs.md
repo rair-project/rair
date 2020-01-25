@@ -95,6 +95,7 @@ rust style comments
 * `hex` : hexadecimal digit(s).
 * `dec` : decimal digits(s).
 * `bin` : binary digit(s).
+* `char`: Characters.
 
 ### Types with variable size
 
@@ -166,9 +167,6 @@ Enum {
  v2: ExoticFileV2
 }
 ```
-
-* `Option\<T\>`: Wrapper around types that may be or may be not
-part of the file format. `Option<T>` is
 
 ### Attributes
 

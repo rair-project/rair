@@ -35,6 +35,9 @@ impl ErrorList {
     pub fn push_err(&mut self, e: Error) {
         self.list.push(e);
     }
+    pub fn append(&mut self, mut list: ErrorList) {
+        self.list.append(&mut list.list);
+    }
     pub fn collapse(mut self) -> Option<Error> {
         match self.list.len() {
             0 => None,
