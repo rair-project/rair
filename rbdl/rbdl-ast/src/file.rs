@@ -178,17 +178,121 @@ mod test_item {
     use super::*;
     use syn::parse_str;
     #[test]
-    fn test_duplicate() {
+    fn test_duplicate_attrs() {
         let parse_tree: RBDLFile = parse_str(
-            "\
-        x: struct{ \
-            #[a, a=x, a = y]
-            x: A\
-        }\
+            "
+            x: struct{
+                #[a, a=x, a = y]
+                x: A
+            }
         ",
         )
         .unwrap();
         let ast = AstFile::try_from(parse_tree);
         assert!(ast.is_err());
+    }
+
+    #[test]
+    fn test_duplicate_item() {
+        let parse_tree: RBDLFile = parse_str(
+            "
+            x: struct{
+                x: A
+            }
+            x: struct {
+                x: B
+            }
+        ",
+        )
+        .unwrap();
+        let ast = AstFile::try_from(parse_tree);
+        assert!(ast.is_err());
+    }
+    #[test]
+    fn test_no_duplicate() {
+        let parse_tree: RBDLFile = parse_str(
+            "
+            x: struct{
+                x: A
+            }
+            x: struct {
+                x: B
+            }
+        ",
+        )
+        .unwrap();
+        let ast = AstFile::try_from(parse_tree);
+        assert!(ast.is_err());
+    }
+
+    #[test]
+    fn test_types() {
+        let parse_tree: RBDLFile = parse_str(
+            "
+            x: struct{
+                x: i8,
+                y: i32
+            }
+        ",
+        )
+        .unwrap();
+        let ast = AstFile::try_from(parse_tree).unwrap();
+        assert!(ast.check_fields_types().is_none());
+    }
+
+    #[test]
+    fn test_self_recursion() {
+        let parse_tree: RBDLFile = parse_str(
+            "
+            x: struct{
+                x: i8,
+                y: x
+            }
+        ",
+        )
+        .unwrap();
+        let ast = AstFile::try_from(parse_tree).unwrap();
+        assert!(ast.check_fields_types().is_some());
+    }
+
+    #[test]
+    fn test_mutual_recursion() {
+        let parse_tree: RBDLFile = parse_str(
+            "
+            A: struct{
+                x: i8,
+                y: B
+            }
+            B: struct{
+                x: i8,
+                y: C
+            }
+            C: struct{
+                x: i8,
+                y: A
+            }
+        ",
+        )
+        .unwrap();
+        let ast = AstFile::try_from(parse_tree).unwrap();
+        assert!(ast.check_fields_types().is_some());
+    }
+
+    #[test]
+    fn test_struct_field() {
+        let parse_tree: RBDLFile = parse_str(
+            "
+            A: struct{
+                x: i8,
+                y: B
+            }
+            B: struct{
+                x: i8,
+            }
+        ",
+        )
+        .unwrap();
+        let ast = AstFile::try_from(parse_tree).unwrap();
+        assert!(ast.check_fields_types().is_none());
     }
 }
