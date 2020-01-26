@@ -141,28 +141,10 @@ pub enum AstItem {
 }
 
 impl AstItem {
-    pub fn unwrap(self) -> AstItemContent {
-        match self {
-            AstItem::Struct(s) => s,
-            AstItem::Enum(e) => e,
-        }
-    }
     pub fn unwrap_ref(&self) -> &AstItemContent {
         match self {
             AstItem::Struct(s) => s,
             AstItem::Enum(e) => e,
-        }
-    }
-    pub fn is_struct(&self) -> bool {
-        match self {
-            AstItem::Struct(_) => true,
-            AstItem::Enum(_) => false,
-        }
-    }
-    pub fn is_enum(&self) -> bool {
-        match self {
-            AstItem::Struct(_) => false,
-            AstItem::Enum(_) => true,
         }
     }
 }
@@ -365,6 +347,25 @@ mod test_item {
     }
 
     #[test]
+    fn test_invalid_type_arg4() {
+        let parse_tree: RBDLFile = parse_str(
+            "
+            A: struct{
+                x: i8,
+                y: vec<i8>
+            }
+            B: struct {
+                x: i8,
+                y: A<i8>
+            }
+        ",
+        )
+        .unwrap();
+        let ast = AstFile::try_from(parse_tree).unwrap();
+        assert!(ast.check_fields_types().is_some());
+    }
+
+    #[test]
     fn test_invalid_type() {
         let parse_tree: RBDLFile = parse_str(
             "
@@ -378,4 +379,7 @@ mod test_item {
         let ast = AstFile::try_from(parse_tree).unwrap();
         assert!(ast.check_fields_types().is_some());
     }
+
+
+
 }
