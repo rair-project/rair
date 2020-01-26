@@ -318,4 +318,64 @@ mod test_item {
         let ast = AstFile::try_from(parse_tree).unwrap();
         assert!(ast.check_fields_types().is_none());
     }
+
+    #[test]
+    fn test_invalid_type_arg() {
+        let parse_tree: RBDLFile = parse_str(
+            "
+            A: struct{
+                x: i8,
+                y: i16<i8>
+            }
+        ",
+        )
+        .unwrap();
+        let ast = AstFile::try_from(parse_tree).unwrap();
+        assert!(ast.check_fields_types().is_some());
+    }
+
+    #[test]
+    fn test_invalid_type_arg2() {
+        let parse_tree: RBDLFile = parse_str(
+            "
+            A: struct{
+                x: i8,
+                y: vec
+            }
+        ",
+        )
+        .unwrap();
+        let ast = AstFile::try_from(parse_tree).unwrap();
+        assert!(ast.check_fields_types().is_some());
+    }
+
+    #[test]
+    fn test_invalid_type_arg3() {
+        let parse_tree: RBDLFile = parse_str(
+            "
+            A: struct{
+                x: i8,
+                y: vec<i8, i16>
+            }
+        ",
+        )
+        .unwrap();
+        let ast = AstFile::try_from(parse_tree).unwrap();
+        assert!(ast.check_fields_types().is_some());
+    }
+
+    #[test]
+    fn test_invalid_type() {
+        let parse_tree: RBDLFile = parse_str(
+            "
+            A: struct{
+                x: i8,
+                y: B
+            }
+        ",
+        )
+        .unwrap();
+        let ast = AstFile::try_from(parse_tree).unwrap();
+        assert!(ast.check_fields_types().is_some());
+    }
 }
