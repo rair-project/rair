@@ -105,13 +105,13 @@ mod test_item {
         assert_eq!(ident, "x");
     }
     #[test]
-    fn test_duplicate_field_attributes() {
+    fn test_struct_duplicate_field_attributes() {
         let parse_tree: RBDLItem = parse_str(
-            "\
-        x: struct{ \
+            "
+        x: struct{
             #[a, a=x, a = y]
-            x: A\
-        }\
+            x: A
+        }
         ",
         )
         .unwrap();
@@ -119,8 +119,9 @@ mod test_item {
         assert!(ast.is_err());
     }
     #[test]
-    fn test_duplicate_fields() {
-        let parse_tree: RBDLItem = parse_str("
+    fn test_struct_duplicate_fields() {
+        let parse_tree: RBDLItem = parse_str(
+            "
         x: struct{
             #[a]
             x: A,
@@ -133,8 +134,9 @@ mod test_item {
         assert!(ast.is_err());
     }
     #[test]
-    fn test_passing_attribute() {
-        let parse_tree: RBDLItem = parse_str("
+    fn test_struct_passing_attribute() {
+        let parse_tree: RBDLItem = parse_str(
+            "
         #[a]
         x: struct{
             x: B
@@ -142,7 +144,7 @@ mod test_item {
         ",
         )
         .unwrap();
-        let a : Ident = parse_str("a").unwrap();
+        let a: Ident = parse_str("a").unwrap();
         let (ident, item) = FullItem::try_from(parse_tree).unwrap().unwrap();
         assert_eq!(ident, "x");
         if let AstItem::Struct(s) = item {
@@ -150,5 +152,81 @@ mod test_item {
         } else {
             panic!("Expected Struct!");
         }
+    }
+    #[test]
+    fn test_struct_failing_attribute() {
+        let parse_tree: RBDLItem = parse_str(
+            "
+        #[a, a]
+        x: struct{
+            x: B
+        }
+        ",
+        )
+        .unwrap();
+        assert!(FullItem::try_from(parse_tree).is_err());
+    }
+
+    #[test]
+    fn test_enum_duplicate_field_attributes() {
+        let parse_tree: RBDLItem = parse_str(
+            "\
+        x: enum{ \
+            #[a, a=x, a = y]
+            x: A\
+        }\
+        ",
+        )
+        .unwrap();
+        let ast = FullItem::try_from(parse_tree);
+        assert!(ast.is_err());
+    }
+    #[test]
+    fn test_enum_duplicate_fields() {
+        let parse_tree: RBDLItem = parse_str(
+            "
+        x: enum{
+            #[a]
+            x: A,
+            x: B
+        }
+        ",
+        )
+        .unwrap();
+        let ast = FullItem::try_from(parse_tree);
+        assert!(ast.is_err());
+    }
+    #[test]
+    fn test_enum_passing_attribute() {
+        let parse_tree: RBDLItem = parse_str(
+            "
+        #[a]
+        x: enum{
+            x: B
+        }
+        ",
+        )
+        .unwrap();
+        let a: Ident = parse_str("a").unwrap();
+        let (ident, item) = FullItem::try_from(parse_tree).unwrap().unwrap();
+        assert_eq!(ident, "x");
+        if let AstItem::Enum(e) = item {
+            assert_eq!(*e.attrs.get(&a).unwrap(), AstAttrValue::None);
+        } else {
+            panic!("Expected Enum!");
+        }
+    }
+    #[test]
+    fn test_enum_failing_attribute() {
+        let parse_tree: RBDLItem = parse_str(
+            "
+        #[a, a]
+        x: enum{
+            x: B
+        }
+        ",
+        )
+        .unwrap();
+        assert!(FullItem::try_from(parse_tree).is_err());
     }
 }
