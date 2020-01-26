@@ -96,9 +96,16 @@ impl TryFrom<RBDLItem> for FullItem {
 #[cfg(test)]
 mod test_item {
     use super::*;
+    use crate::AstAttrValue;
     use syn::parse_str;
     #[test]
-    fn test_duplicate() {
+    fn test_unwrap() {
+        let parse_tree: RBDLItem = parse_str("x: struct {a: T}").unwrap();
+        let (ident, _) = FullItem::try_from(parse_tree).unwrap().unwrap();
+        assert_eq!(ident, "x");
+    }
+    #[test]
+    fn test_duplicate_field_attributes() {
         let parse_tree: RBDLItem = parse_str(
             "\
         x: struct{ \
@@ -110,5 +117,38 @@ mod test_item {
         .unwrap();
         let ast = FullItem::try_from(parse_tree);
         assert!(ast.is_err());
+    }
+    #[test]
+    fn test_duplicate_fields() {
+        let parse_tree: RBDLItem = parse_str("
+        x: struct{
+            #[a]
+            x: A,
+            x: B
+        }
+        ",
+        )
+        .unwrap();
+        let ast = FullItem::try_from(parse_tree);
+        assert!(ast.is_err());
+    }
+    #[test]
+    fn test_passing_attribute() {
+        let parse_tree: RBDLItem = parse_str("
+        #[a]
+        x: struct{
+            x: B
+        }
+        ",
+        )
+        .unwrap();
+        let a : Ident = parse_str("a").unwrap();
+        let (ident, item) = FullItem::try_from(parse_tree).unwrap().unwrap();
+        assert_eq!(ident, "x");
+        if let AstItem::Struct(s) = item {
+            assert_eq!(*s.attrs.get(&a).unwrap(), AstAttrValue::None);
+        } else {
+            panic!("Expected Struct!");
+        }
     }
 }
