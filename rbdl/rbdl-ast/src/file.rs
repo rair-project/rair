@@ -279,6 +279,29 @@ mod test_item {
     }
 
     #[test]
+    fn test_arg_recursion() {
+        let parse_tree: RBDLFile = parse_str(
+            "
+            A: struct{
+                x: i8,
+                y: Vec<B>
+            }
+            B: struct{
+                x: i8,
+                y: C
+            }
+            C: struct{
+                x: i8,
+                y: A
+            }
+        ",
+        )
+        .unwrap();
+        let ast = AstFile::try_from(parse_tree).unwrap();
+        assert!(ast.check_fields_types().is_some());
+    }
+
+    #[test]
     fn test_struct_field() {
         let parse_tree: RBDLFile = parse_str(
             "
