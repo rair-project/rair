@@ -29,7 +29,7 @@ impl Environment {
     }
     fn iterate(&self, core: &mut Core) {
         let env = core.env.clone();
-        for (k, v) in env.borrow().iter() {
+        for (k, v) in env.read().iter() {
             match v {
                 EnvData::Bool(b) => writeln!(core.stdout, "{} = {}", k, b).unwrap(),
                 EnvData::I64(i) => writeln!(core.stdout, "{} = {}", k, i).unwrap(),
@@ -45,7 +45,7 @@ impl Environment {
     fn set(&self, core: &mut Core, key: &str, value: &str) {
         let env = core.env.clone();
         let mut res = Ok(());
-        if env.borrow().is_bool(key) {
+        if env.read().is_bool(key) {
             let v_str = value.to_ascii_lowercase();
             let value = match v_str.as_str() {
                 "true" => true,
@@ -55,22 +55,22 @@ impl Environment {
                     return error_msg(core, "Failed to set variable.", &message);
                 }
             };
-            res = env.borrow_mut().set_bool(key, value, core);
-        } else if env.borrow().is_i64(key) {
+            res = env.write().set_bool(key, value, core);
+        } else if env.read().is_i64(key) {
             let value = match i64::from_str_radix(value, 10) {
                 Ok(value) => value,
                 Err(e) => return error_msg(core, "Failed to set variable.", &e.to_string()),
             };
-            res = env.borrow_mut().set_i64(key, value, core);
-        } else if env.borrow().is_u64(key) {
+            res = env.write().set_i64(key, value, core);
+        } else if env.read().is_u64(key) {
             let value = match str_to_num(value) {
                 Ok(value) => value,
                 Err(e) => return error_msg(core, "Failed to set variable.", &e.to_string()),
             };
-            res = env.borrow_mut().set_u64(key, value, core);
-        } else if env.borrow().is_str(key) {
-            res = env.borrow_mut().set_str(key, value, core);
-        } else if env.borrow().is_color(key) {
+            res = env.write().set_u64(key, value, core);
+        } else if env.read().is_str(key) {
+            res = env.write().set_str(key, value, core);
+        } else if env.read().is_color(key) {
             if value.len() != 7 || !value.starts_with('#') {
                 let message = format!("Expected color code, found `{}`.", value);
                 return error_msg(core, "Failed to set variable.", &message);
@@ -87,14 +87,14 @@ impl Environment {
                 Ok(c) => c,
                 Err(e) => return error_msg(core, "Failed to set variable.", &e.to_string()),
             };
-            res = env.borrow_mut().set_color(key, (r, g, b), core);
+            res = env.write().set_color(key, (r, g, b), core);
         }
         if let Err(e) = res {
             return error_msg(core, "Failed to set variable.", &e.to_string());
         }
     }
     fn display(&self, core: &mut Core, key: &str) {
-        let env = core.env.borrow();
+        let env = core.env.read();
         let data = match env.get(key) {
             Some(data) => data,
             None => {
@@ -177,7 +177,7 @@ impl Cmd for EnvironmentReset {
             return;
         }
         let env = core.env.clone();
-        let res = env.borrow_mut().reset(&args[0], core);
+        let res = env.write().reset(&args[0], core);
         if let Err(e) = res {
             return error_msg(core, "Failed to reset variable.", &e.to_string());
         }
@@ -194,7 +194,7 @@ pub struct EnvironmentHelp {}
 impl EnvironmentHelp {
     pub fn new(core: &mut Core) -> Self {
         let env = core.env.clone();
-        env.borrow_mut()
+        env.write()
             .add_str_with_cb("environmentHelp.envColor", "color.6", "Color used in the environment variable", core, is_color)
             .unwrap();
         return Default::default();
@@ -207,7 +207,7 @@ impl Cmd for EnvironmentHelp {
             expect(core, args.len() as u64, 1);
             return;
         }
-        let env = core.env.borrow();
+        let env = core.env.read();
         let res = env.get_help(&args[0]);
         if let Some(help) = res {
             let color = env.get_str("environmentHelp.envColor").unwrap();
@@ -278,10 +278,10 @@ mod test_env {
         core.stdout = Writer::new_buf();
         let mut er = EnvironmentReset::new();
         let env = core.env.clone();
-        let (r, g, b) = env.borrow().get_color("color.1").unwrap();
-        env.borrow_mut().set_color("color.1", (r + 1, g + 1, b + 1), &mut core).unwrap();
+        let (r, g, b) = env.read().get_color("color.1").unwrap();
+        env.write().set_color("color.1", (r + 1, g + 1, b + 1), &mut core).unwrap();
         er.run(&mut core, &["color.1".to_string()]);
-        let (r2, g2, b2) = env.borrow().get_color("color.1").unwrap();
+        let (r2, g2, b2) = env.read().get_color("color.1").unwrap();
         assert_eq!(r, r2);
         assert_eq!(g, g2);
         assert_eq!(b, b2);
@@ -305,11 +305,11 @@ mod test_env {
     fn get_good_core() -> Core {
         let mut core = Core::new_no_colors();
         core.env = Default::default();
-        core.env.borrow_mut().add_bool("b", false, "").unwrap();
-        core.env.borrow_mut().add_u64("u", 500, "").unwrap();
-        core.env.borrow_mut().add_i64("i", -500, "").unwrap();
-        core.env.borrow_mut().add_str("s", "hello world", "").unwrap();
-        core.env.borrow_mut().add_color("c", (0xff, 0xee, 0xdd), "").unwrap();
+        core.env.write().add_bool("b", false, "").unwrap();
+        core.env.write().add_u64("u", 500, "").unwrap();
+        core.env.write().add_i64("i", -500, "").unwrap();
+        core.env.write().add_str("s", "hello world", "").unwrap();
+        core.env.write().add_color("c", (0xff, 0xee, 0xdd), "").unwrap();
         return core;
     }
     #[test]
@@ -390,7 +390,7 @@ mod test_env {
     #[test]
     fn test_env_error() {
         let mut core = Core::new_no_colors();
-        core.env.borrow_mut().add_bool("b", false, "").unwrap();
+        core.env.write().add_bool("b", false, "").unwrap();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut env = Environment::new();
@@ -427,11 +427,11 @@ mod test_env {
     fn test_set_error() {
         let mut core = Core::new_no_colors();
         let env = core.env.clone();
-        env.borrow_mut().add_bool_with_cb("b", false, "", &mut core, always_false).unwrap();
-        env.borrow_mut().add_u64("u", 500, "").unwrap();
-        env.borrow_mut().add_i64("i", -500, "").unwrap();
-        env.borrow_mut().add_str("s", "hi", "").unwrap();
-        env.borrow_mut().add_color("c", (0xee, 0xee, 0xee), "").unwrap();
+        env.write().add_bool_with_cb("b", false, "", &mut core, always_false).unwrap();
+        env.write().add_u64("u", 500, "").unwrap();
+        env.write().add_i64("i", -500, "").unwrap();
+        env.write().add_str("s", "hi", "").unwrap();
+        env.write().add_color("c", (0xee, 0xee, 0xee), "").unwrap();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut env = Environment::new();

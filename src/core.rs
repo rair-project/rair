@@ -19,18 +19,17 @@ use commands::Commands;
 use helper::*;
 use io::*;
 use loc::*;
+use parking_lot::{Mutex, RwLock};
 use rair_env::*;
 use rair_io::*;
 use serde::{Deserialize, Serialize};
-use std::cell::RefCell;
 use std::io;
 use std::io::Write;
 use std::mem;
-use std::rc::Rc;
+use std::sync::Arc;
 use utils::register_utils;
 use writer::Writer;
 use yansi::Paint;
-
 #[derive(Serialize, Deserialize)]
 pub struct Core {
     pub mode: AddrMode,
@@ -44,9 +43,9 @@ pub struct Core {
     #[serde(skip)]
     pub stderr: Writer,
     #[serde(skip)]
-    commands: Rc<RefCell<Commands>>,
+    commands: Arc<Mutex<Commands>>,
     #[serde(skip)]
-    pub env: Rc<RefCell<Environment<Core>>>,
+    pub env: Arc<RwLock<Environment<Core>>>,
 }
 
 impl Default for Core {
@@ -77,26 +76,25 @@ impl Core {
         register_utils(self);
     }
     /// Returns list of all available commands in [Core].
-    pub fn commands(&mut self) -> Rc<RefCell<Commands>> {
+    pub fn commands(&mut self) -> Arc<Mutex<Commands>> {
         return self.commands.clone();
     }
-    pub fn set_commands(&mut self, commands: Rc<RefCell<Commands>>) {
+    pub fn set_commands(&mut self, commands: Arc<Mutex<Commands>>) {
         self.commands = commands
     }
     fn init_colors(&mut self, enable: bool) {
-        let env = self.env.clone();
-        env.borrow_mut()
-            .add_bool_with_cb("color.enable", enable, "Enable/Disable color theme globally", self, set_global_color)
-            .unwrap();
-        env.borrow_mut().add_color("color.1", (0x58, 0x68, 0x75), "").unwrap();
-        env.borrow_mut().add_color("color.2", (0xb5, 0x89, 0x00), "").unwrap();
-        env.borrow_mut().add_color("color.3", (0xcb, 0x4b, 0x16), "").unwrap();
-        env.borrow_mut().add_color("color.4", (0xdc, 0x32, 0x2f), "").unwrap();
-        env.borrow_mut().add_color("color.5", (0xd3, 0x36, 0x82), "").unwrap();
-        env.borrow_mut().add_color("color.6", (0x6c, 0x71, 0xc4), "").unwrap();
-        env.borrow_mut().add_color("color.7", (0x26, 0x8b, 0xd2), "").unwrap();
-        env.borrow_mut().add_color("color.8", (0x2a, 0xa1, 0x98), "").unwrap();
-        env.borrow_mut().add_color("color.9", (0x85, 0x99, 0x00), "").unwrap();
+        let locked_env = self.env.clone();
+        let mut env = locked_env.write();
+        env.add_bool_with_cb("color.enable", enable, "Enable/Disable color theme globally", self, set_global_color).unwrap();
+        env.add_color("color.1", (0x58, 0x68, 0x75), "").unwrap();
+        env.add_color("color.2", (0xb5, 0x89, 0x00), "").unwrap();
+        env.add_color("color.3", (0xcb, 0x4b, 0x16), "").unwrap();
+        env.add_color("color.4", (0xdc, 0x32, 0x2f), "").unwrap();
+        env.add_color("color.5", (0xd3, 0x36, 0x82), "").unwrap();
+        env.add_color("color.6", (0x6c, 0x71, 0xc4), "").unwrap();
+        env.add_color("color.7", (0x26, 0x8b, 0xd2), "").unwrap();
+        env.add_color("color.8", (0x2a, 0xa1, 0x98), "").unwrap();
+        env.add_color("color.9", (0x85, 0x99, 0x00), "").unwrap();
     }
     fn new_settings(color: bool) -> Self {
         let mut core: Core = Default::default();
@@ -119,12 +117,12 @@ impl Core {
     }
 
     pub fn add_command(&mut self, long: &'static str, short: &'static str, funcs: MRc<dyn Cmd + Sync + Send>) {
-        if !long.is_empty() && !self.commands.borrow_mut().add_command(long, funcs.clone()) {
+        if !long.is_empty() && !self.commands.lock().add_command(long, funcs.clone()) {
             let msg = format!("Command {} already existed.", Paint::default(long).bold());
             error_msg(self, "Cannot add this command.", &msg);
         }
 
-        if !short.is_empty() && !self.commands.borrow_mut().add_command(short, funcs) {
+        if !short.is_empty() && !self.commands.lock().add_command(short, funcs) {
             let msg = format!("Command {} already existed.", Paint::default(short).bold());
             error_msg(self, "Cannot add this command.", &msg);
         }
@@ -132,11 +130,11 @@ impl Core {
     fn command_not_found(&mut self, command: &str) {
         let msg = format!("Command {} is not found.", Paint::default(command).bold());
         error_msg(self, "Execution failed", &msg);
-        let commands = self.commands.borrow();
+        let commands = self.commands.lock();
         let similar = commands.suggest(&command.to_string(), 2);
         let mut s = similar.iter();
         if let Some(suggestion) = s.next() {
-            let (r, g, b) = self.env.borrow().get_color("color.6").unwrap();
+            let (r, g, b) = self.env.read().get_color("color.6").unwrap();
             write!(self.stderr, "Similar command: {}", Paint::rgb(r, g, b, suggestion)).unwrap();
             for suggestion in s {
                 write!(self.stderr, ", {}", Paint::rgb(r, g, b, suggestion)).unwrap();
@@ -147,10 +145,10 @@ impl Core {
 
     pub fn run(&mut self, command: &str, args: &[String]) {
         let cmds = self.commands.clone();
-        let cmds_ref = cmds.borrow_mut();
+        let cmds_ref = cmds.lock();
         let cmd = cmds_ref.find(&command.to_string());
         if let Some(cmd) = cmd {
-            cmd.as_ref().lock().run(self, args);
+            cmd.lock().run(self, args);
         } else {
             drop(cmds_ref);
             self.command_not_found(command)
@@ -165,7 +163,7 @@ impl Core {
 
     pub fn help(&mut self, command: &str) {
         let cmds = self.commands.clone();
-        let cmds_ref = cmds.borrow();
+        let cmds_ref = cmds.lock();
         let cmd = cmds_ref.find(&command.to_string());
         if let Some(cmd) = cmd {
             cmd.as_ref().lock().help(self);

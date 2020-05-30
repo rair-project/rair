@@ -33,10 +33,10 @@ fn one_byte(_: &str, value: &str, _: &Environment<Core>, _: &mut Core) -> bool {
 impl PrintHex {
     pub fn new(core: &mut Core) -> Self {
         let env = core.env.clone();
-        env.borrow_mut()
+        env.write()
             .add_str_with_cb("printHex.headerColor", "color.6", "Color used in the header of `printHex` command", core, is_color)
             .unwrap();
-        env.borrow_mut()
+        env.write()
             .add_str_with_cb(
                 "printHex.nonPrintColor",
                 "color.5",
@@ -45,7 +45,7 @@ impl PrintHex {
                 is_color,
             )
             .unwrap();
-        env.borrow_mut()
+        env.write()
             .add_str_with_cb(
                 "printHex.nonPrintReplace",
                 ".",
@@ -54,7 +54,7 @@ impl PrintHex {
                 one_byte,
             )
             .unwrap();
-        env.borrow_mut()
+        env.write()
             .add_str_with_cb("printHex.gapReplace", "#", "Text used to replace gaps when using the `printHex` command", core, one_byte)
             .unwrap();
 
@@ -92,11 +92,11 @@ impl Cmd for PrintHex {
             Ok(d) => d,
             Err(e) => return error_msg(core, "Read Failed", &e.to_string()),
         };
-        let env = core.env.borrow();
+        let env = core.env.read();
         let color = env.get_str("printHex.headerColor").unwrap();
         let banner = env.get_color(color).unwrap();
         let color = env.get_str("printHex.nonPrintColor").unwrap();
-        let na = core.env.borrow().get_color(color).unwrap();
+        let na = core.env.read().get_color(color).unwrap();
         let gap = env.get_str("printHex.gapReplace").unwrap();
         let no_print = env.get_str("printHex.nonPrintReplace").unwrap();
 

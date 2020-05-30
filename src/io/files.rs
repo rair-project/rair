@@ -27,7 +27,7 @@ pub struct ListFiles {}
 impl ListFiles {
     pub fn new(core: &mut Core) -> Self {
         let env = core.env.clone();
-        env.borrow_mut()
+        env.write()
             .add_str_with_cb("files.headerColor", "color.6", "Color used in the header of `files` command", core, is_color)
             .unwrap();
         Default::default()
@@ -40,7 +40,7 @@ impl Cmd for ListFiles {
             expect(core, args.len() as u64, 0);
             return;
         }
-        let env = core.env.borrow();
+        let env = core.env.read();
         let color = env.get_str("maps.headerColor").unwrap();
         let (r, g, b) = env.get_color(color).unwrap();
 
