@@ -18,7 +18,6 @@ use super::history::History;
 use core::*;
 use helper::*;
 use yansi::Paint;
-
 #[derive(Default)]
 pub struct Mode {
     history: MRc<History>,
@@ -37,7 +36,7 @@ impl Cmd for Mode {
             return;
         }
         if args[0] == "vir" {
-            self.history.borrow_mut().add(core);
+            self.history.lock().add(core);
             if core.mode == AddrMode::Phy {
                 let vir = core.io.phy_to_vir(core.get_loc());
                 if !vir.is_empty() {
@@ -46,7 +45,7 @@ impl Cmd for Mode {
             }
             core.mode = AddrMode::Vir;
         } else if args[0] == "phy" {
-            self.history.borrow_mut().add(core);
+            self.history.lock().add(core);
             if core.mode == AddrMode::Vir {
                 if let Some(vir) = core.io.vir_to_phy(core.get_loc(), 1) {
                     core.set_loc(vir[0].paddr);

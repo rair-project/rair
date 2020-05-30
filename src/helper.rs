@@ -16,18 +16,18 @@
  */
 
 use core::*;
+use parking_lot::Mutex;
 use rair_env::Environment;
 use serde::{Deserialize, Serialize};
-use std::cell::RefCell;
 use std::fmt;
 use std::fmt::Display;
 use std::io::Write;
 use std::num;
 use std::process::exit;
-use std::rc::Rc;
+use std::sync::Arc;
 use yansi::Paint;
 
-pub type MRc<T> = Rc<RefCell<T>>; //mutable refcounter
+pub type MRc<T> = Arc<Mutex<T>>; //mutable refcounter that is thread safe
 
 pub fn str_to_num(n: &str) -> Result<u64, num::ParseIntError> {
     if n.len() >= 2 {

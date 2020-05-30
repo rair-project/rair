@@ -18,6 +18,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 extern crate flate2;
+extern crate parking_lot;
 extern crate rair_env;
 extern crate rair_io;
 extern crate rtrees;
@@ -26,7 +27,6 @@ extern crate serde_cbor;
 #[cfg(test)]
 extern crate test_file;
 extern crate yansi;
-
 mod commands;
 mod core;
 mod helper;

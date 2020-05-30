@@ -24,24 +24,23 @@ use self::map::*;
 use self::print::*;
 use self::write::*;
 use core::Core;
-use std::cell::RefCell;
-use std::rc::Rc;
-
+use parking_lot::Mutex;
+use std::sync::Arc;
 pub fn register_io(core: &mut Core) {
-    let maps = Rc::new(RefCell::new(ListMap::new(core)));
-    let files = Rc::new(RefCell::new(ListFiles::new(core)));
-    let px = Rc::new(RefCell::new(PrintHex::new(core)));
+    let maps = Arc::new(Mutex::new(ListMap::new(core)));
+    let files = Arc::new(Mutex::new(ListFiles::new(core)));
+    let px = Arc::new(Mutex::new(PrintHex::new(core)));
 
-    core.add_command("map", "", Rc::new(RefCell::new(Map::new())));
+    core.add_command("map", "", Arc::new(Mutex::new(Map::new())));
     core.add_command("maps", "", maps);
     core.add_command("printHex", "px", px);
-    core.add_command("printBase", "pb", Rc::new(RefCell::new(PrintBase::new())));
-    core.add_command("printCSV", "pcsv", Rc::new(RefCell::new(PrintCSV::new())));
-    core.add_command("printSignedCSV", "pscsv", Rc::new(RefCell::new(PrintSignedCSV::new())));
-    core.add_command("unmap", "um", Rc::new(RefCell::new(UnMap::new())));
+    core.add_command("printBase", "pb", Arc::new(Mutex::new(PrintBase::new())));
+    core.add_command("printCSV", "pcsv", Arc::new(Mutex::new(PrintCSV::new())));
+    core.add_command("printSignedCSV", "pscsv", Arc::new(Mutex::new(PrintSignedCSV::new())));
+    core.add_command("unmap", "um", Arc::new(Mutex::new(UnMap::new())));
     core.add_command("files", "", files);
-    core.add_command("open", "o", Rc::new(RefCell::new(OpenFile::new())));
-    core.add_command("close", "", Rc::new(RefCell::new(CloseFile::new())));
-    core.add_command("writeHex", "wx", Rc::new(RefCell::new(WriteHex::new())));
-    core.add_command("writeToFile", "wtf", Rc::new(RefCell::new(WriteToFile::new())));
+    core.add_command("open", "o", Arc::new(Mutex::new(OpenFile::new())));
+    core.add_command("close", "", Arc::new(Mutex::new(CloseFile::new())));
+    core.add_command("writeHex", "wx", Arc::new(Mutex::new(WriteHex::new())));
+    core.add_command("writeToFile", "wtf", Arc::new(Mutex::new(WriteToFile::new())));
 }

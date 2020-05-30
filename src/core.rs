@@ -118,7 +118,7 @@ impl Core {
         self.loc
     }
 
-    pub fn add_command(&mut self, long: &'static str, short: &'static str, funcs: MRc<dyn Cmd>) {
+    pub fn add_command(&mut self, long: &'static str, short: &'static str, funcs: MRc<dyn Cmd + Sync + Send>) {
         if !long.is_empty() && !self.commands.borrow_mut().add_command(long, funcs.clone()) {
             let msg = format!("Command {} already existed.", Paint::default(long).bold());
             error_msg(self, "Cannot add this command.", &msg);
@@ -150,7 +150,7 @@ impl Core {
         let cmds_ref = cmds.borrow_mut();
         let cmd = cmds_ref.find(&command.to_string());
         if let Some(cmd) = cmd {
-            cmd.borrow_mut().run(self, args);
+            cmd.as_ref().lock().run(self, args);
         } else {
             drop(cmds_ref);
             self.command_not_found(command)
@@ -168,7 +168,7 @@ impl Core {
         let cmds_ref = cmds.borrow();
         let cmd = cmds_ref.find(&command.to_string());
         if let Some(cmd) = cmd {
-            cmd.borrow().help(self);
+            cmd.as_ref().lock().help(self);
         } else {
             drop(cmds_ref);
             self.command_not_found(command);
@@ -179,6 +179,8 @@ impl Core {
 #[cfg(test)]
 mod test_core {
     use super::*;
+    use parking_lot::Mutex;
+    use std::sync::Arc;
     use utils::Quit;
     #[test]
     fn test_loc() {
@@ -191,16 +193,16 @@ mod test_core {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.add_command("a_non_existing_command", "a", Rc::new(RefCell::new(Quit::new())));
+        core.add_command("a_non_existing_command", "a", Arc::new(Mutex::new(Quit::new())));
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.add_command("test_command", "s", Rc::new(RefCell::new(Quit::new())));
+        core.add_command("test_command", "s", Arc::new(Mutex::new(Quit::new())));
         assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Cannot add this command.\nCommand s already existed.\n");
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.add_command("seek", "test_stuff", Rc::new(RefCell::new(Quit::new())));
+        core.add_command("seek", "test_stuff", Arc::new(Mutex::new(Quit::new())));
         assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Cannot add this command.\nCommand seek already existed.\n");
     }
     #[test]

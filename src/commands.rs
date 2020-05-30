@@ -22,12 +22,12 @@ use std::collections::BTreeMap; // for suffex search
 #[derive(Default)]
 pub struct Commands {
     suggestions: SpellTree<()>,
-    search: BTreeMap<&'static str, MRc<dyn Cmd>>,
+    search: BTreeMap<&'static str, MRc<dyn Cmd + Sync + Send>>,
 }
 
 impl Commands {
     // Returns false if the command with the same name exists
-    pub fn add_command(&mut self, command_name: &'static str, functionality: MRc<dyn Cmd>) -> bool {
+    pub fn add_command(&mut self, command_name: &'static str, functionality: MRc<dyn Cmd + Sync + Send>) -> bool {
         // first check that command_name doesn't exist
         if self.search.contains_key(command_name) {
             return false;
@@ -38,7 +38,7 @@ impl Commands {
         }
     }
 
-    pub fn find(&self, command: &str) -> Option<MRc<dyn Cmd>> {
+    pub fn find(&self, command: &str) -> Option<MRc<dyn Cmd + Sync + Send>> {
         return self.search.get(command).cloned();
     }
     pub fn suggest(&self, command: &str, tolerance: u64) -> Vec<&String> {

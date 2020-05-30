@@ -22,15 +22,15 @@ use self::env::*;
 use self::project::*;
 pub use self::quit::Quit;
 use core::Core;
-use std::cell::RefCell;
-use std::rc::Rc;
+use parking_lot::Mutex;
+use std::sync::Arc;
 
 pub fn register_utils(core: &mut Core) {
-    core.add_command("quit", "q", Rc::new(RefCell::new(Quit::new())));
-    core.add_command("save", "", Rc::new(RefCell::new(Save::new())));
-    core.add_command("load", "", Rc::new(RefCell::new(Load::new())));
-    core.add_command("environment", "e", Rc::new(RefCell::new(Environment::new())));
-    core.add_command("environmentReset", "er", Rc::new(RefCell::new(EnvironmentReset::new())));
-    let eh = Rc::new(RefCell::new(EnvironmentHelp::new(core)));
+    core.add_command("quit", "q", Arc::new(Mutex::new(Quit::new())));
+    core.add_command("save", "", Arc::new(Mutex::new(Save::new())));
+    core.add_command("load", "", Arc::new(Mutex::new(Load::new())));
+    core.add_command("environment", "e", Arc::new(Mutex::new(Environment::new())));
+    core.add_command("environmentReset", "er", Arc::new(Mutex::new(EnvironmentReset::new())));
+    let eh = Arc::new(Mutex::new(EnvironmentHelp::new(core)));
     core.add_command("environmentHelp", "eh", eh);
 }

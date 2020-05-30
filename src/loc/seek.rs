@@ -29,7 +29,7 @@ impl Seek {
         Seek { history }
     }
     fn backward(&mut self, core: &mut Core) {
-        if let Some((mode, addr)) = self.history.borrow_mut().backward(core) {
+        if let Some((mode, addr)) = self.history.lock().backward(core) {
             core.mode = mode;
             core.set_loc(addr);
         } else {
@@ -37,7 +37,7 @@ impl Seek {
         }
     }
     fn forward(&mut self, core: &mut Core) {
-        if let Some((mode, addr)) = self.history.borrow_mut().forward(core) {
+        if let Some((mode, addr)) = self.history.lock().forward(core) {
             core.mode = mode;
             core.set_loc(addr);
         } else {
@@ -60,7 +60,7 @@ impl Seek {
     }
     #[inline]
     fn set_loc(&mut self, core: &mut Core, offset: u64) {
-        self.history.borrow_mut().add(core);
+        self.history.lock().add(core);
         core.set_loc(offset);
     }
 }

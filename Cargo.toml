@@ -25,6 +25,7 @@ rtrees = {path = "rtrees"}
 serde = { version = "1.0", features = ["derive"]}
 serde_cbor = "0.10"
 yansi = "0.5"
+parking_lot="0.10"
 
 [dev-dependencies]
 test_file = {path = "test_file"}
