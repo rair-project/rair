@@ -116,7 +116,7 @@ impl RIOPlugin for MallocPlugin {
     }
 }
 
-pub fn plugin() -> Box<dyn RIOPlugin> {
+pub fn plugin() -> Box<dyn RIOPlugin + Sync + Send> {
     return Box::new(MallocPlugin {});
 }
 

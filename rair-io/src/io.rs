@@ -21,7 +21,7 @@ use plugin::*;
 use plugins;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::BTreeMap;
-use std::rc::Rc;
+use std::sync::Arc;
 use utils::*;
 
 // Credits goes to @Talchas#7429 for the idea of using remote
@@ -41,7 +41,7 @@ pub struct RIO {
     descs: RIODescQuery,
     maps: RIOMapQuery,
     #[serde(skip)]
-    plugins: Vec<Box<dyn RIOPlugin>>,
+    plugins: Vec<Box<dyn RIOPlugin + Sync + Send>>,
 }
 impl Serialize for RIO {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -91,7 +91,7 @@ impl RIO {
 
     /// THIS FUNCTION IS NOT SUPPOSED TO BE THAT TRIVIAL
     /// I WANT IT TO LITERALLY OPEN A PLUGIN FILE
-    pub fn load_plugin(&mut self, plugin: Box<dyn RIOPlugin>) {
+    pub fn load_plugin(&mut self, plugin: Box<dyn RIOPlugin + Sync + Send>) {
         self.plugins.push(plugin);
     }
     /// Allows us to open file and have it accessable from out physical address space,
@@ -352,7 +352,7 @@ impl RIO {
     }
 
     /// Iterate over memory maps
-    pub fn map_iter<'a>(&'a self) -> Box<dyn Iterator<Item = Rc<RIOMap>> + 'a> {
+    pub fn map_iter<'a>(&'a self) -> Box<dyn Iterator<Item = Arc<RIOMap>> + 'a> {
         self.maps.into_iter()
     }
     // Return equivalent [RIODesc] structure for the given *hndl*

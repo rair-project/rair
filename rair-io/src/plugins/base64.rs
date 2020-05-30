@@ -30,7 +30,7 @@ const METADATA: RIOPluginMetadata = RIOPluginMetadata {
     version: "0.0.1",
 };
 struct Base64Internal {
-    file: Box<dyn RIOPluginOperations>, // defaultplugin
+    file: Box<dyn RIOPluginOperations + Sync + Send>, // defaultplugin
     len: u64,
 }
 impl Base64Internal {
@@ -173,7 +173,7 @@ impl RIOPluginOperations for Base64Internal {
 }
 
 struct Base64Plugin {
-    defaultplugin: Box<dyn RIOPlugin>, // defaultplugin
+    defaultplugin: Box<dyn RIOPlugin + Sync + Send>, // defaultplugin
 }
 
 impl Base64Plugin {
@@ -224,7 +224,7 @@ impl RIOPlugin for Base64Plugin {
     }
 }
 
-pub fn plugin() -> Box<dyn RIOPlugin> {
+pub fn plugin() -> Box<dyn RIOPlugin + Sync + Send> {
     return Box::new(Base64Plugin::new());
 }
 

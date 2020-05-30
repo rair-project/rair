@@ -17,7 +17,7 @@
 use rtrees::ist::IST;
 use serde::{Deserialize, Serialize};
 use std::cmp::min;
-use std::rc::Rc;
+use std::sync::Arc;
 use utils::*;
 
 #[derive(Copy, Clone, PartialEq, Debug, Serialize, Deserialize)]
@@ -65,22 +65,22 @@ impl RIOMap {
     }
 }
 
-impl PartialEq<RIOMap> for Rc<RIOMap> {
+impl PartialEq<RIOMap> for Arc<RIOMap> {
     fn eq(&self, other: &RIOMap) -> bool {
         return &**self == other;
     }
 }
 
-impl PartialEq<Rc<RIOMap>> for RIOMap {
-    fn eq(&self, other: &Rc<RIOMap>) -> bool {
+impl PartialEq<Arc<RIOMap>> for RIOMap {
+    fn eq(&self, other: &Arc<RIOMap>) -> bool {
         return self == &**other;
     }
 }
 
 #[derive(Default, Serialize, Deserialize)]
 pub(super) struct RIOMapQuery {
-    maps: IST<u64, Rc<RIOMap>>,     //key = virtual address
-    rev_maps: IST<u64, Rc<RIOMap>>, // key = physiscal address
+    maps: IST<u64, Arc<RIOMap>>,     //key = virtual address
+    rev_maps: IST<u64, Arc<RIOMap>>, // key = physiscal address
 }
 
 impl RIOMapQuery {
@@ -95,13 +95,13 @@ impl RIOMapQuery {
         if !self.maps.overlap(vaddr, vaddr + size - 1).is_empty() {
             return Err(IoError::AddressesOverlapError);
         }
-        let mapping = Rc::new(RIOMap { paddr, vaddr, size });
+        let mapping = Arc::new(RIOMap { paddr, vaddr, size });
         self.maps.insert(vaddr, vaddr + size - 1, mapping.clone());
         self.rev_maps.insert(paddr, paddr + size - 1, mapping);
         return Ok(());
     }
     pub fn split_vaddr_range(&self, vaddr: u64, size: u64) -> Option<Vec<RIOMap>> {
-        let maps: Vec<Rc<RIOMap>> = self.maps.overlap(vaddr, vaddr + size - 1).iter().map(|&x| x.clone()).collect();
+        let maps: Vec<Arc<RIOMap>> = self.maps.overlap(vaddr, vaddr + size - 1).iter().map(|&x| x.clone()).collect();
         if maps.is_empty() {
             return None;
         }
@@ -128,14 +128,14 @@ impl RIOMapQuery {
         return Some(ranges);
     }
     pub fn rev_query(&self, paddr: u64) -> Vec<u64> {
-        let maps: Vec<Rc<RIOMap>> = self.rev_maps.at(paddr).iter().map(|&x| x.clone()).collect();
+        let maps: Vec<Arc<RIOMap>> = self.rev_maps.at(paddr).iter().map(|&x| x.clone()).collect();
         if maps.is_empty() {
             return Vec::new();
         }
         return maps.iter().map(|map| paddr - map.paddr + map.vaddr).collect();
     }
     pub fn split_vaddr_sparce_range(&self, vaddr: u64, size: u64) -> Vec<RIOMap> {
-        let maps: Vec<Rc<RIOMap>> = self.maps.overlap(vaddr, vaddr + size - 1).iter().map(|&x| x.clone()).collect();
+        let maps: Vec<Arc<RIOMap>> = self.maps.overlap(vaddr, vaddr + size - 1).iter().map(|&x| x.clone()).collect();
         if maps.is_empty() {
             return Vec::new();
         }
@@ -174,13 +174,13 @@ impl RIOMapQuery {
                 .remove_projection(&frag)
                 .into_iter()
                 .map(|m| m)
-                .for_each(|m| self.maps.insert(m.vaddr, m.vaddr + m.size - 1, Rc::new(m)));
+                .for_each(|m| self.maps.insert(m.vaddr, m.vaddr + m.size - 1, Arc::new(m)));
             for map in old_rev_maps {
                 if map.envelop(&frag) {
                     map.remove_projection(&frag)
                         .into_iter()
                         .map(|m| m)
-                        .for_each(|m| self.rev_maps.insert(m.paddr, m.paddr + m.size - 1, Rc::new(m)));
+                        .for_each(|m| self.rev_maps.insert(m.paddr, m.paddr + m.size - 1, Arc::new(m)));
                 } else {
                     self.rev_maps.insert(map.paddr, map.paddr + map.size - 1, map)
                 }
@@ -191,9 +191,9 @@ impl RIOMapQuery {
 }
 
 impl<'a> IntoIterator for &'a RIOMapQuery {
-    type Item = Rc<RIOMap>;
-    type IntoIter = Box<dyn Iterator<Item = Rc<RIOMap>> + 'a>;
-    fn into_iter(self) -> Box<dyn Iterator<Item = Rc<RIOMap>> + 'a> {
+    type Item = Arc<RIOMap>;
+    type IntoIter = Box<dyn Iterator<Item = Arc<RIOMap>> + 'a>;
+    fn into_iter(self) -> Box<dyn Iterator<Item = Arc<RIOMap>> + 'a> {
         return Box::new((&self.maps).into_iter().map(|(_, _, map)| map).cloned());
     }
 }

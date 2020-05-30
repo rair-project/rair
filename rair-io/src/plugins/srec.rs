@@ -44,8 +44,8 @@ const METADATA: RIOPluginMetadata = RIOPluginMetadata {
     version: "0.0.1",
 };
 struct SrecInternal {
-    file: Box<dyn RIOPluginOperations>, // defaultplugin
-    bytes: BTreeMap<u64, u8>,           // sparce array of bytes
+    file: Box<dyn RIOPluginOperations + Sync + Send>, // defaultplugin
+    bytes: BTreeMap<u64, u8>,                         // sparce array of bytes
     uri: String,
     prot: IoMode,
     start_address: Option<u64>, // I am not sure if this will always exist or not
@@ -371,7 +371,7 @@ impl RIOPluginOperations for SrecInternal {
 }
 
 struct SrecPlugin {
-    defaultplugin: Box<dyn RIOPlugin>, // defaultplugin
+    defaultplugin: Box<dyn RIOPlugin + Sync + Send>, // defaultplugin
 }
 
 impl SrecPlugin {
@@ -424,7 +424,7 @@ impl RIOPlugin for SrecPlugin {
     }
 }
 
-pub fn plugin() -> Box<dyn RIOPlugin> {
+pub fn plugin() -> Box<dyn RIOPlugin + Sync + Send> {
     return Box::new(SrecPlugin::new());
 }
 

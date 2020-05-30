@@ -29,7 +29,7 @@ pub struct RIOPluginDesc {
     pub perm: IoMode,
     pub raddr: u64, //padd is simulated physical address
     pub size: u64,
-    pub plugin_operations: Box<dyn RIOPluginOperations>,
+    pub plugin_operations: Box<dyn RIOPluginOperations + Sync + Send>,
 }
 
 pub trait RIOPlugin {
@@ -53,7 +53,7 @@ impl RIOPluginOperations for DefPluginOperations {
     }
 }
 
-impl Default for Box<dyn RIOPluginOperations> {
+impl Default for Box<dyn RIOPluginOperations + Sync + Send> {
     fn default() -> Self {
         return Box::new(DefPluginOperations());
     }

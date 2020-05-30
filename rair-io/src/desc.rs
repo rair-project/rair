@@ -27,8 +27,10 @@ pub struct RIODesc {
     raddr: u64, // raddr is the IO descriptor address, general rule of interaction paddr is high level lie, while raddr is the real thing.
     // Since we are skiping files operation structures .. after deserializing RIO .. we must
     // reopen the files again and make sure that they are in the right place
+    // for sake of serde skip Box<dyn RIOPluginOperations + Sync + Send> must implement Default and
+    // the implementation is found in plugins.rs
     #[serde(skip)]
-    plugin_operations: Box<dyn RIOPluginOperations>,
+    plugin_operations: Box<dyn RIOPluginOperations + Sync + Send>,
 }
 
 impl RIODesc {

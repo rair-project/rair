@@ -138,7 +138,7 @@ impl RIOPlugin for FilePlugin {
     }
 }
 
-pub fn plugin() -> Box<dyn RIOPlugin> {
+pub fn plugin() -> Box<dyn RIOPlugin + Sync + Send> {
     return Box::new(FilePlugin {});
 }
 

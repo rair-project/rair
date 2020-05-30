@@ -44,7 +44,7 @@ const METADATA: RIOPluginMetadata = RIOPluginMetadata {
 };
 
 struct FileInternals {
-    file: Box<dyn RIOPluginOperations>, // defaultplugin
+    file: Box<dyn RIOPluginOperations + Sync + Send>, // defaultplugin
     uri: String,
     bytes: BTreeMap<u64, u8>, // sparce array of bytes
     prot: IoMode,
@@ -331,7 +331,7 @@ impl RIOPluginOperations for FileInternals {
 }
 
 struct IHexPlugin {
-    defaultplugin: Box<dyn RIOPlugin>, // defaultplugin
+    defaultplugin: Box<dyn RIOPlugin + Sync + Send>, // defaultplugin
 }
 
 impl IHexPlugin {
@@ -384,7 +384,7 @@ impl RIOPlugin for IHexPlugin {
     }
 }
 
-pub fn plugin() -> Box<dyn RIOPlugin> {
+pub fn plugin() -> Box<dyn RIOPlugin + Sync + Send> {
     return Box::new(IHexPlugin::new());
 }
 
