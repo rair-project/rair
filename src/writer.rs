@@ -22,7 +22,7 @@ use std::io::Write;
 /// either a buffer, a file or even terminal IO.
 pub enum Writer {
     #[doc(hidden)]
-    Write(Box<dyn Write>),
+    Write(Box<dyn Write + Sync + Send>),
     #[doc(hidden)]
     Bytes(Vec<u8>),
 }
@@ -48,7 +48,7 @@ impl Default for Writer {
 }
 impl Writer {
     /// Creates a new [Writer] backed by object that implements [Write].
-    pub fn new_write(out: Box<dyn Write>) -> Self {
+    pub fn new_write(out: Box<dyn Write + Sync + Send>) -> Self {
         return Writer::Write(out);
     }
 
