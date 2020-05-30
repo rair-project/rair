@@ -19,7 +19,7 @@ if [ $DOC ]; then
   set -e
   cargo doc  --no-deps --all # building docs
   cargo rustdoc -- -Z unstable-options --enable-index-page
-  cargo deadlinks --check-http --dir target/doc #testing docs
+  #cargo deadlinks --check-http --dir target/doc #testing docs
   if [ $TRAVIS_BRANCH = master ] && [ $TRAVIS_PULL_REQUEST = false ]; then
     pip install ghp-import --user
     ghp-import -n target/doc
