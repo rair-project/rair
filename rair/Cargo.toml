@@ -24,6 +24,8 @@ rustyline = "5.0"
 rustyline-derive = "0.2"
 app_dirs = "1.2"
 yansi = "0.5"
+parking_lot = "0.10"
+
 rcmd = {path = "rcmd"}
 rtrees = {git = "https://github.com/rair-project/rair-core"}
 rair-io = {git = "https://github.com/rair-project/rair-core"}

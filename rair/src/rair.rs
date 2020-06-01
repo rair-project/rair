@@ -20,6 +20,7 @@
 #[macro_use]
 extern crate clap;
 extern crate app_dirs;
+extern crate parking_lot;
 extern crate rair_io;
 extern crate rcmd;
 extern crate rcore;

@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+use parking_lot::Mutex;
 use rcmd::*;
 use rcore::Commands;
 use rustyline::completion::{Completer, Pair};
@@ -24,37 +25,18 @@ use rustyline::hint::{Hinter, HistoryHinter};
 use rustyline::Context;
 use rustyline_derive::Helper;
 use std::borrow::Cow::{self, Owned};
-use std::cell::{Ref, RefCell};
-use std::rc::Rc;
+use std::sync::Arc;
 use yansi::Paint;
-
-// Thanks to @stephaneyfx#2922 for the struct
-pub struct ReadOnly<T>(Rc<RefCell<T>>);
-
-impl<T> ReadOnly<T> {
-    pub fn borrow(&self) -> Ref<'_, T> {
-        self.0.borrow()
-    }
-}
-
-impl<T> From<Rc<RefCell<T>>> for ReadOnly<T> {
-    fn from(x: Rc<RefCell<T>>) -> Self {
-        ReadOnly(x)
-    }
-}
 
 #[derive(Helper)]
 pub struct LineFormatter {
     hinter: HistoryHinter,
-    commands: ReadOnly<Commands>,
+    commands: Arc<Mutex<Commands>>,
 }
 
 impl LineFormatter {
-    pub fn new(commands: Rc<RefCell<Commands>>) -> Self {
-        LineFormatter {
-            hinter: HistoryHinter {},
-            commands: commands.into(),
-        }
+    pub fn new(commands: Arc<Mutex<Commands>>) -> Self {
+        LineFormatter { hinter: HistoryHinter {}, commands }
     }
     fn tree_complete(&self, tree: ParseTree) -> Result<(usize, Vec<Pair>), ReadlineError> {
         match tree {
@@ -62,7 +44,7 @@ impl LineFormatter {
             // all the commands sharing same prefix ending with the help token
             ParseTree::Help(help) => {
                 let mut ret = Vec::new();
-                for suggestion in self.commands.borrow().prefix(&help.command) {
+                for suggestion in self.commands.lock().prefix(&help.command) {
                     let display = (*suggestion).to_string();
                     let replacement = (*suggestion).to_string() + "?";
                     ret.push(Pair { display, replacement });
@@ -76,7 +58,7 @@ impl LineFormatter {
                     return Ok((0, Vec::new()));
                 }
                 let mut ret = Vec::new();
-                for suggestion in self.commands.borrow().prefix(&cmd.command) {
+                for suggestion in self.commands.lock().prefix(&cmd.command) {
                     let display = (*suggestion).to_string();
                     let replacement = (*suggestion).to_string();
                     ret.push(Pair { display, replacement });
