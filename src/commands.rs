@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use helper::*;
+use crate::helper::*;
 use rtrees::bktree::SpellTree;
 use std::collections::BTreeMap; // for suffex search
 

@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use core::Core;
-use helper::AddrMode;
+use crate::core::Core;
+use crate::helper::AddrMode;
 #[derive(Default)]
 pub struct History {
     back: Vec<(AddrMode, u64)>,

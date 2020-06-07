@@ -14,8 +14,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use core::*;
-use helper::*;
+use crate::core::*;
+use crate::helper::*;
 use std::process;
 
 #[derive(Default)]

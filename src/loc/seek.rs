@@ -16,8 +16,8 @@
  */
 
 use super::history::History;
-use core::*;
-use helper::*;
+use crate::core::*;
+use crate::helper::*;
 
 #[derive(Default)]
 pub struct Seek {

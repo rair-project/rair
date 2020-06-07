@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use super::history::History;
-use core::*;
-use helper::*;
+use crate::core::*;
+use crate::helper::*;
 use yansi::Paint;
 #[derive(Default)]
 pub struct Mode {

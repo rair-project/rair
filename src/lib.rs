@@ -1,5 +1,15 @@
 #![warn(clippy::cargo)]
 #![allow(clippy::multiple_crate_versions)]
+#![warn(
+    future_incompatible,
+    //nonstandard_style,
+    //warnings,
+    //rust_2018_idioms,
+    //unused,
+    //rust_2018_idioms,
+    //missing_docs
+)]
+
 /*
  * rcore: rair core library
  * Copyright (C) 2019  Oddcoder
@@ -34,8 +44,8 @@ mod loc;
 mod utils;
 mod writer;
 
-pub use commands::*;
-pub use core::*;
-pub use helper::*;
-pub use io::*;
-pub use writer::*;
+pub use self::commands::*;
+pub use self::core::*;
+pub use self::helper::*;
+pub use self::io::*;
+pub use self::writer::*;

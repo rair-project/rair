@@ -21,7 +21,7 @@ mod quit;
 use self::env::*;
 use self::project::*;
 pub use self::quit::Quit;
-use core::Core;
+use crate::core::Core;
 use parking_lot::Mutex;
 use std::sync::Arc;
 

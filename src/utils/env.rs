@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use core::*;
-use helper::*;
+use crate::core::*;
+use crate::helper::*;
 use rair_env::EnvData;
 use std::io::Write;
 use yansi::Paint;

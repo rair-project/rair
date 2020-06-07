@@ -15,10 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use commands::Commands;
-use helper::*;
-use io::*;
-use loc::*;
+use crate::commands::Commands;
+use crate::helper::*;
+use crate::io::*;
+use crate::loc::*;
+use crate::utils::register_utils;
+use crate::writer::Writer;
 use parking_lot::{Mutex, RwLock};
 use rair_env::*;
 use rair_io::*;
@@ -27,8 +29,6 @@ use std::io;
 use std::io::Write;
 use std::mem;
 use std::sync::Arc;
-use utils::register_utils;
-use writer::Writer;
 use yansi::Paint;
 #[derive(Serialize, Deserialize)]
 pub struct Core {

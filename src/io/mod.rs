@@ -23,7 +23,7 @@ use self::files::*;
 use self::map::*;
 use self::print::*;
 use self::write::*;
-use core::Core;
+use crate::core::Core;
 use parking_lot::Mutex;
 use std::sync::Arc;
 pub fn register_io(core: &mut Core) {

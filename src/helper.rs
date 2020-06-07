@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use core::*;
+use crate::core::*;
 use parking_lot::Mutex;
 use rair_env::Environment;
 use serde::{Deserialize, Serialize};
@@ -103,8 +103,8 @@ pub struct CmdFunctions {
 }
 
 pub trait Cmd {
-    fn run(&mut self, &mut Core, &[String]);
-    fn help(&self, &mut Core);
+    fn run(&mut self, _: &mut Core, _: &[String]);
+    fn help(&self, _: &mut Core);
 }
 #[derive(Copy, Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub enum AddrMode {

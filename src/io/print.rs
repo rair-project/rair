@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use core::*;
-use helper::*;
+use crate::core::*;
+use crate::helper::*;
+use crate::writer::*;
 use rair_env::Environment;
 use std::cmp;
 use std::io::Write;
-use writer::*;
 use yansi::Paint;
 
 #[derive(Default)]

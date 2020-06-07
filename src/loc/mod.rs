@@ -20,7 +20,7 @@ mod seek;
 use self::history::History;
 use self::mode::*;
 use self::seek::*;
-use core::Core;
+use crate::core::Core;
 use parking_lot::Mutex;
 use std::sync::Arc;
 

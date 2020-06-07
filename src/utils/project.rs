@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use core::*;
+use crate::core::*;
+use crate::helper::*;
 use flate2::write::{ZlibDecoder, ZlibEncoder};
 use flate2::Compression;
-use helper::*;
 use serde::Deserialize;
 use std::fs::File;
 use std::io::prelude::*;
