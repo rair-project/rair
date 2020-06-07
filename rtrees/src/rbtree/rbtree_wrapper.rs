@@ -66,12 +66,12 @@ where
 
     #[inline]
     pub(super) fn as_mut(&mut self) -> Option<&mut Node<K, A, V>> {
-        self.0.as_mut().map(|x| &mut **x)
+        self.0.as_deref_mut()
     }
 
     #[inline]
     pub(super) fn as_ref(&self) -> Option<&Node<K, A, V>> {
-        self.0.as_ref().map(|x| &**x)
+        self.0.as_deref()
     }
 
     #[inline]
