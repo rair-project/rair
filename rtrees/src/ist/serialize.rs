@@ -61,7 +61,7 @@ where
             let data = seq.next_element()?.ok_or_else(|| de::Error::invalid_length(0, &self))?;
             tree.insert(lo, hi, data);
         }
-        return Ok(tree);
+        Ok(tree)
     }
 }
 

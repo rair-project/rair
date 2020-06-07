@@ -64,7 +64,7 @@ where
             let aug_data = seq.next_element()?.ok_or_else(|| de::Error::invalid_length(0, &self))?;
             tree.insert(key, aug_data, data);
         }
-        return Ok(tree);
+        Ok(tree)
     }
 }
 
