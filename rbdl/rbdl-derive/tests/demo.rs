@@ -15,7 +15,7 @@
  */
 
 use rbdl::*;
-
+/*
 rbdl_inline!(
     FileType: enum {
         #[static='0']
@@ -69,6 +69,24 @@ rbdl_inline!(
         devminor: oct,
         #[size=155, encoding="ascii", delimiter=0]
         prefix: String,
+    }
+);
+
+*/
+rbdl_inline!(
+    /*X: struct {
+        #[a=x]
+        a: i8,
+        b: i8,
+        c: Vec<Y>,
+    }*/
+    Y: struct {
+        a: i16,
+        b: Vec<i8>,
+    }
+    A: struct{
+        x: i16,
+        y: Y<i8>
     }
 );
 
