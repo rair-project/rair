@@ -45,7 +45,7 @@ where
     V: Deserialize<'de>,
 {
     type Value = IST<K, V>;
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("struct IST")
     }
     fn visit_seq<VI>(self, mut seq: VI) -> Result<IST<K, V>, VI::Error>

@@ -48,7 +48,7 @@ where
     V: Deserialize<'de>,
 {
     type Value = RBTree<K, A, V>;
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("struct RBTree")
     }
     fn visit_seq<VI>(self, mut seq: VI) -> Result<RBTree<K, A, V>, VI::Error>
