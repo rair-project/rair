@@ -67,7 +67,7 @@ fn set_global_color(_: &str, value: bool, _: &Environment<Core>, _: &mut Core) -
     } else {
         Paint::disable();
     }
-    return true;
+    true
 }
 impl Core {
     pub(crate) fn load_commands(&mut self) {
@@ -77,7 +77,7 @@ impl Core {
     }
     /// Returns list of all available commands in [Core].
     pub fn commands(&mut self) -> Arc<Mutex<Commands>> {
-        return self.commands.clone();
+        self.commands.clone()
     }
     pub fn set_commands(&mut self, commands: Arc<Mutex<Commands>>) {
         self.commands = commands
@@ -100,7 +100,7 @@ impl Core {
         let mut core: Core = Default::default();
         core.init_colors(color);
         core.load_commands();
-        return core;
+        core
     }
     pub fn new() -> Self {
         Core::new_settings(true)

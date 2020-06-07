@@ -27,7 +27,7 @@ use yansi::Paint;
 pub struct PrintHex {}
 
 fn one_byte(_: &str, value: &str, _: &Environment<Core>, _: &mut Core) -> bool {
-    return value.len() == 1;
+    value.len() == 1
 }
 
 impl PrintHex {
@@ -152,14 +152,14 @@ fn encode_bin(data: &[u8]) -> String {
     for byte in data {
         out += &format!("{:08b}", byte);
     }
-    return out;
+    out
 }
 fn encode_hex(data: &[u8]) -> String {
     let mut out = String::with_capacity(data.len() * 2);
     for byte in data {
         out += &format!("{:02x}", byte);
     }
-    return out;
+    out
 }
 impl Cmd for PrintBase {
     fn run(&mut self, core: &mut Core, args: &[String]) {
@@ -223,7 +223,7 @@ fn csv8(data: &[u8]) -> String {
         }
         out += &format!("0x{:02x}{}", byte, terminal);
     }
-    return out;
+    out
 }
 
 fn csv16(data: &[u8]) -> String {
@@ -240,7 +240,7 @@ fn csv16(data: &[u8]) -> String {
         }
         out += &format!("0x{:02x}{:02x}{}", data[i + 1], data[i], terminal);
     }
-    return out;
+    out
 }
 
 fn csv32(data: &[u8]) -> String {
@@ -261,7 +261,7 @@ fn csv32(data: &[u8]) -> String {
         }
         out += terminal
     }
-    return out;
+    out
 }
 
 fn csv64(data: &[u8]) -> String {
@@ -282,7 +282,7 @@ fn csv64(data: &[u8]) -> String {
         }
         out += terminal
     }
-    return out;
+    out
 }
 
 fn csv128(data: &[u8]) -> String {
@@ -303,7 +303,7 @@ fn csv128(data: &[u8]) -> String {
         }
         out += terminal
     }
-    return out;
+    out
 }
 
 fn csv256(data: &[u8]) -> String {
@@ -324,7 +324,7 @@ fn csv256(data: &[u8]) -> String {
         }
         out += terminal
     }
-    return out;
+    out
 }
 
 fn csv512(data: &[u8]) -> String {
@@ -343,7 +343,7 @@ fn csv512(data: &[u8]) -> String {
         }
         out += terminal
     }
-    return out;
+    out
 }
 
 impl Cmd for PrintCSV {
@@ -431,7 +431,7 @@ fn scsv8(data: &[u8]) -> String {
         }
         out += &format!("{}{}", *byte as i8, terminal);
     }
-    return out;
+    out
 }
 
 fn scsv16(data: &[u8]) -> String {
@@ -449,7 +449,7 @@ fn scsv16(data: &[u8]) -> String {
         let x = ((data[i + 1] as u16) << 8) + data[i] as u16;
         out += &format!("{}{}", x as i16, terminal);
     }
-    return out;
+    out
 }
 
 fn scsv32(data: &[u8]) -> String {
@@ -470,7 +470,7 @@ fn scsv32(data: &[u8]) -> String {
         }
         out += &format!("{}{}", x as i32, terminal);
     }
-    return out;
+    out
 }
 
 fn scsv64(data: &[u8]) -> String {
@@ -491,7 +491,7 @@ fn scsv64(data: &[u8]) -> String {
         }
         out += &format!("{}{}", x as i64, terminal);
     }
-    return out;
+    out
 }
 
 fn scsv128(data: &[u8]) -> String {
@@ -512,7 +512,7 @@ fn scsv128(data: &[u8]) -> String {
         }
         out += &format!("{}{}", x as i128, terminal);
     }
-    return out;
+    out
 }
 
 impl Cmd for PrintSignedCSV {

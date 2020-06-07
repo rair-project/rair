@@ -1,6 +1,5 @@
 #![warn(clippy::cargo)]
 #![allow(clippy::multiple_crate_versions)]
-#![allow(clippy::needless_return)]
 /*
  * rcore: rair core library
  * Copyright (C) 2019  Oddcoder

@@ -27,13 +27,11 @@ fn map_error(core: &mut Core, name: &str, err: &str) {
     let name = Paint::default(name).bold();
     let msg = format!("Failed to parse {}, {}.", name, err);
     error_msg(core, "Failed to map memory", &msg);
-    return;
 }
 fn unmap_error(core: &mut Core, name: &str, err: &str) {
     let name = Paint::default(name).bold();
     let msg = format!("Failed to parse {}, {}.", name, err);
     error_msg(core, "Failed to unmap memory", &msg);
-    return;
 }
 impl Map {
     pub fn new() -> Self {

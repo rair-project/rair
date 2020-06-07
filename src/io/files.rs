@@ -77,7 +77,7 @@ fn parse_perm(p: &str) -> Result<IoMode, String> {
             _ => return Err(format!("Unknown Permission: `{}`", c)),
         }
     }
-    return Ok(perm);
+    Ok(perm)
 }
 impl Cmd for OpenFile {
     fn run(&mut self, core: &mut Core, args: &[String]) {

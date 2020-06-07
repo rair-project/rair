@@ -49,20 +49,20 @@ impl Default for Writer {
 impl Writer {
     /// Creates a new [Writer] backed by object that implements [Write].
     pub fn new_write(out: Box<dyn Write + Sync + Send>) -> Self {
-        return Writer::Write(out);
+        Writer::Write(out)
     }
 
     /// Returns a new buffer based [Writer].
     pub fn new_buf() -> Self {
-        return Writer::Bytes(Vec::new());
+        Writer::Bytes(Vec::new())
     }
     /// This function consumes the [Writer] object, it returns the
     /// data stored there if the object is buffer based.
     pub fn bytes(self) -> Option<Vec<u8>> {
         if let Writer::Bytes(b) = self {
-            return Some(b);
+            Some(b)
         } else {
-            return None;
+            None
         }
     }
     /// This function consumes the [Writer] object, it returns UTF-8
@@ -71,21 +71,21 @@ impl Writer {
     pub fn utf8_string(self) -> Option<String> {
         if let Writer::Bytes(b) = self {
             if let Ok(s) = String::from_utf8(b) {
-                return Some(s);
+                Some(s)
             } else {
-                return None;
+                None
             }
         } else {
-            return None;
+            None
         }
     }
     /// This function returns a reference to the data stored
     /// in respective [Writer] if the object is buffer based.
     pub fn bytes_ref(&self) -> Option<&Vec<u8>> {
         if let Writer::Bytes(b) = self {
-            return Some(b);
+            Some(b)
         } else {
-            return None;
+            None
         }
     }
 
@@ -94,9 +94,9 @@ impl Writer {
     /// based.
     pub fn bytes_mut(&mut self) -> Option<&mut Vec<u8>> {
         if let Writer::Bytes(b) = self {
-            return Some(b);
+            Some(b)
         } else {
-            return None;
+            None
         }
     }
 }

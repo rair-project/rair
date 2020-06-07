@@ -119,7 +119,7 @@ impl Environment {
 impl Cmd for Environment {
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if args.len() > 3 {
-            return expect_range(core, args.len() as u64, 0, 3);
+            expect_range(core, args.len() as u64, 0, 3)
         } else if args.is_empty() {
             self.iterate(core);
         } else if args.len() == 1 {
@@ -136,14 +136,14 @@ impl Cmd for Environment {
                 let value = args[1].split('=').last().unwrap().trim();
                 self.set(core, key, value);
             } else {
-                return error_msg(core, "Failed to set variable.", &"Expected `=`.");
+                error_msg(core, "Failed to set variable.", &"Expected `=`.")
             }
         } else if args.len() == 3 {
             if args[1] == "=" {
                 self.set(core, &args[0], &args[2]);
             } else {
                 let message = format!("Expected `=` found `{}`.", args[1]);
-                return error_msg(core, "Failed to set variable.", &message);
+                error_msg(core, "Failed to set variable.", &message)
             }
         }
     }
@@ -181,7 +181,6 @@ impl Cmd for EnvironmentReset {
         if let Err(e) = res {
             return error_msg(core, "Failed to reset variable.", &e.to_string());
         }
-        return;
     }
     fn help(&self, core: &mut Core) {
         help(core, &"environmentReset", &"er", vec![("[var]", "Reset [var] environment variable.")]);
@@ -197,7 +196,7 @@ impl EnvironmentHelp {
         env.write()
             .add_str_with_cb("environmentHelp.envColor", "color.6", "Color used in the environment variable", core, is_color)
             .unwrap();
-        return Default::default();
+        Default::default()
     }
 }
 
@@ -217,7 +216,6 @@ impl Cmd for EnvironmentHelp {
             drop(env);
             error_msg(core, "Failed to display help.", "Variable Not found");
         }
-        return;
     }
     fn help(&self, core: &mut Core) {
         help(core, &"environmentHelp", &"eh", vec![("[var]", "Print help for [var] environment variable.")]);

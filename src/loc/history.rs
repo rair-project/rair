@@ -25,17 +25,17 @@ pub struct History {
 
 impl History {
     pub fn new() -> Self {
-        return Default::default();
+        Default::default()
     }
     pub fn backward(&mut self, core: &Core) -> Option<(AddrMode, u64)> {
         let (mode, addr) = self.back.pop()?;
         self.front.push((core.mode, core.get_loc()));
-        return Some((mode, addr));
+        Some((mode, addr))
     }
     pub fn forward(&mut self, core: &Core) -> Option<(AddrMode, u64)> {
         let (mode, addr) = self.front.pop()?;
         self.back.push((core.mode, core.get_loc()));
-        return Some((mode, addr));
+        Some((mode, addr))
     }
     pub fn add(&mut self, core: &Core) {
         self.front.clear();

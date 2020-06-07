@@ -30,21 +30,21 @@ impl Commands {
     pub fn add_command(&mut self, command_name: &'static str, functionality: MRc<dyn Cmd + Sync + Send>) -> bool {
         // first check that command_name doesn't exist
         if self.search.contains_key(command_name) {
-            return false;
+            false
         } else {
             self.suggestions.insert(command_name.to_string(), ());
             self.search.insert(command_name, functionality);
-            return true;
+            true
         }
     }
 
     pub fn find(&self, command: &str) -> Option<MRc<dyn Cmd + Sync + Send>> {
-        return self.search.get(command).cloned();
+        self.search.get(command).cloned()
     }
     pub fn suggest(&self, command: &str, tolerance: u64) -> Vec<&String> {
-        return self.suggestions.find(&command.to_string(), tolerance).1;
+        self.suggestions.find(&command.to_string(), tolerance).1
     }
     pub fn prefix<'a>(&'a self, command: &'a str) -> Vec<&&str> {
-        return self.search.range(command..).take_while(|(k, _)| k.starts_with(command)).map(|(k, _)| k).collect();
+        self.search.range(command..).take_while(|(k, _)| k.starts_with(command)).map(|(k, _)| k).collect()
     }
 }
