@@ -27,6 +27,7 @@ enum Hint<'a, K: Ord + Copy, A: Copy, V> {
     LR(&'a RBTree<K, A, V>),
 }
 
+/// Iterator for [RBTree] reference
 pub struct TreeRefIterator<'a, K: Ord + Copy, A: Copy, V> {
     right: Vec<Hint<'a, K, A, V>>,
     current: Option<&'a RBTree<K, A, V>>,

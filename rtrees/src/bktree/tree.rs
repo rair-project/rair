@@ -74,6 +74,7 @@ where
 /// In case of strings, the distance function could be something like Levenshtein distance,
 /// Damerau–Levenshtein distance, Optimal string alignment distance or anything similar.
 pub trait Distance {
+    /// Calculate the distance between two nodes in the [BKTree]
     fn distance(&self, other: &Self) -> u64;
 }
 

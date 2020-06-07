@@ -18,6 +18,7 @@
 // https://codereview.stackexchange.com/questions/110161/binary-trees-in-rust-iterators
 use super::rbtree_wrapper::{Augment, RBTree};
 
+/// Iterator for [RBtree]
 pub struct TreeIterator<K: Ord + Copy, A: Copy, V> {
     right: Vec<RBTree<K, A, V>>,
     current: Option<RBTree<K, A, V>>,

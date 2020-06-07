@@ -1,14 +1,8 @@
 #![warn(clippy::cargo)]
 #![allow(clippy::multiple_crate_versions)]
-#![warn(
-    future_incompatible,
-    nonstandard_style,
-    warnings,
-    rust_2018_idioms,
-    unused,
-    rust_2018_idioms,
-    //missing_docs
-)]
+#![warn(future_incompatible, nonstandard_style, warnings, rust_2018_idioms, unused, rust_2018_idioms, missing_docs)]
+
+//!various trees impelementation for rair project
 
 /*
  * rtrees: rair trees library impelementation
@@ -31,6 +25,11 @@ extern crate serde_json;
 
 #[cfg(feature = "serialize")]
 extern crate serde;
+
+/// Approximate String search data structure.
 pub mod bktree;
+/// Interval search tree implementation.
 pub mod ist;
+
+/// Left-Leaning Red Black tree implementation built with augmentation in mind.
 pub mod rbtree;

@@ -21,6 +21,7 @@ use super::tree::*;
 use crate::rbtree::TreeIterator;
 use std::vec::IntoIter;
 
+/// Iterator for [IST]
 pub struct ISTIterator<K: Ord + Copy, V> {
     tree_iter: TreeIterator<Interval<K>, AugData<K>, Vec<V>>,
     lo: Option<K>,

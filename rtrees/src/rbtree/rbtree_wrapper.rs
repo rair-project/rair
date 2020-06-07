@@ -32,6 +32,7 @@ pub type LeftRightDataTuple<'a, K, A, V> = (&'a mut RBTree<K, A, V>, &'a mut RBT
 /// This trait is mainly meant to be only implemented for [RBTree]
 /// before using the tree.
 pub trait Augment<T: Copy> {
+    /// Recalculate the agumented data in the current node
     fn sync_custom_aug(&mut self) {}
 }
 
