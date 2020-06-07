@@ -18,7 +18,7 @@
 use super::interval::*;
 use super::rb_helpers::*;
 use super::tree::*;
-use rbtree::TreeRefIterator;
+use crate::rbtree::TreeRefIterator;
 use std::slice::Iter;
 pub struct ISTRefIterator<'a, K: Ord + Copy, V> {
     tree_iter: TreeRefIterator<'a, Interval<K>, AugData<K>, Vec<V>>,

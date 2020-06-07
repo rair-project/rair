@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **/
 use super::interval::*;
-use rbtree::RBTree;
+use crate::rbtree::RBTree;
 
 #[derive(Copy, Clone)]
 pub(super) struct AugData<K: Ord + Copy> {

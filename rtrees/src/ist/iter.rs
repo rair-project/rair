@@ -18,7 +18,7 @@
 use super::interval::*;
 use super::rb_helpers::*;
 use super::tree::*;
-use rbtree::TreeIterator;
+use crate::rbtree::TreeIterator;
 use std::vec::IntoIter;
 
 pub struct ISTIterator<K: Ord + Copy, V> {

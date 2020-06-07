@@ -24,7 +24,7 @@ use super::interval::Interval;
 use super::iter::ISTIterator;
 use super::iter_ref::ISTRefIterator;
 use super::rb_helpers::{AugData, ISTHelpers};
-use rbtree::{Augment, RBTree};
+use crate::rbtree::{Augment, RBTree};
 
 /// Interval Query data type based on augmented binary search tree,
 /// written as *IST* but pronounced 'Interval Search Tree'.
