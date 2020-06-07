@@ -76,7 +76,7 @@ impl PartialEq for IoError {
                 }
             }
         }
-        return false;
+        false
     }
 }
 impl fmt::Display for IoError {

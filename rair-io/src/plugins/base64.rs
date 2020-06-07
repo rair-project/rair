@@ -35,7 +35,7 @@ struct Base64Internal {
 }
 impl Base64Internal {
     fn len(&self) -> u64 {
-        return self.len;
+        self.len
     }
     fn read_first_unaligned_block<'a>(&mut self, raddr: usize, buffer: &'a mut [u8]) -> Result<(usize, &'a mut [u8]), IoError> {
         let offset = raddr % 3;
@@ -52,7 +52,7 @@ impl Base64Internal {
             return Err(IoError::Custom("Corrupted base64 data".to_string()));
         }
         buffer[0..size].copy_from_slice(&decoded_data[offset..offset + size]);
-        return Ok((raddr + size, &mut buffer[size..]));
+        Ok((raddr + size, &mut buffer[size..]))
     }
 
     fn read_last_unaligned_block<'a>(&mut self, raddr: usize, buffer: &'a mut [u8]) -> Result<(usize, &'a mut [u8]), IoError> {
@@ -71,13 +71,13 @@ impl Base64Internal {
             return Err(IoError::Custom("Corrupted base64 data".to_string()));
         }
         buffer[offset..].copy_from_slice(&decoded_data[0..size]);
-        return Ok((raddr, &mut buffer[..offset]));
+        Ok((raddr, &mut buffer[..offset]))
     }
     // returns new raddr and new buffer to fill;
     fn read_unaligned_blocks<'a>(&mut self, raddr: usize, buffer: &'a mut [u8]) -> Result<(usize, &'a mut [u8]), IoError> {
         let (raddr, buffer) = self.read_first_unaligned_block(raddr, buffer)?;
         let (raddr, buffer) = self.read_last_unaligned_block(raddr, buffer)?;
-        return Ok((raddr, buffer));
+        Ok((raddr, buffer))
     }
     fn read_aligned_blocks(&mut self, raddr: usize, buffer: &mut [u8]) -> Result<(), IoError> {
         if buffer.is_empty() {
@@ -90,7 +90,7 @@ impl Base64Internal {
         if decode_config_slice(&b64data, base64::STANDARD, buffer).is_err() {
             return Err(IoError::Custom("Corrupted base64 data".to_string()));
         }
-        return Ok(());
+        Ok(())
     }
     fn write_first_unaligned_block<'a>(&mut self, raddr: usize, buffer: &'a [u8]) -> Result<(usize, &'a [u8]), IoError> {
         let offset = raddr % 3;
@@ -110,7 +110,7 @@ impl Base64Internal {
         decoded_data[offset..offset + size].copy_from_slice(&buffer[0..size]);
         encode_config_slice(&decoded_data, base64::STANDARD, &mut b64data);
         self.file.write(b64base, &b64data)?;
-        return Ok((raddr + size, &buffer[size..]));
+        Ok((raddr + size, &buffer[size..]))
     }
 
     fn write_last_unaligned_block<'a>(&mut self, raddr: usize, buffer: &'a [u8]) -> Result<(usize, &'a [u8]), IoError> {
@@ -131,13 +131,13 @@ impl Base64Internal {
         decoded_data[0..size].copy_from_slice(&buffer[offset..]);
         encode_config_slice(&decoded_data, base64::STANDARD, &mut b64data);
         self.file.write(b64base, &b64data)?;
-        return Ok((raddr, &buffer[..offset]));
+        Ok((raddr, &buffer[..offset]))
     }
 
     fn write_unaligned_blocks<'a>(&mut self, raddr: usize, buffer: &'a [u8]) -> Result<(usize, &'a [u8]), IoError> {
         let (raddr, buffer) = self.write_first_unaligned_block(raddr, buffer)?;
         let (raddr, buffer) = self.write_last_unaligned_block(raddr, buffer)?;
-        return Ok((raddr, buffer));
+        Ok((raddr, buffer))
     }
     fn write_aligned_blocks(&mut self, raddr: usize, buffer: &[u8]) -> Result<(), IoError> {
         if buffer.is_empty() {
@@ -148,7 +148,7 @@ impl Base64Internal {
         let mut b64data = vec![0; b64size];
         encode_config_slice(buffer, base64::STANDARD, &mut b64data);
         self.file.write(b64addr, &b64data)?;
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -159,7 +159,7 @@ impl RIOPluginOperations for Base64Internal {
         }
         let (raddr, buffer) = self.read_unaligned_blocks(raddr, buffer)?;
         self.read_aligned_blocks(raddr, buffer)?;
-        return Ok(());
+        Ok(())
     }
 
     fn write(&mut self, raddr: usize, buffer: &[u8]) -> Result<(), IoError> {
@@ -168,7 +168,7 @@ impl RIOPluginOperations for Base64Internal {
         }
         let (raddr, buffer) = self.write_unaligned_blocks(raddr, buffer)?;
         self.write_aligned_blocks(raddr, buffer)?;
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -179,7 +179,7 @@ struct Base64Plugin {
 impl Base64Plugin {
     fn uri_to_path(uri: &str) -> &Path {
         let path = uri.trim_start_matches("b64://");
-        return Path::new(path);
+        Path::new(path)
     }
     fn new() -> Base64Plugin {
         Base64Plugin {
@@ -190,7 +190,7 @@ impl Base64Plugin {
 
 impl RIOPlugin for Base64Plugin {
     fn get_metadata(&self) -> &'static RIOPluginMetadata {
-        return &METADATA;
+        &METADATA
     }
 
     fn open(&mut self, uri: &str, flags: IoMode) -> Result<RIOPluginDesc, IoError> {
@@ -212,20 +212,17 @@ impl RIOPlugin for Base64Plugin {
             size: internal.len(),
             plugin_operations: Box::new(internal),
         };
-        return Ok(desc);
+        Ok(desc)
     }
 
     fn accept_uri(&self, uri: &str) -> bool {
         let split: Vec<&str> = uri.split("://").collect();
-        if split.len() == 2 && split[0] == "b64" {
-            return true;
-        }
-        return false;
+        split.len() == 2 && split[0] == "b64"
     }
 }
 
 pub fn plugin() -> Box<dyn RIOPlugin + Sync + Send> {
-    return Box::new(Base64Plugin::new());
+    Box::new(Base64Plugin::new())
 }
 
 #[cfg(test)]

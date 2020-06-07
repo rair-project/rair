@@ -21,9 +21,9 @@ pub struct Dummy {}
 
 impl RIOPluginOperations for Dummy {
     fn read(&mut self, _raddr: usize, _buffer: &mut [u8]) -> Result<(), IoError> {
-        return Ok(());
+        Ok(())
     }
     fn write(&mut self, _raddr: usize, _buffer: &[u8]) -> Result<(), IoError> {
-        return Ok(());
+        Ok(())
     }
 }

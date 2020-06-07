@@ -55,6 +55,6 @@ impl RIOPluginOperations for DefPluginOperations {
 
 impl Default for Box<dyn RIOPluginOperations + Sync + Send> {
     fn default() -> Self {
-        return Box::new(DefPluginOperations());
+        Box::new(DefPluginOperations())
     }
 }

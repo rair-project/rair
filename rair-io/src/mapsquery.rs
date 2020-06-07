@@ -47,7 +47,7 @@ impl RIOMap {
             size: self.size - delta,
         };
         self.size = delta;
-        return (self, new_map);
+        (self, new_map)
     }
     // This will only work IFF self.envelop(map) == true
     fn remove_projection(mut self, map: &RIOMap) -> Vec<RIOMap> {
@@ -61,19 +61,19 @@ impl RIOMap {
             let (_, clean) = self.split(map.vaddr + map.size);
             maps.push(clean);
         }
-        return maps;
+        maps
     }
 }
 
 impl PartialEq<RIOMap> for Arc<RIOMap> {
     fn eq(&self, other: &RIOMap) -> bool {
-        return &**self == other;
+        &**self == other
     }
 }
 
 impl PartialEq<Arc<RIOMap>> for RIOMap {
     fn eq(&self, other: &Arc<RIOMap>) -> bool {
-        return self == &**other;
+        self == &**other
     }
 }
 
@@ -98,7 +98,7 @@ impl RIOMapQuery {
         let mapping = Arc::new(RIOMap { paddr, vaddr, size });
         self.maps.insert(vaddr, vaddr + size - 1, mapping.clone());
         self.rev_maps.insert(paddr, paddr + size - 1, mapping);
-        return Ok(());
+        Ok(())
     }
     pub fn split_vaddr_range(&self, vaddr: u64, size: u64) -> Option<Vec<RIOMap>> {
         let maps: Vec<Arc<RIOMap>> = self.maps.overlap(vaddr, vaddr + size - 1).iter().map(|&x| x.clone()).collect();
@@ -125,14 +125,14 @@ impl RIOMapQuery {
         if remaining != 0 {
             return None;
         }
-        return Some(ranges);
+        Some(ranges)
     }
     pub fn rev_query(&self, paddr: u64) -> Vec<u64> {
         let maps: Vec<Arc<RIOMap>> = self.rev_maps.at(paddr).iter().map(|&x| x.clone()).collect();
         if maps.is_empty() {
             return Vec::new();
         }
-        return maps.iter().map(|map| paddr - map.paddr + map.vaddr).collect();
+        maps.iter().map(|map| paddr - map.paddr + map.vaddr).collect()
     }
     pub fn split_vaddr_sparce_range(&self, vaddr: u64, size: u64) -> Vec<RIOMap> {
         let maps: Vec<Arc<RIOMap>> = self.maps.overlap(vaddr, vaddr + size - 1).iter().map(|&x| x.clone()).collect();
@@ -157,7 +157,7 @@ impl RIOMapQuery {
             start += delta;
             remaining -= delta;
         }
-        return ranged_hndl;
+        ranged_hndl
     }
     pub fn unmap(&mut self, vaddr: u64, size: u64) -> Result<(), IoError> {
         let fragments = self.split_vaddr_range(vaddr, size);
@@ -186,7 +186,7 @@ impl RIOMapQuery {
                 }
             }
         }
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -194,7 +194,7 @@ impl<'a> IntoIterator for &'a RIOMapQuery {
     type Item = Arc<RIOMap>;
     type IntoIter = Box<dyn Iterator<Item = Arc<RIOMap>> + 'a>;
     fn into_iter(self) -> Box<dyn Iterator<Item = Arc<RIOMap>> + 'a> {
-        return Box::new((&self.maps).into_iter().map(|(_, _, map)| map).cloned());
+        Box::new((&self.maps).into_iter().map(|(_, _, map)| map).cloned())
     }
 }
 

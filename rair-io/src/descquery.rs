@@ -44,7 +44,7 @@ impl RIODescQuery {
             result = self.next_hndl;
             self.next_hndl += 1;
         }
-        return result;
+        result
     }
     fn register_handle(&mut self, plugin: &mut dyn RIOPlugin, uri: &str, flags: IoMode) -> Result<u64, IoError> {
         let mut desc = RIODesc::open(plugin, uri, flags)?;
@@ -55,7 +55,7 @@ impl RIODescQuery {
         } else {
             self.hndl_to_descs.push(Some(desc));
         }
-        return Ok(hndl);
+        Ok(hndl)
     }
     fn deregister_hndl(&mut self, hndl: u64) -> Result<RIODesc, IoError> {
         if hndl >= self.hndl_to_descs.len() as u64 || self.hndl_to_descs[hndl as usize].is_none() {
@@ -63,12 +63,12 @@ impl RIODescQuery {
         }
         let ret = mem::replace(&mut self.hndl_to_descs[hndl as usize], None).unwrap();
         self.free_hndls.push(Reverse(hndl));
-        return Ok(ret);
+        Ok(ret)
     }
     pub(crate) fn close(&mut self, hndl: u64) -> Result<RIODesc, IoError> {
         let desc = self.deregister_hndl(hndl)?;
         self.paddr_to_hndls.delete_envelop(desc.paddr, desc.paddr + desc.size - 1);
-        return Ok(desc);
+        Ok(desc)
     }
     pub(crate) fn register_open(&mut self, plugin: &mut dyn RIOPlugin, uri: &str, flags: IoMode) -> Result<u64, IoError> {
         let hndl = self.register_handle(plugin, uri, flags)?;
@@ -85,7 +85,7 @@ impl RIODescQuery {
         }
         self.hndl_to_descs[hndl as usize].as_mut().unwrap().paddr = lo;
         self.paddr_to_hndls.insert(lo, lo + size - 1, hndl);
-        return Ok(hndl);
+        Ok(hndl)
     }
 
     pub(crate) fn register_open_default(&mut self, plugin: &mut dyn RIOPlugin, uri: &str, flags: IoMode) -> Result<u64, IoError> {
@@ -99,7 +99,7 @@ impl RIODescQuery {
         }
         self.hndl_to_mut_desc(hndl).unwrap().paddr = lo;
         self.paddr_to_hndls.insert(lo, hi, hndl);
-        return Ok(hndl);
+        Ok(hndl)
     }
 
     pub(crate) fn register_open_at(&mut self, plugin: &mut dyn RIOPlugin, uri: &str, flags: IoMode, at: u64) -> Result<u64, IoError> {
@@ -112,19 +112,19 @@ impl RIODescQuery {
         }
         self.hndl_to_descs[hndl as usize].as_mut().unwrap().paddr = lo;
         self.paddr_to_hndls.insert(lo, hi, hndl);
-        return Ok(hndl);
+        Ok(hndl)
     }
     pub(crate) fn hndl_to_desc(&self, hndl: u64) -> Option<&RIODesc> {
         if hndl >= self.hndl_to_descs.len() as u64 {
             return None;
         }
-        return self.hndl_to_descs[hndl as usize].as_ref();
+        self.hndl_to_descs[hndl as usize].as_ref()
     }
     pub(crate) fn hndl_to_mut_desc(&mut self, hndl: u64) -> Option<&mut RIODesc> {
         if hndl >= self.hndl_to_descs.len() as u64 {
             return None;
         }
-        return self.hndl_to_descs[hndl as usize].as_mut();
+        self.hndl_to_descs[hndl as usize].as_mut()
     }
     // Returns Option<Vec<hndl, start, size>>
     pub(crate) fn paddr_range_to_hndl(&self, paddr: u64, size: u64) -> Option<Vec<(u64, u64, u64)>> {
@@ -148,7 +148,7 @@ impl RIODescQuery {
         if remaining != 0 {
             return None;
         }
-        return Some(ranged_hndl);
+        Some(ranged_hndl)
     }
 
     pub(crate) fn paddr_sparce_range_to_hndl(&self, paddr: u64, size: u64) -> Vec<(u64, u64, u64)> {
@@ -170,7 +170,7 @@ impl RIODescQuery {
             start += delta;
             remaining -= delta;
         }
-        return ranged_hndl;
+        ranged_hndl
     }
 }
 
@@ -178,7 +178,7 @@ impl<'a> IntoIterator for &'a RIODescQuery {
     type Item = &'a RIODesc;
     type IntoIter = Box<dyn Iterator<Item = &'a RIODesc> + 'a>;
     fn into_iter(self) -> Box<dyn Iterator<Item = &'a RIODesc> + 'a> {
-        return Box::new(self.hndl_to_descs.iter().filter_map(|desc| desc.as_ref()));
+        Box::new(self.hndl_to_descs.iter().filter_map(|desc| desc.as_ref()))
     }
 }
 
@@ -186,7 +186,7 @@ impl<'a> IntoIterator for &'a mut RIODescQuery {
     type Item = &'a mut RIODesc;
     type IntoIter = Box<dyn Iterator<Item = &'a mut RIODesc> + 'a>;
     fn into_iter(self) -> Box<dyn Iterator<Item = &'a mut RIODesc> + 'a> {
-        return Box::new(self.hndl_to_descs.iter_mut().filter_map(|desc| desc.as_mut()));
+        Box::new(self.hndl_to_descs.iter_mut().filter_map(|desc| desc.as_mut()))
     }
 }
 

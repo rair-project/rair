@@ -35,7 +35,7 @@ impl MallocInternal {
         MallocInternal { data: vec![0; size as usize] }
     }
     fn len(&self) -> usize {
-        return self.data.len();
+        self.data.len()
     }
 }
 
@@ -45,7 +45,7 @@ impl RIOPluginOperations for MallocInternal {
             return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
         }
         buffer.copy_from_slice(&self.data[raddr..raddr + buffer.len()]);
-        return Ok(());
+        Ok(())
     }
 
     fn write(&mut self, raddr: usize, buf: &[u8]) -> Result<(), IoError> {
@@ -53,7 +53,7 @@ impl RIOPluginOperations for MallocInternal {
             return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
         }
         self.data[raddr..raddr + buf.len()].copy_from_slice(buf);
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -72,13 +72,13 @@ impl MallocPlugin {
         if n.len() > 1 && n.starts_with('0') {
             return u64::from_str_radix(&n[1..], 8).ok();
         }
-        return u64::from_str_radix(n, 10).ok();
+        u64::from_str_radix(n, 10).ok()
     }
 }
 
 impl RIOPlugin for MallocPlugin {
     fn get_metadata(&self) -> &'static RIOPluginMetadata {
-        return &METADATA;
+        &METADATA
     }
 
     fn open(&mut self, uri: &str, flags: IoMode) -> Result<RIOPluginDesc, IoError> {
@@ -104,20 +104,17 @@ impl RIOPlugin for MallocPlugin {
             size: (file.len() as u64),
             plugin_operations: Box::new(file),
         };
-        return Ok(desc);
+        Ok(desc)
     }
 
     fn accept_uri(&self, uri: &str) -> bool {
         let split: Vec<&str> = uri.split("://").collect();
-        if split.len() == 2 && split[0] == "malloc" {
-            return true;
-        }
-        return false;
+        split.len() == 2 && split[0] == "malloc"
     }
 }
 
 pub fn plugin() -> Box<dyn RIOPlugin + Sync + Send> {
-    return Box::new(MallocPlugin {});
+    Box::new(MallocPlugin {})
 }
 
 #[cfg(test)]

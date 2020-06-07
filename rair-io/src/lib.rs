@@ -1,6 +1,5 @@
 #![warn(clippy::cargo)]
 #![allow(clippy::multiple_crate_versions)]
-#![allow(clippy::needless_return)]
 /*
  * rio: rair IO library impelementation
  * Copyright (C) 2019  Oddcoder

@@ -71,7 +71,7 @@ impl<'de> Deserialize<'de> for RIO {
                 return Err(IoError::IoPluginNotFoundError).map_err(de::Error::custom);
             }
         }
-        return Ok(io);
+        Ok(io)
     }
 }
 
@@ -86,7 +86,7 @@ impl RIO {
     pub fn new() -> RIO {
         let mut io: RIO = Default::default();
         plugins::load_plugins(&mut io);
-        return io;
+        io
     }
 
     /// THIS FUNCTION IS NOT SUPPOSED TO BE THAT TRIVIAL
@@ -122,7 +122,7 @@ impl RIO {
                 }
             }
         }
-        return Err(IoError::IoPluginNotFoundError);
+        Err(IoError::IoPluginNotFoundError)
     }
 
     /// Allows us to open file and have it accessable from out physical address space
@@ -150,7 +150,7 @@ impl RIO {
                 return self.descs.register_open_at(&mut **plugin, uri, flags, at);
             }
         }
-        return Err(IoError::IoPluginNotFoundError);
+        Err(IoError::IoPluginNotFoundError)
     }
 
     /// Close an opened file, delete its physical and virtual address space.
@@ -173,7 +173,7 @@ impl RIO {
     pub fn close(&mut self, hndl: u64) -> Result<(), IoError> {
         // delete all memory mappings related to the closed handle
         self.descs.close(hndl)?;
-        return Ok(());
+        Ok(())
     }
 
     /// Close all open files, and reset all virtual and physical address spaces.
@@ -220,9 +220,9 @@ impl RIO {
                 desc.read(paddr as usize, &mut buf[start as usize..(start + size) as usize])?;
                 start += size;
             }
-            return Ok(());
+            Ok(())
         } else {
-            return Err(IoError::AddressNotFound);
+            Err(IoError::AddressNotFound)
         }
     }
     /// Read from the physical address space of current [RIO] object. Data is stored in a sparce
@@ -248,7 +248,7 @@ impl RIO {
                 result.insert(paddr + i as u64, *v);
             }
         }
-        return Ok(result);
+        Ok(result)
     }
     /// Write into the physical address space of current [RIO] object. If there is no enough
     /// space to accomodate *buf* an error is returned.
@@ -272,9 +272,9 @@ impl RIO {
                 desc.write(paddr as usize, &buf[start as usize..(start + size) as usize])?;
                 start += size;
             }
-            return Ok(());
+            Ok(())
         } else {
-            return Err(IoError::AddressNotFound);
+            Err(IoError::AddressNotFound)
         }
     }
     ///  Map memory regions from physical address space to virtual address space
@@ -282,7 +282,7 @@ impl RIO {
         if self.descs.paddr_range_to_hndl(paddr, size).is_none() {
             return Err(IoError::AddressNotFound);
         }
-        return self.maps.map(paddr, vaddr, size);
+        self.maps.map(paddr, vaddr, size)
     }
 
     /// unmap already mapped regions
@@ -300,9 +300,9 @@ impl RIO {
                 self.pread(map.paddr, &mut buf[start as usize..(start + map.size) as usize])?;
                 start += map.size;
             }
-            return Ok(());
+            Ok(())
         } else {
-            return Err(IoError::AddressNotFound);
+            Err(IoError::AddressNotFound)
         }
     }
     /// read memory from virtual address space. Data is stored in a sparce
@@ -318,7 +318,7 @@ impl RIO {
                 result.insert(map.vaddr + i as u64, *v);
             }
         }
-        return Ok(result);
+        Ok(result)
     }
     /// write memory into virtual address space
     pub fn vwrite(&mut self, vaddr: u64, buf: &[u8]) -> Result<(), IoError> {
@@ -329,9 +329,9 @@ impl RIO {
                 self.pwrite(map.paddr, &buf[start as usize..(start + map.size) as usize])?;
                 start += map.size;
             }
-            return Ok(());
+            Ok(())
         } else {
-            return Err(IoError::AddressNotFound);
+            Err(IoError::AddressNotFound)
         }
     }
 
@@ -357,7 +357,7 @@ impl RIO {
     }
     // Return equivalent [RIODesc] structure for the given *hndl*
     pub fn hndl_to_desc(&self, hndl: u64) -> Option<&RIODesc> {
-        return self.descs.hndl_to_desc(hndl);
+        self.descs.hndl_to_desc(hndl)
     }
 }
 

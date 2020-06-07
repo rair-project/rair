@@ -48,43 +48,43 @@ impl RIODesc {
             plugin_operations: plugin_desc.plugin_operations,
             raddr: plugin_desc.raddr,
         };
-        return Ok(desc);
+        Ok(desc)
     }
     pub(crate) fn reopen(&mut self, plugin: &mut dyn RIOPlugin) -> Result<(), IoError> {
         let plugin_desc = plugin.open(&self.name, self.perm)?;
         self.plugin_operations = plugin_desc.plugin_operations;
         self.raddr = plugin_desc.raddr;
-        return Ok(());
+        Ok(())
     }
     pub(crate) fn read(&mut self, paddr: usize, buffer: &mut [u8]) -> Result<(), IoError> {
-        return self.plugin_operations.read(paddr - self.paddr as usize + self.raddr as usize as usize, buffer);
+        self.plugin_operations.read(paddr - self.paddr as usize + self.raddr as usize as usize, buffer)
     }
     pub(crate) fn write(&mut self, paddr: usize, buffer: &[u8]) -> Result<(), IoError> {
-        return self.plugin_operations.write(paddr - self.paddr as usize + self.raddr as usize, buffer);
+        self.plugin_operations.write(paddr - self.paddr as usize + self.raddr as usize, buffer)
     }
     /// Returns URI of current file descriptor.
     pub fn name(&self) -> &str {
-        return &self.name;
+        &self.name
     }
     /// Returns *true* if paddr exists in this file descriptor and *false* otherwise.
     pub fn has_paddr(&self, paddr: u64) -> bool {
-        return paddr >= self.paddr && paddr < self.paddr + self.size as u64;
+        paddr >= self.paddr && paddr < self.paddr + self.size as u64
     }
     /// Returns the base physical address of this file.
     pub fn paddr_base(&self) -> u64 {
-        return self.paddr;
+        self.paddr
     }
     /// Returns size of file on disk.
     pub fn size(&self) -> u64 {
-        return self.size;
+        self.size
     }
     /// Returns the permissions which the file was opened with.
     pub fn perm(&self) -> IoMode {
-        return self.perm;
+        self.perm
     }
     /// Returns the Handle of given file descriptor.
     pub fn hndl(&self) -> u64 {
-        return self.hndl;
+        self.hndl
     }
 }
 

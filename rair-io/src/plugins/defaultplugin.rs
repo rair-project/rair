@@ -29,15 +29,15 @@ enum FileInternals {
 impl FileInternals {
     fn len(&self) -> usize {
         match self {
-            FileInternals::Map(m) => return m.len(),
-            FileInternals::MutMap(m) => return m.len(),
+            FileInternals::Map(m) => m.len(),
+            FileInternals::MutMap(m) => m.len(),
         }
     }
     fn as_mut(&mut self) -> Option<&mut MmapMut> {
         if let FileInternals::MutMap(mutmap) = self {
-            return Some(mutmap);
+            Some(mutmap)
         } else {
-            return None;
+            None
         }
     }
 }
@@ -63,7 +63,7 @@ impl RIOPluginOperations for FileInternals {
             return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
         }
         buffer.copy_from_slice(&self[raddr..raddr + buffer.len()]);
-        return Ok(());
+        Ok(())
     }
 
     fn write(&mut self, raddr: usize, buf: &[u8]) -> Result<(), IoError> {
@@ -72,9 +72,9 @@ impl RIOPluginOperations for FileInternals {
                 return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
             }
             mutmap[raddr..raddr + buf.len()].copy_from_slice(buf);
-            return Ok(());
+            Ok(())
         } else {
-            return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "File Not Writable")));
+            Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "File Not Writable")))
         }
     }
 }
@@ -84,13 +84,13 @@ struct FilePlugin {}
 impl FilePlugin {
     fn uri_to_path(uri: &str) -> &Path {
         let path = uri.trim_start_matches("file://");
-        return Path::new(path);
+        Path::new(path)
     }
 }
 
 impl RIOPlugin for FilePlugin {
     fn get_metadata(&self) -> &'static RIOPluginMetadata {
-        return &METADATA;
+        &METADATA
     }
 
     fn open(&mut self, uri: &str, flags: IoMode) -> Result<RIOPluginDesc, IoError> {
@@ -122,7 +122,7 @@ impl RIOPlugin for FilePlugin {
             size: (file.len() as u64),
             plugin_operations: Box::new(file),
         };
-        return Ok(desc);
+        Ok(desc)
     }
 
     // either file:// or just no "://" to start with
@@ -131,15 +131,12 @@ impl RIOPlugin for FilePlugin {
         if split.len() == 1 {
             return true;
         }
-        if split[0] == "file" {
-            return true;
-        }
-        return false;
+        split[0] == "file"
     }
 }
 
 pub fn plugin() -> Box<dyn RIOPlugin + Sync + Send> {
-    return Box::new(FilePlugin {});
+    Box::new(FilePlugin {})
 }
 
 #[cfg(test)]

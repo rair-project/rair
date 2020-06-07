@@ -75,17 +75,17 @@ fn hex_byte(input: &[u8]) -> IResult<&[u8], u8> {
 fn hex_big_word(input: &[u8]) -> IResult<&[u8], u16> {
     let (input, (byte1, byte2)) = tuple((hex_byte, hex_byte))(input)?;
     let result = ((byte1 as u16) << 8) + byte2 as u16;
-    return Ok((input, result));
+    Ok((input, result))
 }
 fn hex_big_24bits(input: &[u8]) -> IResult<&[u8], u32> {
     let (input, (byte, word)) = tuple((hex_byte, hex_big_word))(input)?;
     let result = ((byte as u32) << 16) + word as u32;
-    return Ok((input, result));
+    Ok((input, result))
 }
 fn hex_big_dword(input: &[u8]) -> IResult<&[u8], u32> {
     let (input, (word1, word2)) = tuple((hex_big_word, hex_big_word))(input)?;
     let result = ((word1 as u32) << 16) + word2 as u32;
-    return Ok((input, result));
+    Ok((input, result))
 }
 
 fn parse_record0(input: &[u8]) -> IResult<&[u8], Record> {
@@ -101,7 +101,7 @@ fn parse_record0(input: &[u8]) -> IResult<&[u8], Record> {
     }
     let (input, _) = hex_byte(input)?; //checksum
     let (input, _) = parse_newline(input)?; //newline
-    return Ok((input, Record::Header(data)));
+    Ok((input, Record::Header(data)))
 }
 fn parse_record1(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, _) = tag("S1")(input)?;
@@ -116,7 +116,7 @@ fn parse_record1(input: &[u8]) -> IResult<&[u8], Record> {
     }
     let (input, _) = hex_byte(input)?; //checksum
     let (input, _) = parse_newline(input)?; //newline
-    return Ok((input, Record::Data(addr as u64, data)));
+    Ok((input, Record::Data(addr as u64, data)))
 }
 fn parse_record2(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, _) = tag("S2")(input)?;
@@ -131,7 +131,7 @@ fn parse_record2(input: &[u8]) -> IResult<&[u8], Record> {
     }
     let (input, _) = hex_byte(input)?; //checksum
     let (input, _) = parse_newline(input)?; //newline
-    return Ok((input, Record::Data(addr as u64, data)));
+    Ok((input, Record::Data(addr as u64, data)))
 }
 fn parse_record3(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, _) = tag("S3")(input)?;
@@ -146,39 +146,39 @@ fn parse_record3(input: &[u8]) -> IResult<&[u8], Record> {
     }
     let (input, _) = hex_byte(input)?; //checksum
     let (input, _) = parse_newline(input)?; //newline
-    return Ok((input, Record::Data(addr as u64, data)));
+    Ok((input, Record::Data(addr as u64, data)))
 }
 fn parse_record5(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, _) = tag("S503")(input)?;
     let (input, count) = hex_big_word(input)?;
     let (input, _) = hex_byte(input)?; //checksum
     let (input, _) = parse_newline(input)?; //newline
-    return Ok((input, Record::Count(count as u64)));
+    Ok((input, Record::Count(count as u64)))
 }
 fn parse_record6(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, _) = tag("S604")(input)?;
     let (input, count) = hex_big_24bits(input)?;
     let (input, _) = hex_byte(input)?; //checksum
     let (input, _) = parse_newline(input)?; //newline
-    return Ok((input, Record::Count(count as u64)));
+    Ok((input, Record::Count(count as u64)))
 }
 fn parse_record7(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, _) = tag("S705")(input)?;
     let (input, start) = hex_big_dword(input)?;
     let (input, _) = hex_byte(input)?; //checksum
-    return Ok((input, Record::EOF(start as u64)));
+    Ok((input, Record::EOF(start as u64)))
 }
 fn parse_record8(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, _) = tag("S804")(input)?;
     let (input, start) = hex_big_24bits(input)?;
     let (input, _) = hex_byte(input)?; //checksum
-    return Ok((input, Record::EOF(start as u64)));
+    Ok((input, Record::EOF(start as u64)))
 }
 fn parse_record9(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, _) = tag("S903")(input)?;
     let (input, start) = hex_big_word(input)?;
     let (input, _) = hex_byte(input)?; //checksum
-    return Ok((input, Record::EOF(start as u64)));
+    Ok((input, Record::EOF(start as u64)))
 }
 named!(parse_record(&[u8]) -> Record, alt!(parse_record0 | parse_record1 | parse_record2 | parse_record3 | parse_record5 | parse_record6 | parse_record7 | parse_record8 | parse_record9));
 
@@ -207,7 +207,7 @@ impl SrecInternal {
             }
             line += 1;
         }
-        return Ok(());
+        Ok(())
     }
     fn size(&self) -> u64 {
         let min = if let Some((k, _)) = self.bytes.iter().next() {
@@ -220,14 +220,14 @@ impl SrecInternal {
         } else {
             return 0;
         };
-        return max - min + 1;
+        max - min + 1
     }
     fn base(&self) -> u64 {
         if let Some((k, _)) = self.bytes.iter().next() {
-            return *k;
+            *k
         } else {
-            return 0;
-        };
+            0
+        }
     }
     fn write_header(&mut self, file: &mut File) -> Result<(), IoError> {
         if self.header.len() > 0xff {
@@ -240,7 +240,7 @@ impl SrecInternal {
             write!(file, "{:02x}", byte).unwrap();
         }
         writeln!(file, "{:02x}", !((checksum & 0xff) as u8)).unwrap();
-        return Ok(());
+        Ok(())
     }
     fn write_data(&mut self, file: &mut File) -> Result<(), IoError> {
         let mut checksum: u16 = 0x10;
@@ -298,7 +298,7 @@ impl SrecInternal {
             writeln!(file, "{}{:02x}{}{:02x}", record, size, data, checksum)?;
         }
 
-        return Ok(());
+        Ok(())
     }
     fn write_eof(&mut self, file: &mut File) -> Result<(), IoError> {
         let start = match self.start_address {
@@ -323,14 +323,14 @@ impl SrecInternal {
             checksum = (checksum + *byte as u16) & 0xff;
         }
         writeln!(file, "{:02x}", checksum).unwrap();
-        return Ok(());
+        Ok(())
     }
     fn save_srec(&mut self) -> Result<(), IoError> {
         let mut file = OpenOptions::new().write(true).truncate(true).open(SrecPlugin::uri_to_path(&self.uri))?;
         self.write_header(&mut file)?;
         self.write_data(&mut file)?;
         self.write_eof(&mut file)?;
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -344,7 +344,7 @@ impl RIOPluginOperations for SrecInternal {
                 *item = 0;
             }
         }
-        return Ok(());
+        Ok(())
     }
 
     fn write(&mut self, raddr: usize, buf: &[u8]) -> Result<(), IoError> {
@@ -366,7 +366,7 @@ impl RIOPluginOperations for SrecInternal {
             let def_desc = plug.open(&SrecPlugin::uri_to_path(&self.uri).to_string_lossy(), IoMode::READ)?;
             self.file = def_desc.plugin_operations;
         }
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -377,7 +377,7 @@ struct SrecPlugin {
 impl SrecPlugin {
     fn uri_to_path(uri: &str) -> &Path {
         let path = uri.trim_start_matches("srec://");
-        return Path::new(path);
+        Path::new(path)
     }
     fn new() -> Self {
         SrecPlugin {
@@ -388,7 +388,7 @@ impl SrecPlugin {
 
 impl RIOPlugin for SrecPlugin {
     fn get_metadata(&self) -> &'static RIOPluginMetadata {
-        return &METADATA;
+        &METADATA
     }
 
     fn open(&mut self, uri: &str, flags: IoMode) -> Result<RIOPluginDesc, IoError> {
@@ -412,20 +412,17 @@ impl RIOPlugin for SrecPlugin {
             size: internal.size(),
             plugin_operations: Box::new(internal),
         };
-        return Ok(desc);
+        Ok(desc)
     }
 
     fn accept_uri(&self, uri: &str) -> bool {
         let split: Vec<&str> = uri.split("://").collect();
-        if split.len() == 2 && split[0] == "srec" {
-            return true;
-        }
-        return false;
+        split.len() == 2 && split[0] == "srec"
     }
 }
 
 pub fn plugin() -> Box<dyn RIOPlugin + Sync + Send> {
-    return Box::new(SrecPlugin::new());
+    Box::new(SrecPlugin::new())
 }
 
 #[cfg(test)]

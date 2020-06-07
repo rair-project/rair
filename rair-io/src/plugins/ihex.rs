@@ -75,12 +75,12 @@ fn hex_byte(input: &[u8]) -> IResult<&[u8], u8> {
 fn hex_big_word(input: &[u8]) -> IResult<&[u8], u16> {
     let (input, (byte1, byte2)) = tuple((hex_byte, hex_byte))(input)?;
     let result = ((byte1 as u16) << 8) + byte2 as u16;
-    return Ok((input, result));
+    Ok((input, result))
 }
 fn hex_big_dword(input: &[u8]) -> IResult<&[u8], u32> {
     let (input, (word1, word2)) = tuple((hex_big_word, hex_big_word))(input)?;
     let result = ((word1 as u32) << 16) + word2 as u32;
-    return Ok((input, result));
+    Ok((input, result))
 }
 fn parse_record00(input: &[u8]) -> IResult<&[u8], Record> {
     // Data record
@@ -96,7 +96,7 @@ fn parse_record00(input: &[u8]) -> IResult<&[u8], Record> {
     }
     let (input, _) = hex_byte(input)?; //checksum
     let (input, _) = parse_newline(input)?; //newline
-    return Ok((input, Record::Data(addr as u64, data)));
+    Ok((input, Record::Data(addr as u64, data)))
 }
 
 fn parse_record01(input: &[u8]) -> IResult<&[u8], Record> {
@@ -105,7 +105,7 @@ fn parse_record01(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, _) = hex_big_word(input)?; // addr entry
     let (input, _) = tag("01")(input)?; // record ID
     let (input, _) = hex_byte(input)?; // checksum
-    return Ok((input, Record::EOF));
+    Ok((input, Record::EOF))
 }
 fn parse_record02(input: &[u8]) -> IResult<&[u8], Record> {
     // Extended Segment Address Record
@@ -115,7 +115,7 @@ fn parse_record02(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, addr) = hex_big_word(input)?; // data
     let (input, _) = hex_byte(input)?; // checksum
     let (input, _) = parse_newline(input)?; //newline
-    return Ok((input, Record::EA((addr as u64) << 4)));
+    Ok((input, Record::EA((addr as u64) << 4)))
 }
 
 fn parse_record03(input: &[u8]) -> IResult<&[u8], Record> {
@@ -126,7 +126,7 @@ fn parse_record03(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, addr) = hex_big_dword(input)?; // data
     let (input, _) = hex_byte(input)?; // checksum
     let (input, _) = parse_newline(input)?; //newline
-    return Ok((input, Record::SSA(addr)));
+    Ok((input, Record::SSA(addr)))
 }
 
 fn parse_record04(input: &[u8]) -> IResult<&[u8], Record> {
@@ -137,7 +137,7 @@ fn parse_record04(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, addr) = hex_big_word(input)?; // data
     let (input, _) = hex_byte(input)?; // checksum
     let (input, _) = parse_newline(input)?; //newline
-    return Ok((input, Record::EA((addr as u64) << 16)));
+    Ok((input, Record::EA((addr as u64) << 16)))
 }
 
 fn parse_record05(input: &[u8]) -> IResult<&[u8], Record> {
@@ -148,7 +148,7 @@ fn parse_record05(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, addr) = hex_big_dword(input)?; // data
     let (input, _) = hex_byte(input)?; // checksum
     let (input, _) = parse_newline(input)?; //newline
-    return Ok((input, Record::SLA(addr)));
+    Ok((input, Record::SLA(addr)))
 }
 
 impl FileInternals {
@@ -176,7 +176,7 @@ impl FileInternals {
             }
             line += 1;
         }
-        return Ok(());
+        Ok(())
     }
     fn write_sa(&self, file: &mut File) -> Result<(), IoError> {
         if let Some(ssa) = self.ssa {
@@ -195,7 +195,7 @@ impl FileInternals {
             checksum = 256 - checksum;
             writeln!(file, ":04000005{:08x}{:02x}", sla, checksum)?;
         }
-        return Ok(());
+        Ok(())
     }
     fn write_record04(&self, file: &mut File, addr: u64) -> Result<(), IoError> {
         let addr = (addr >> 16) as u16;
@@ -205,7 +205,7 @@ impl FileInternals {
         }
         checksum = 256 - checksum;
         writeln!(file, ":02000004{:04x}{:02x}", addr, checksum)?;
-        return Ok(());
+        Ok(())
     }
 
     fn write_record02(&self, file: &mut File, addr: u64) -> Result<(), IoError> {
@@ -216,7 +216,7 @@ impl FileInternals {
         }
         checksum = 256 - checksum;
         writeln!(file, ":02000002{:04x}{:02x}", addr, checksum)?;
-        return Ok(());
+        Ok(())
     }
 
     fn write_data(&self, file: &mut File) -> Result<(), IoError> {
@@ -259,7 +259,7 @@ impl FileInternals {
         if !data.is_empty() {
             writeln!(file, ":{:02x}{}{:02x}", i, data, 256 - checksum)?;
         }
-        return Ok(());
+        Ok(())
     }
     fn save_ihex(&self) -> Result<(), IoError> {
         // truncate the current file.
@@ -270,7 +270,7 @@ impl FileInternals {
         self.write_data(&mut file)?;
         // write EOF
         writeln!(file, ":00000001FF")?;
-        return Ok(());
+        Ok(())
     }
     fn size(&self) -> u64 {
         let min = if let Some((k, _)) = self.bytes.iter().next() {
@@ -283,14 +283,14 @@ impl FileInternals {
         } else {
             return 0;
         };
-        return max - min + 1;
+        max - min + 1
     }
     fn base(&self) -> u64 {
         if let Some((k, _)) = self.bytes.iter().next() {
-            return *k;
+            *k
         } else {
-            return 0;
-        };
+            0
+        }
     }
 }
 
@@ -304,7 +304,7 @@ impl RIOPluginOperations for FileInternals {
                 *item = 0;
             }
         }
-        return Ok(());
+        Ok(())
     }
 
     fn write(&mut self, raddr: usize, buf: &[u8]) -> Result<(), IoError> {
@@ -326,7 +326,7 @@ impl RIOPluginOperations for FileInternals {
             let def_desc = plug.open(&IHexPlugin::uri_to_path(&self.uri).to_string_lossy(), IoMode::READ)?;
             self.file = def_desc.plugin_operations;
         }
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -337,7 +337,7 @@ struct IHexPlugin {
 impl IHexPlugin {
     fn uri_to_path(uri: &str) -> &Path {
         let path = uri.trim_start_matches("ihex://");
-        return Path::new(path);
+        Path::new(path)
     }
     fn new() -> IHexPlugin {
         IHexPlugin {
@@ -348,7 +348,7 @@ impl IHexPlugin {
 
 impl RIOPlugin for IHexPlugin {
     fn get_metadata(&self) -> &'static RIOPluginMetadata {
-        return &METADATA;
+        &METADATA
     }
 
     fn open(&mut self, uri: &str, flags: IoMode) -> Result<RIOPluginDesc, IoError> {
@@ -372,20 +372,17 @@ impl RIOPlugin for IHexPlugin {
             size: internal.size(),
             plugin_operations: Box::new(internal),
         };
-        return Ok(desc);
+        Ok(desc)
     }
 
     fn accept_uri(&self, uri: &str) -> bool {
         let split: Vec<&str> = uri.split("://").collect();
-        if split.len() == 2 && split[0] == "ihex" {
-            return true;
-        }
-        return false;
+        split.len() == 2 && split[0] == "ihex"
     }
 }
 
 pub fn plugin() -> Box<dyn RIOPlugin + Sync + Send> {
-    return Box::new(IHexPlugin::new());
+    Box::new(IHexPlugin::new())
 }
 
 #[cfg(test)]
