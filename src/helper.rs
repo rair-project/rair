@@ -37,7 +37,7 @@ pub fn str_to_num(n: &str) -> Result<u64, num::ParseIntError> {
             _ => (),
         }
     }
-    if n.len() > 1 && n.chars().next().unwrap() == '0' {
+    if n.len() > 1 && n.starts_with('0') {
         return u64::from_str_radix(&n[1..], 8);
     }
     return u64::from_str_radix(n, 10);
