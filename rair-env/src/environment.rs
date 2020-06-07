@@ -477,7 +477,7 @@ impl<T> Environment<T> {
         }
         Ok(())
     }
-    pub fn get(&self, key: &str) -> Option<EnvData> {
+    pub fn get(&self, key: &str) -> Option<EnvData<'_>> {
         let meta = self.data.get(key)?;
         match meta {
             EnvMetaData::Bool(b) => Some(EnvData::Bool(b.data)),
@@ -497,7 +497,7 @@ impl<T> Environment<T> {
             EnvMetaData::Color(c) => Some(&c.help),
         }
     }
-    pub fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = (&str, EnvData)> + 'a> {
+    pub fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = (&str, EnvData<'_>)> + 'a> {
         Box::new(self.data.iter().map(|(k, v)| (k.as_str(), EnvData::from(v))))
     }
 }

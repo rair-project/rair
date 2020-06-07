@@ -25,7 +25,7 @@ pub enum EnvErr {
 }
 
 impl fmt::Display for EnvErr {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             EnvErr::NotFound => write!(f, "Environment variable not found."),
             EnvErr::DifferentType => write!(f, "Environment variable has different type."),
