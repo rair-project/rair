@@ -70,60 +70,60 @@ impl<T> EnvMetaData<T> {
         if let EnvMetaData::Str(s) = self {
             return Some(s);
         }
-        return None;
+        None
     }
     pub(crate) fn as_u64(&self) -> Option<&EnvU64<T>> {
         if let EnvMetaData::U64(u) = self {
             return Some(u);
         }
-        return None;
+        None
     }
     pub(crate) fn as_i64(&self) -> Option<&EnvI64<T>> {
         if let EnvMetaData::I64(i) = self {
             return Some(i);
         }
-        return None;
+        None
     }
     pub(crate) fn as_bool(&self) -> Option<&EnvBool<T>> {
         if let EnvMetaData::Bool(b) = self {
             return Some(b);
         }
-        return None;
+        None
     }
     pub(crate) fn as_color(&self) -> Option<&EnvColor<T>> {
         if let EnvMetaData::Color(c) = self {
             return Some(c);
         }
-        return None;
+        None
     }
     pub(crate) fn mut_str(&mut self) -> Option<&mut EnvStr<T>> {
         if let EnvMetaData::Str(s) = self {
             return Some(s);
         }
-        return None;
+        None
     }
     pub(crate) fn mut_u64(&mut self) -> Option<&mut EnvU64<T>> {
         if let EnvMetaData::U64(u) = self {
             return Some(u);
         }
-        return None;
+        None
     }
     pub(crate) fn mut_i64(&mut self) -> Option<&mut EnvI64<T>> {
         if let EnvMetaData::I64(i) = self {
             return Some(i);
         }
-        return None;
+        None
     }
     pub(crate) fn mut_bool(&mut self) -> Option<&mut EnvBool<T>> {
         if let EnvMetaData::Bool(b) = self {
             return Some(b);
         }
-        return None;
+        None
     }
     pub(crate) fn mut_color(&mut self) -> Option<&mut EnvColor<T>> {
         if let EnvMetaData::Color(c) = self {
             return Some(c);
         }
-        return None;
+        None
     }
 }
