@@ -1,5 +1,15 @@
 #![warn(clippy::cargo)]
 #![allow(clippy::multiple_crate_versions)]
+#![warn(
+    future_incompatible,
+    nonstandard_style,
+    warnings,
+    rust_2018_idioms,
+    unused,
+    rust_2018_idioms,
+    //missing_docs
+)]
+
 /*
  * rio: rair IO library impelementation
  * Copyright (C) 2019  Oddcoder
@@ -36,8 +46,8 @@ mod mapsquery;
 mod plugin;
 mod plugins;
 mod utils;
-pub use desc::*;
-pub use io::*;
-pub use mapsquery::*;
-pub use plugin::*;
-pub use utils::*;
+pub use crate::desc::*;
+pub use crate::io::*;
+pub use crate::mapsquery::*;
+pub use crate::plugin::*;
+pub use crate::utils::*;

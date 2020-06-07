@@ -80,7 +80,7 @@ impl PartialEq for IoError {
     }
 }
 impl fmt::Display for IoError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             IoError::AddressNotFound => write!(f, "Cannot resolve address."),
             IoError::AddressesOverlapError => write!(f, "Phyiscal addresses overlap."),

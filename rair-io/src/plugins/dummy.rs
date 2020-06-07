@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use plugin::*;
-use utils::*;
+use crate::plugin::*;
+use crate::utils::*;
 pub struct Dummy {}
 
 impl RIOPluginOperations for Dummy {

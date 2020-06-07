@@ -14,14 +14,14 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use desc::RIODesc;
-use plugin::RIOPlugin;
+use crate::desc::RIODesc;
+use crate::plugin::RIOPlugin;
+use crate::utils::{IoError, IoMode};
 use rtrees::ist::IST;
 use serde::{Deserialize, Serialize};
 use std::cmp::{min, Reverse};
 use std::collections::BinaryHeap;
 use std::mem;
-use utils::{IoError, IoMode};
 
 #[derive(Default, Serialize, Deserialize)]
 pub(crate) struct RIODescQuery {

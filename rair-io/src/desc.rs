@@ -14,9 +14,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use plugin::*;
+use crate::plugin::*;
+use crate::utils::*;
 use serde::{Deserialize, Serialize};
-use utils::*;
 #[derive(Serialize, Deserialize)]
 pub struct RIODesc {
     pub(crate) name: String,

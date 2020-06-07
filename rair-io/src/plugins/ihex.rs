@@ -16,12 +16,13 @@
  */
 use super::defaultplugin;
 use super::dummy::Dummy;
+use crate::plugin::*;
+use crate::utils::*;
 use nom::bytes::complete::tag;
 use nom::bytes::complete::take_while_m_n;
 use nom::combinator::map_res;
 use nom::sequence::tuple;
 use nom::IResult;
-use plugin::*;
 use std::collections::BTreeMap;
 use std::fmt::Write as FmtWrite;
 use std::fs::File;
@@ -30,7 +31,6 @@ use std::io;
 use std::io::Write as IoWrite;
 use std::path::Path;
 use std::str;
-use utils::*;
 
 const METADATA: RIOPluginMetadata = RIOPluginMetadata {
     name: "IHex",

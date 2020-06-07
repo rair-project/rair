@@ -14,15 +14,15 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use desc::RIODesc;
-use descquery::RIODescQuery;
-use mapsquery::{RIOMap, RIOMapQuery};
-use plugin::*;
-use plugins;
+use crate::desc::RIODesc;
+use crate::descquery::RIODescQuery;
+use crate::mapsquery::{RIOMap, RIOMapQuery};
+use crate::plugin::*;
+use crate::plugins;
+use crate::utils::*;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::BTreeMap;
 use std::sync::Arc;
-use utils::*;
 
 // Credits goes to @Talchas#7429 for the idea of using remote
 // to create something that behaves as finalize_hook() for

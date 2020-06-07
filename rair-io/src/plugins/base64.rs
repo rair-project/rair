@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use super::defaultplugin;
+use crate::plugin::*;
+use crate::utils::*;
 use base64;
 use base64::{decode_config_slice, encode_config_slice};
-use plugin::*;
 use std::cmp;
 use std::io;
 use std::path::Path;
-use utils::*;
 const METADATA: RIOPluginMetadata = RIOPluginMetadata {
     name: "Base64",
     desc: "This plugin is used to open base64 encoded files.",
