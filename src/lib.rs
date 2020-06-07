@@ -2,11 +2,11 @@
 #![allow(clippy::multiple_crate_versions)]
 #![warn(
     future_incompatible,
-    //nonstandard_style,
-    //warnings,
-    //rust_2018_idioms,
-    //unused,
-    //rust_2018_idioms,
+    nonstandard_style,
+    warnings,
+    rust_2018_idioms,
+    unused,
+    rust_2018_idioms,
     //missing_docs
 )]
 
@@ -32,7 +32,6 @@ extern crate rair_env;
 extern crate rair_io;
 extern crate rtrees;
 extern crate serde;
-extern crate serde_cbor;
 #[cfg(test)]
 extern crate test_file;
 extern crate yansi;
