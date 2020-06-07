@@ -28,7 +28,7 @@ pub struct ISTRefIterator<'a, K: Ord + Copy, V> {
 }
 
 impl<'a, K: Ord + Copy, V> ISTRefIterator<'a, K, V> {
-    pub(crate) fn new(root: &'a IST<K, V>) -> ISTRefIterator<K, V> {
+    pub(crate) fn new(root: &'a IST<K, V>) -> ISTRefIterator<'_, K, V> {
         ISTRefIterator {
             tree_iter: (&root.root).into_iter(),
             lo: None,

@@ -127,7 +127,7 @@ where
     /// and [data_mut()](struct.RBTree.html#method.data_mut) will not
     /// work because rust does not support partial
     /// borrowing [yet](https://github.com/rust-lang/rfcs/issues/1215).
-    pub fn mut_me(&mut self) -> LeftRightDataTuple<K, A, V> {
+    pub fn mut_me(&mut self) -> LeftRightDataTuple<'_, K, A, V> {
         let node = self.as_mut().unwrap();
         (&mut node.left, &mut node.right, &mut node.data)
     }
