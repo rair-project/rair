@@ -129,7 +129,7 @@ where
     /// borrowing [yet](https://github.com/rust-lang/rfcs/issues/1215).
     pub fn mut_me(&mut self) -> LeftRightDataTuple<K, A, V> {
         let node = self.as_mut().unwrap();
-        return (&mut node.left, &mut node.right, &mut node.data);
+        (&mut node.left, &mut node.right, &mut node.data)
     }
     /// Returns non-mutable reference to data stored in the current Tree node
     /// # Panics
@@ -233,7 +233,11 @@ where
     /// assert_eq!(rbtree.size(), 3);
     /// ```
     pub fn size(&self) -> u64 {
-        return if let Some(node) = &self.0 { node.size() } else { 0 };
+        if let Some(node) = &self.0 {
+            node.size()
+        } else {
+            0
+        }
     }
 
     /// 0 will be returned in case of empty tree. If tree has nodes, then *get_level*
@@ -253,7 +257,11 @@ where
     /// assert!(rbtree.get_level() >= 10 && rbtree.get_level() <= 20);
     /// ```
     pub fn get_level(&self) -> u64 {
-        return if let Some(node) = self.as_ref() { node.get_level() } else { 0 };
+        if let Some(node) = self.as_ref() {
+            node.get_level()
+        } else {
+            0
+        }
     }
 
     pub(crate) fn sync_aug(&mut self) {
@@ -272,7 +280,7 @@ where
         if self.left_ref().is_red() && self.right_ref().is_red() {
             self.as_mut().unwrap().flip_colors();
         }
-        return self;
+        self
     }
 
     fn insert_not_root(mut self, key: K, aug_data: A, data: V) -> RBTree<K, A, V> {
@@ -291,7 +299,7 @@ where
             }
         }
         self = self.balance();
-        return self;
+        self
     }
     /// Deletes the minimum value in the tree and returns the data stored in that node.
     ///
@@ -323,7 +331,7 @@ where
             result.0.as_mut().unwrap().color = COLOR::BLACK;
         }
         *self = result.0;
-        return result.1;
+        result.1
     }
 
     /// Inserts *data* associated with *key* into tree. *insert* does not support
@@ -384,7 +392,7 @@ where
                 Ordering::Less => subtree = subtree.left_ref(),
             }
         }
-        return None;
+        None
     }
 
     /// Returns a mutable references of the data stored at *key*.
@@ -410,7 +418,7 @@ where
                 Ordering::Less => subtree = subtree.left_mut(),
             }
         }
-        return None;
+        None
     }
     fn delete_random_node(mut self, key: K) -> (RBTree<K, A, V>, Option<V>) {
         if !self.is_node() {
@@ -451,7 +459,7 @@ where
             }
         }
         result.0 = result.0.balance();
-        return result;
+        result
     }
     /// Deletes tree node represented by *key*. The return
     /// value is data stored there.
@@ -479,13 +487,13 @@ where
         if self.is_node() {
             self.as_mut().unwrap().color = COLOR::BLACK;
         }
-        return result;
+        result
     }
     fn node_min(&mut self) -> &mut RBTree<K, A, V> {
         if self.left_ref().is_node() {
-            return self.left_mut().node_min();
+            self.left_mut().node_min()
         } else {
-            return self;
+            self
         }
     }
     fn delete_min_not_root(mut self) -> (Self, Option<V>) {
@@ -499,7 +507,7 @@ where
         let (new_left, deleted_value) = self.left().delete_min_not_root();
         self.set_left(new_left);
         self = self.balance();
-        return (self, deleted_value);
+        (self, deleted_value)
     }
 }
 

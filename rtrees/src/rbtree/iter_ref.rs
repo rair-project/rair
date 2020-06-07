@@ -39,7 +39,7 @@ where
     pub(crate) fn new(root: &'a RBTree<K, A, V>) -> TreeRefIterator<'a, K, A, V> {
         let mut iter = TreeRefIterator { right: vec![], current: None };
         iter.add_subtree(root);
-        return iter;
+        iter
     }
     fn add_subtree(&mut self, root: &'a RBTree<K, A, V>) {
         let mut node = root;
@@ -77,6 +77,6 @@ where
                 Hint::LR(node) => self.add_subtree(node),
             }
         }
-        return result;
+        result
     }
 }

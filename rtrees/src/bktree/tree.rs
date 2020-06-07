@@ -67,7 +67,7 @@ where
             }
         }
 
-        return (exact, close);
+        (exact, close)
     }
 }
 /// This trait used by [BKTree] to tell how close are 2 objects when fuzzy searching.
@@ -102,7 +102,11 @@ where
     /// Two keys *key1* and *key2* are said to be approximate match IFF
     /// `key1.distance(key2) <= tolerance`.
     pub fn find(&self, key: &K, tolerance: u64) -> (Vec<&V>, Vec<&K>) {
-        return if let Some(root) = &self.root { root.find(&key, tolerance) } else { (Vec::new(), Vec::new()) };
+        if let Some(root) = &self.root {
+            root.find(&key, tolerance)
+        } else {
+            (Vec::new(), Vec::new())
+        }
     }
 }
 
@@ -135,7 +139,7 @@ fn osa_distance(str1: &str, str2: &str) -> u64 {
             }
         }
     }
-    return d[a.len()][b.len()];
+    d[a.len()][b.len()]
 }
 
 impl Distance for String {
@@ -144,7 +148,7 @@ impl Distance for String {
     }
 }
 
-/// a BKTree with string based Key and distance trait optimized for
+/// A BKTree with string based Key and distance trait optimized for
 /// capturing spelling and typing mistakes.
 ///
 /// # Example

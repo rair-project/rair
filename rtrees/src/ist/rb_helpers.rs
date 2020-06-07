@@ -54,7 +54,7 @@ impl<K: Ord + Copy, V> ISTHelpers<K, V> for RBTree<Interval<K>, AugData<K>, Vec<
         if self.right_ref().is_node() && recurse(&self.right_ref().aug_data(), &int) {
             result.extend(self.right_ref().generic_search(int, recurse, accept));
         }
-        return result;
+        result
     }
     fn generic_search_mut(&mut self, int: Interval<K>, recurse: &Recurse<K>, accept: &Accept<K>) -> Vec<&mut V> {
         let key = self.key();
@@ -70,7 +70,7 @@ impl<K: Ord + Copy, V> ISTHelpers<K, V> for RBTree<Interval<K>, AugData<K>, Vec<
         if right.is_node() && recurse(&right.aug_data(), &int) {
             result.extend(right.generic_search_mut(int, recurse, accept));
         }
-        return result;
+        result
     }
     fn generic_key_search(&self, int: Interval<K>, recurse: &Recurse<K>, accept: &Accept<K>) -> Vec<Interval<K>> {
         let mut keys = if self.left_ref().is_node() && recurse(&self.left_ref().aug_data(), &int) {
@@ -84,7 +84,7 @@ impl<K: Ord + Copy, V> ISTHelpers<K, V> for RBTree<Interval<K>, AugData<K>, Vec<
         if self.right_ref().is_node() && recurse(&self.right_ref().aug_data(), &int) {
             keys.extend(self.right_ref().generic_key_search(int, recurse, accept));
         }
-        return keys;
+        keys
     }
     fn generic_delete(&mut self, int: Interval<K>, recurse: &Recurse<K>, accept: &Accept<K>) -> Vec<V> {
         let delete_keys = self.generic_key_search(int, recurse, accept);
@@ -93,6 +93,6 @@ impl<K: Ord + Copy, V> ISTHelpers<K, V> for RBTree<Interval<K>, AugData<K>, Vec<
             // we can safely unwrap because we already queried the keys!
             result.extend(self.delete(key).unwrap());
         }
-        return result;
+        result
     }
 }

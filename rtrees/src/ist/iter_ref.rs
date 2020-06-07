@@ -51,6 +51,6 @@ impl<'a, K: Ord + Copy, V> Iterator for ISTRefIterator<'a, K, V> {
         } else {
             return None;
         }
-        return Some((self.lo.unwrap(), self.hi.unwrap(), self.current_iter.next().unwrap()));
+        Some((self.lo.unwrap(), self.hi.unwrap(), self.current_iter.next().unwrap()))
     }
 }

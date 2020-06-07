@@ -34,13 +34,13 @@ where
     RBTree<K, A, V>: Augment<A>,
 {
     pub fn size(&self) -> u64 {
-        return self.size;
+        self.size
     }
     pub fn get_level(&self) -> u64 {
-        return self.level;
+        self.level
     }
     pub fn new(key: K, aug_data: A, data: V) -> Self {
-        return Node {
+        Node {
             key,
             aug_data,
             data,
@@ -49,7 +49,7 @@ where
             color: COLOR::RED,
             left: RBTree::new(),
             right: RBTree::new(),
-        };
+        }
     }
     //sync augmented data
     pub(super) fn sync_builtin_aug(&mut self) {
@@ -67,7 +67,7 @@ where
         x.as_mut().unwrap().left = self.into();
         x.as_mut().unwrap().left.sync_aug();
         x.sync_aug();
-        return *x.unwrap();
+        *x.unwrap()
     }
     pub(super) fn rotate_right(mut self) -> Self {
         let mut x = self.left.take();
@@ -77,7 +77,7 @@ where
         x.as_mut().unwrap().right = self.into();
         x.as_mut().unwrap().right.sync_aug();
         x.sync_aug();
-        return *x.unwrap();
+        *x.unwrap()
     }
     #[inline]
     pub(super) fn flip_colors(&mut self) {
@@ -96,7 +96,7 @@ where
             self = self.rotate_left();
             self.flip_colors();
         }
-        return self;
+        self
     }
     pub(super) fn move_red_right(mut self) -> Self {
         assert!(self.is_red());
@@ -105,6 +105,6 @@ where
             self = self.rotate_right();
             self.flip_colors();
         }
-        return self;
+        self
     }
 }

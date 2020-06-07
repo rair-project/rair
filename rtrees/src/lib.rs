@@ -1,6 +1,5 @@
 #![warn(clippy::cargo)]
 #![allow(clippy::multiple_crate_versions)]
-#![allow(clippy::needless_return)]
 /*
  * rtrees: rair trees library impelementation
  * Copyright (C) 2019  Oddcoder

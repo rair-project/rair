@@ -30,7 +30,7 @@ where
     pub(crate) fn new(root: RBTree<K, A, V>) -> TreeIterator<K, A, V> {
         let mut iter = TreeIterator { right: vec![], current: None };
         iter.add_subtree(root);
-        return iter;
+        iter
     }
     fn add_subtree(&mut self, root: RBTree<K, A, V>) {
         let mut node: RBTree<K, A, V> = root;
@@ -65,6 +65,6 @@ where
         if let Some(node) = self.right.pop() {
             self.add_subtree(node);
         }
-        return result;
+        result
     }
 }
