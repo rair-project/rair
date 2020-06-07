@@ -172,7 +172,7 @@ impl Cmd for CloseFile {
 #[cfg(test)]
 mod test_files {
     use super::*;
-    use writer::Writer;
+    use crate::writer::Writer;
     #[test]
     fn test_docs() {
         let mut core = Core::new_no_colors();

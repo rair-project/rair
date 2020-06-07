@@ -177,9 +177,9 @@ impl Core {
 #[cfg(test)]
 mod test_core {
     use super::*;
+    use crate::utils::Quit;
     use parking_lot::Mutex;
     use std::sync::Arc;
-    use utils::Quit;
     #[test]
     fn test_loc() {
         let mut core = Core::new_no_colors();

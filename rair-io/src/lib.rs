@@ -36,8 +36,6 @@ extern crate memmap;
 extern crate rtrees;
 extern crate serde;
 #[cfg(test)]
-extern crate serde_json;
-#[cfg(test)]
 extern crate test_file;
 mod desc;
 mod descquery;

@@ -111,9 +111,9 @@ impl Cmd for Load {
 
 mod test_project {
     use super::*;
+    use crate::writer::*;
     use rair_io::*;
     use std::fs;
-    use writer::*;
     #[test]
     fn test_project_help() {
         let mut core = Core::new_no_colors();

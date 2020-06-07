@@ -20,9 +20,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#[cfg(test)]
-extern crate serde_json;
-
 #[cfg(feature = "serialize")]
 extern crate serde;
 

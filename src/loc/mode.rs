@@ -75,10 +75,10 @@ impl Cmd for Mode {
 #[cfg(test)]
 mod test_mode {
     use super::*;
+    use crate::writer::Writer;
     use rair_io::*;
     use std::path::Path;
     use test_file::*;
-    use writer::Writer;
 
     #[test]
     fn test_docs() {

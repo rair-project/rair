@@ -39,7 +39,7 @@ impl Cmd for Quit {
 #[cfg(test)]
 mod test_quit {
     use super::*;
-    use writer::Writer;
+    use crate::writer::Writer;
     #[test]
     fn test_quit_docs() {
         let mut core = Core::new_no_colors();

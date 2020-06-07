@@ -129,9 +129,9 @@ impl Cmd for WriteToFile {
 
 mod test_write {
     use super::*;
+    use crate::writer::Writer;
     use rair_io::*;
     use std::fs;
-    use writer::Writer;
     #[test]
     fn test_help() {
         let mut core = Core::new_no_colors();

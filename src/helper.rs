@@ -128,8 +128,8 @@ pub fn is_color<Core>(_: &str, value: &str, env: &Environment<Core>, _: &mut Cor
 #[cfg(test)]
 mod test_helper {
     use super::*;
+    use crate::writer::Writer;
     use std::fmt::Write;
-    use writer::Writer;
     #[test]
     fn test_str_to_num() {
         assert_eq!(str_to_num("12345").unwrap(), 12345);

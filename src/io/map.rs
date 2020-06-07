@@ -146,10 +146,10 @@ impl Cmd for ListMap {
 #[cfg(test)]
 mod test_mapping {
     use super::*;
+    use crate::writer::Writer;
     use rair_io::*;
     use std::path::Path;
     use test_file::*;
-    use writer::Writer;
     #[test]
     fn test_map_docs() {
         let mut core = Core::new_no_colors();

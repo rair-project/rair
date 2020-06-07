@@ -225,8 +225,8 @@ impl Cmd for EnvironmentHelp {
 #[cfg(test)]
 mod test_env {
     use super::*;
+    use crate::writer::*;
     use rair_env::Environment as Env;
-    use writer::*;
     #[test]
     fn test_help() {
         let mut core = Core::new_no_colors();

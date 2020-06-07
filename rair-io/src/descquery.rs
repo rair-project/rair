@@ -193,7 +193,7 @@ impl<'a> IntoIterator for &'a mut RIODescQuery {
 #[cfg(test)]
 mod desc_query_tests {
     use super::*;
-    use plugins::defaultplugin::plugin;
+    use crate::plugins::defaultplugin::plugin;
     use std::path::Path;
     use test_file::*;
     fn test_open_close_cb(path: &[&Path]) {
