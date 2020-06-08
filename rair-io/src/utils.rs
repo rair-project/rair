@@ -19,22 +19,35 @@ use std::fmt;
 use std::io;
 
 bitflags! {
+    /// Set the mode for opening files.
     #[derive(Default, Serialize, Deserialize)]
     pub struct IoMode: u64 {
+    /// Open File in read mode.
     const WRITE = 2;
+    /// Open file in write mode.
     const READ = 4;
+    /// Open file in Copy-On-Write mode.
     const COW = 8;
     }
 }
 
+
+/// Errors resultion from operations on [RIO]
 #[derive(Debug)]
 pub enum IoError {
+    /// Reading or writing to an invalid address.
     AddressNotFound,
+    /// Memory addresses gets mapped in way that makes them overlap
     AddressesOverlapError,
+    /// There is no sutiable IO plugin for loading the given file encoding
     IoPluginNotFoundError,
+    /// Doing operationg on file handles that doesn't exist
     HndlNotFoundError,
+    /// Too many files are opened.
     TooManyFilesError,
+    /// Custom error message.
     Custom(String),
+    /// Error that is originating from [std::io]
     Parse(io::Error),
 }
 impl PartialEq for IoError {
