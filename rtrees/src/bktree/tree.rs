@@ -19,8 +19,6 @@ use std::collections::HashMap;
 
 // SIMD-accelerated edit distance routines
 extern crate triple_accel;
-use self::triple_accel::rdamerau_exp;
-#[allow(unused_imports)]
 use self::triple_accel::levenshtein_exp;
 
 /// Generic BK-Tree Template used to store dictionary like
@@ -117,62 +115,23 @@ where
     }
 }
 
-#[allow(unused)]
-fn osa_distance(str1: &str, str2: &str) -> u64 {
-    // Optimal string alignment distance
-    if str1 == str2 {
-        return 0;
-    }
-    let a = str1.as_bytes();
-    let b = str2.as_bytes();
-    let mut d = vec![vec![0; b.len() + 1]; a.len() + 1];
-    for (i, item) in d.iter_mut().enumerate().take(a.len() + 1) {
-        item[0] = i as u64;
-    }
-    for (j, item) in d[0].iter_mut().enumerate().take(b.len() + 1) {
-        *item = j as u64;
-    }
-    for i in 1..=a.len() {
-        for j in 1..=b.len() {
-            let cost = if a[i - 1] == b[j - 1] { 0 } else { 1 };
-            d[i][j] = min(
-                d[i - 1][j] + 1, // deletion
-                min(
-                    d[i][j - 1] + 1, // insertion
-                    d[i - 1][j - 1] + cost,
-                ),
-            ); // substitution
-            if i > 1 && j > 1 && a[i - 1] == b[j - 2] && a[i - 2] == b[j - 1] {
-                d[i][j] = min(d[i][j], d[i - 2][j - 2] + cost) // transposition
-            }
-        }
-    }
-    d[a.len()][b.len()]
-}
-
 impl Distance for String {
     fn distance(&self, other: &Self) -> u64 {
-        // osa_distance(self, other)
-        // Note: OSA/restricted Damerau-Levenshtein may lead to wrong
-        // results in a BK-tree that depends on the distance functions
-        // being metrics. To solve this problem, replace rdamerau_exp
-        // with levenshtein_exp.
-        rdamerau_exp(self.as_bytes(), other.as_bytes()) as u64
+        levenshtein_exp(self.as_bytes(), other.as_bytes()) as u64
     }
 }
 
 /// A BKTree with string based Key and distance trait optimized for
 /// capturing spelling and typing mistakes.
 ///
-/// By default, this uses Optimal String Alignment distance or restricted
-/// Damerau-Levenshtein distance that is accelerated with SIMD.
+/// By default, this uses Levenshtein distance accelerated with SIMD.
 ///
 /// # Example
 /// ```
 /// use rtrees::bktree::SpellTree;
 /// let mut tree :SpellTree<&str> = SpellTree::new();
 /// tree.insert("hello".to_string(), &"hello");
-/// tree.insert("hell".to_string(), "&hell");
+/// tree.insert("hell".to_string(), &"hell");
 /// tree.insert("help".to_string(), &"help");
 /// tree.insert("boy".to_string(), &"boy");
 /// tree.insert("interaction".to_string(), &"interaction");
@@ -191,13 +150,9 @@ mod bktree_tests {
             ("hello world", "hello world", 0),
             ("hello world", "hello world ", 1),
             ("hello world", "h ello World", 2),
-            ("helo wolrd", "hello world", 2),
-            ("open", "opnre", 3), // In case of demere Lavenstien distance this might have been 2
-            ("CA", "ABC", 3),
         ];
         for (s1, s2, d) in s.iter() {
-            assert_eq!(osa_distance(s1, s2), *d);
-            assert_eq!(rdamerau_exp(s1.as_bytes(), s2.as_bytes()) as u64, *d);
+            assert_eq!(levenshtein_exp(s1.as_bytes(), s2.as_bytes()) as u64, *d);
         }
     }
     #[test]
@@ -211,7 +166,7 @@ mod bktree_tests {
         assert_eq!(res.0[0], &"hello");
         assert_eq!(res.1.len(), 1);
         assert_eq!(res.1[0], &"hell");
-        res = tree.find(&"helicoptre".to_string(), 1);
+        res = tree.find(&"helicoptrr".to_string(), 1);
         assert_eq!(res.0.len(), 0);
         assert_eq!(res.1.len(), 1);
         assert_eq!(res.1[0], "helicopter");
