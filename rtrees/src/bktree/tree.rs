@@ -17,6 +17,12 @@
 use std::cmp::min;
 use std::collections::HashMap;
 
+// SIMD-accelerated edit distance routines
+extern crate triple_accel;
+use self::triple_accel::rdamerau_exp;
+#[allow(unused_imports)]
+use self::triple_accel::levenshtein_exp;
+
 /// Generic BK-Tree Template used to store dictionary like
 /// structures and perform fuzzy search on them. *K* must implement trait
 /// distance before it can be used as key here.
@@ -111,6 +117,7 @@ where
     }
 }
 
+#[allow(unused)]
 fn osa_distance(str1: &str, str2: &str) -> u64 {
     // Optimal string alignment distance
     if str1 == str2 {
@@ -145,12 +152,20 @@ fn osa_distance(str1: &str, str2: &str) -> u64 {
 
 impl Distance for String {
     fn distance(&self, other: &Self) -> u64 {
-        osa_distance(self, other)
+        // osa_distance(self, other)
+        // Note: OSA/restricted Damerau-Levenshtein may lead to wrong
+        // results in a BK-tree that depends on the distance functions
+        // being metrics. To solve this problem, replace rdamerau_exp
+        // with levenshtein_exp.
+        rdamerau_exp(self.as_bytes(), other.as_bytes()) as u64
     }
 }
 
 /// A BKTree with string based Key and distance trait optimized for
 /// capturing spelling and typing mistakes.
+///
+/// By default, this uses Optimal String Alignment distance or restricted
+/// Damerau-Levenshtein distance that is accelerated with SIMD.
 ///
 /// # Example
 /// ```
@@ -182,6 +197,7 @@ mod bktree_tests {
         ];
         for (s1, s2, d) in s.iter() {
             assert_eq!(osa_distance(s1, s2), *d);
+            assert_eq!(rdamerau_exp(s1.as_bytes(), s2.as_bytes()) as u64, *d);
         }
     }
     #[test]
