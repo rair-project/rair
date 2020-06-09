@@ -14,7 +14,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use std::cmp::min;
 use std::collections::HashMap;
 
 // SIMD-accelerated edit distance routines
@@ -146,11 +145,7 @@ mod bktree_tests {
     use super::*;
     #[test]
     fn test_dl_distance() {
-        let s = [
-            ("hello world", "hello world", 0),
-            ("hello world", "hello world ", 1),
-            ("hello world", "h ello World", 2),
-        ];
+        let s = [("hello world", "hello world", 0), ("hello world", "hello world ", 1), ("hello world", "h ello World", 2)];
         for (s1, s2, d) in s.iter() {
             assert_eq!(levenshtein_exp(s1.as_bytes(), s2.as_bytes()) as u64, *d);
         }
