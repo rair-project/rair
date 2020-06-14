@@ -1,15 +1,6 @@
 #![warn(clippy::cargo)]
 #![allow(clippy::multiple_crate_versions)]
-#![warn(
-    future_incompatible,
-    nonstandard_style,
-    warnings,
-    rust_2018_idioms,
-    unused,
-    rust_2018_idioms,
-    //missing_docs
-)]
-
+#![warn(future_incompatible, nonstandard_style, warnings, rust_2018_idioms, unused, rust_2018_idioms, missing_docs)]
 /*
  * rio: rair IO library impelementation
  * Copyright (C) 2019  Oddcoder
@@ -26,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+//! Rair IO abstraction layer
 #[macro_use]
 extern crate bitflags;
 #[macro_use]

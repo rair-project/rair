@@ -35,6 +35,10 @@ use std::sync::Arc;
 //          methods that you can use with #[serde(with = ..)]. here I'm using
 //          it to just move the methods from a trait impl you can't wrap or
 //          override to separate functions you can
+//
+/// [RIO] is abstraction over IO, It allows you to open (more than one) file each with its own
+/// encoding in one address space, which you can read / write or map parts of without knowing
+/// which file is really being accessed
 #[derive(Default, Serialize, Deserialize)]
 #[serde(remote = "RIO")]
 pub struct RIO {
@@ -43,6 +47,7 @@ pub struct RIO {
     #[serde(skip)]
     plugins: Vec<Box<dyn RIOPlugin + Sync + Send>>,
 }
+
 impl Serialize for RIO {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -51,6 +56,7 @@ impl Serialize for RIO {
         RIO::serialize(&self, serializer)
     }
 }
+
 impl<'de> Deserialize<'de> for RIO {
     fn deserialize<D>(d: D) -> Result<RIO, D::Error>
     where
@@ -355,7 +361,7 @@ impl RIO {
     pub fn map_iter<'a>(&'a self) -> Box<dyn Iterator<Item = Arc<RIOMap>> + 'a> {
         self.maps.into_iter()
     }
-    // Return equivalent [RIODesc] structure for the given *hndl*
+    /// Return equivalent [RIODesc] structure for the given *hndl*
     pub fn hndl_to_desc(&self, hndl: u64) -> Option<&RIODesc> {
         self.descs.hndl_to_desc(hndl)
     }
