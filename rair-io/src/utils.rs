@@ -31,7 +31,6 @@ bitflags! {
     }
 }
 
-
 /// Errors resultion from operations on [RIO]
 #[derive(Debug)]
 pub enum IoError {
