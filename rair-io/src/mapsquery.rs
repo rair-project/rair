@@ -20,10 +20,15 @@ use serde::{Deserialize, Serialize};
 use std::cmp::min;
 use std::sync::Arc;
 
+/// This struct describes a mapping between physical
+/// address space and virtual address space
 #[derive(Copy, Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct RIOMap {
+    /// physical address space
     pub paddr: u64,
+    /// virtual address space
     pub vaddr: u64,
+    /// size of the mapping
     pub size: u64,
 }
 
