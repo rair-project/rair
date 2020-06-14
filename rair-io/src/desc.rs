@@ -17,6 +17,8 @@
 use crate::plugin::*;
 use crate::utils::*;
 use serde::{Deserialize, Serialize};
+
+/// This struct represents a file that is opened in [RIO]
 #[derive(Serialize, Deserialize)]
 pub struct RIODesc {
     pub(crate) name: String,
