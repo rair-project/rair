@@ -65,7 +65,7 @@ impl Cmd for Map {
         }
     }
     fn help(&self, core: &mut Core) {
-        help(core, &"map", &"", vec![("[phy] [vir] [size]", "Map region from physical address space to virtual address space.")]);
+        help(core, "map", "", vec![("[phy] [vir] [size]", "Map region from physical address space to virtual address space.")]);
     }
 }
 
@@ -101,7 +101,7 @@ impl Cmd for UnMap {
         }
     }
     fn help(&self, core: &mut Core) {
-        help(core, &"unmap", &"um", vec![("[vir] [size]", "Unmap a previosly mapped memory region.")]);
+        help(core, "unmap", "um", vec![("[vir] [size]", "Unmap a previosly mapped memory region.")]);
     }
 }
 
@@ -136,11 +136,14 @@ impl Cmd for ListMap {
         )
         .unwrap();
         for map in core.io.map_iter() {
-            writeln!(core.stdout, "{: <20}{: <20}{}", format!("0x{:x}", map.vaddr), format!("0x{:x}", map.paddr), format!("0x{:x}", map.size)).unwrap();
+            let vaddr = format!("0x{:x}", map.vaddr);
+            let paddr = format!("0x{:x}", map.paddr);
+            let size = format!("0x{:x}", map.size);
+            writeln!(core.stdout, "{: <20}{: <20}{}", vaddr, paddr, size).unwrap();
         }
     }
     fn help(&self, core: &mut Core) {
-        help(core, &"maps", &"", vec![("", "List all memory maps.")]);
+        help(core, "maps", "", vec![("", "List all memory maps.")]);
     }
 }
 #[cfg(test)]

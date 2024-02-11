@@ -14,8 +14,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use std::collections::HashMap;
 use std::cmp::min;
+use std::collections::HashMap;
 /// Generic BK-Tree Template used to store dictionary like
 /// structures and perform fuzzy search on them. *K* must implement trait
 /// distance before it can be used as key here.
@@ -52,7 +52,7 @@ where
 
     fn find(&self, key: &K, tolerance: u64) -> (Vec<&V>, Vec<&K>) {
         let (mut exact, mut close) = (Vec::new(), Vec::new());
-        let current_distance = self.key.distance(&key);
+        let current_distance = self.key.distance(key);
         if current_distance == 0 {
             exact.push(&self.value);
         } else if current_distance <= tolerance {
@@ -103,7 +103,7 @@ where
     /// `key1.distance(key2) <= tolerance`.
     pub fn find(&self, key: &K, tolerance: u64) -> (Vec<&V>, Vec<&K>) {
         if let Some(root) = &self.root {
-            root.find(&key, tolerance)
+            root.find(key, tolerance)
         } else {
             (Vec::new(), Vec::new())
         }

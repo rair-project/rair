@@ -95,8 +95,8 @@ impl Cmd for Seek {
     fn help(&self, core: &mut Core) {
         help(
             core,
-            &"seek",
-            &"s",
+            "seek",
+            "s",
             vec![
                 ("+", "\tRedo Seek."),
                 ("-", "\tUndo Seek."),

@@ -55,7 +55,7 @@ impl Cmd for ListFiles {
         }
     }
     fn help(&self, core: &mut Core) {
-        help(core, &"files", &"", vec![("", "List all open files.")]);
+        help(core, "files", "", vec![("", "List all open files.")]);
     }
 }
 
@@ -129,8 +129,8 @@ impl Cmd for OpenFile {
     fn help(&self, core: &mut Core) {
         help(
             core,
-            &"open",
-            &"o",
+            "open",
+            "o",
             vec![("<Perm> [URI] <Addr>", "Open given URI using given optional permission (default to readonly) at given optional address.")],
         );
     }
@@ -165,7 +165,7 @@ impl Cmd for CloseFile {
         }
     }
     fn help(&self, core: &mut Core) {
-        help(core, &"close", &"", vec![("[hndl]", "Close file with given hndl.")]);
+        help(core, "close", "", vec![("[hndl]", "Close file with given hndl.")]);
     }
 }
 

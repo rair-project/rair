@@ -21,7 +21,6 @@ use rtrees::ist::IST;
 use serde::{Deserialize, Serialize};
 use std::cmp::{min, Reverse};
 use std::collections::BinaryHeap;
-use std::mem;
 
 #[derive(Default, Serialize, Deserialize)]
 pub(crate) struct RIODescQuery {
@@ -61,7 +60,7 @@ impl RIODescQuery {
         if hndl >= self.hndl_to_descs.len() as u64 || self.hndl_to_descs[hndl as usize].is_none() {
             return Err(IoError::HndlNotFoundError);
         }
-        let ret = mem::replace(&mut self.hndl_to_descs[hndl as usize], None).unwrap();
+        let ret = self.hndl_to_descs[hndl as usize].take().unwrap();
         self.free_hndls.push(Reverse(hndl));
         Ok(ret)
     }

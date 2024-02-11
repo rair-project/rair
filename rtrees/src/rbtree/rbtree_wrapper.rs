@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use super::color::COLOR;
+use super::color::Color;
 use super::iter::TreeIterator;
 use super::iter_ref::TreeRefIterator;
 use super::node::*;
@@ -325,11 +325,11 @@ where
             return None;
         }
         if !self.left_ref().is_red() && !self.right_ref().is_red() {
-            self.as_mut().unwrap().color = COLOR::RED;
+            self.as_mut().unwrap().color = Color::Red;
         }
         let mut result = self.take().delete_min_not_root();
         if result.0.is_node() {
-            result.0.as_mut().unwrap().color = COLOR::BLACK;
+            result.0.as_mut().unwrap().color = Color::Black;
         }
         *self = result.0;
         result.1
@@ -355,7 +355,7 @@ where
     /// ```
     pub fn insert(&mut self, key: K, aug_data: A, data: V) {
         *self = self.take().insert_not_root(key, aug_data, data);
-        self.as_mut().unwrap().color = COLOR::BLACK;
+        self.as_mut().unwrap().color = Color::Black;
     }
     /// Force recalculating all agumented data from node matching *key* up to the root node.
     pub fn force_sync_aug(&mut self, key: K) {
@@ -481,12 +481,12 @@ where
 
     pub fn delete(&mut self, key: K) -> Option<V> {
         if !self.left_ref().is_red() && !self.right_ref().is_red() {
-            self.as_mut().unwrap().color = COLOR::RED;
+            self.as_mut().unwrap().color = Color::Red;
         }
         let (tree, result) = self.take().delete_random_node(key);
         *self = tree;
         if self.is_node() {
-            self.as_mut().unwrap().color = COLOR::BLACK;
+            self.as_mut().unwrap().color = Color::Black;
         }
         result
     }

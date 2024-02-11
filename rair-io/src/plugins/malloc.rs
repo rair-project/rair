@@ -72,7 +72,7 @@ impl MallocPlugin {
         if n.len() > 1 && n.starts_with('0') {
             return u64::from_str_radix(&n[1..], 8).ok();
         }
-        u64::from_str_radix(n, 10).ok()
+        n.parse::<u64>().ok()
     }
 }
 
@@ -82,7 +82,6 @@ impl RIOPlugin for MallocPlugin {
     }
 
     fn open(&mut self, uri: &str, flags: IoMode) -> Result<RIOPluginDesc, IoError> {
-        let file: MallocInternal;
         if flags.contains(IoMode::COW) {
             return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Can't open file with permission Copy-On-Write")));
         }
@@ -93,10 +92,10 @@ impl RIOPlugin for MallocPlugin {
         if !flags.contains(IoMode::WRITE) {
             return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Memory based files must have write permission")));
         }
-        match MallocPlugin::uri_to_size(uri) {
-            Some(size) => file = MallocInternal::new(size),
+        let file = match MallocPlugin::uri_to_size(uri) {
+            Some(size) => MallocInternal::new(size),
             None => return Err(IoError::Custom("Failed to parse given uri as usize".to_string())),
-        }
+        };
         let desc = RIOPluginDesc {
             name: uri.to_owned(),
             perm: flags,

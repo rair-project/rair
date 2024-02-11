@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use super::color::COLOR;
+use super::color::Color;
 use super::rbtree_wrapper::*;
 use std::cmp::max;
 pub(super) struct Node<K: Ord + Copy, A: Copy, V> {
@@ -24,7 +24,7 @@ pub(super) struct Node<K: Ord + Copy, A: Copy, V> {
     pub(super) data: V,
     pub(super) level: u64,
     size: u64,
-    pub(super) color: COLOR,
+    pub(super) color: Color,
     pub(super) left: RBTree<K, A, V>,
     pub(super) right: RBTree<K, A, V>,
 }
@@ -46,7 +46,7 @@ where
             data,
             level: 1,
             size: 1,
-            color: COLOR::RED,
+            color: Color::Red,
             left: RBTree::new(),
             right: RBTree::new(),
         }
@@ -63,7 +63,7 @@ where
         let mut x = self.right.take();
         self.right = x.as_mut().unwrap().left.take();
         x.as_mut().unwrap().color = self.color;
-        self.color = COLOR::RED;
+        self.color = Color::Red;
         x.as_mut().unwrap().left = self.into();
         x.as_mut().unwrap().left.sync_aug();
         x.sync_aug();
@@ -73,7 +73,7 @@ where
         let mut x = self.left.take();
         self.left = x.as_mut().unwrap().right.take();
         x.as_mut().unwrap().color = self.color;
-        self.color = COLOR::RED;
+        self.color = Color::Red;
         x.as_mut().unwrap().right = self.into();
         x.as_mut().unwrap().right.sync_aug();
         x.sync_aug();
@@ -87,7 +87,7 @@ where
     }
     #[inline]
     pub(super) fn is_red(&self) -> bool {
-        self.color == COLOR::RED
+        self.color == Color::Red
     }
     pub(super) fn move_red_left(mut self) -> Self {
         self.flip_colors();

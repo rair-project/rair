@@ -57,7 +57,7 @@ impl Environment {
             };
             res = env.write().set_bool(key, value, core);
         } else if env.read().is_i64(key) {
-            let value = match i64::from_str_radix(value, 10) {
+            let value = match value.parse::<i64>() {
                 Ok(value) => value,
                 Err(e) => return error_msg(core, "Failed to set variable.", &e.to_string()),
             };
@@ -90,7 +90,7 @@ impl Environment {
             res = env.write().set_color(key, (r, g, b), core);
         }
         if let Err(e) = res {
-            return error_msg(core, "Failed to set variable.", &e.to_string());
+            error_msg(core, "Failed to set variable.", &e.to_string())
         }
     }
     fn display(&self, core: &mut Core, key: &str) {
@@ -125,9 +125,9 @@ impl Cmd for Environment {
         } else if args.len() == 1 {
             let args: Vec<&str> = args[0].split('=').collect();
             if args.len() == 2 {
-                self.set(core, &args[0].trim(), &args[1].trim());
+                self.set(core, args[0].trim(), args[1].trim());
             } else {
-                self.display(core, &args[0]);
+                self.display(core, args[0]);
             }
         } else if args.len() == 2 {
             // either args[0] ends with = or args[1] starts with = but not both!
@@ -136,7 +136,7 @@ impl Cmd for Environment {
                 let value = args[1].split('=').last().unwrap().trim();
                 self.set(core, key, value);
             } else {
-                error_msg(core, "Failed to set variable.", &"Expected `=`.")
+                error_msg(core, "Failed to set variable.", "Expected `=`.")
             }
         } else if args.len() == 3 {
             if args[1] == "=" {
@@ -150,8 +150,8 @@ impl Cmd for Environment {
     fn help(&self, core: &mut Core) {
         help(
             core,
-            &"environment",
-            &"e",
+            "environment",
+            "e",
             vec![
                 ("", "List all environment variables."),
                 ("[var]", "Display the value of [var] environment variables."),
@@ -179,11 +179,11 @@ impl Cmd for EnvironmentReset {
         let env = core.env.clone();
         let res = env.write().reset(&args[0], core);
         if let Err(e) = res {
-            return error_msg(core, "Failed to reset variable.", &e.to_string());
+            error_msg(core, "Failed to reset variable.", &e.to_string());
         }
     }
     fn help(&self, core: &mut Core) {
-        help(core, &"environmentReset", &"er", vec![("[var]", "Reset [var] environment variable.")]);
+        help(core, "environmentReset", "er", vec![("[var]", "Reset [var] environment variable.")]);
     }
 }
 
@@ -218,7 +218,7 @@ impl Cmd for EnvironmentHelp {
         }
     }
     fn help(&self, core: &mut Core) {
-        help(core, &"environmentHelp", &"eh", vec![("[var]", "Print help for [var] environment variable.")]);
+        help(core, "environmentHelp", "eh", vec![("[var]", "Print help for [var] environment variable.")]);
     }
 }
 
@@ -308,7 +308,7 @@ mod test_env {
         core.env.write().add_i64("i", -500, "").unwrap();
         core.env.write().add_str("s", "hello world", "").unwrap();
         core.env.write().add_color("c", (0xff, 0xee, 0xdd), "").unwrap();
-        return core;
+        core
     }
     #[test]
     fn test_env_0() {
@@ -418,7 +418,7 @@ mod test_env {
     }
 
     fn always_false(_: &str, value: bool, _: &Env<Core>, _: &mut Core) -> bool {
-        return !value;
+        !value
     }
 
     #[test]

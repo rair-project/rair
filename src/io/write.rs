@@ -60,11 +60,10 @@ impl Cmd for WriteHex {
         };
         if let Err(e) = error {
             error_msg(core, "Read Failed", &e.to_string());
-            return;
         }
     }
     fn help(&self, core: &mut Core) {
-        help(core, &"writetHex", &"wx", vec![("[hexpairs]", "write given hexpairs data into the current address.")]);
+        help(core, "writetHex", "wx", vec![("[hexpairs]", "write given hexpairs data into the current address.")]);
     }
 }
 
@@ -81,7 +80,6 @@ impl Cmd for WriteToFile {
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if args.len() != 2 {
             expect(core, args.len() as u64, 2);
-            return;
         }
         let size = match str_to_num(&args[0]) {
             Ok(size) => size as usize,
@@ -99,7 +97,6 @@ impl Cmd for WriteToFile {
         };
         if let Err(e) = error {
             error_msg(core, "Failed to read data", &e.to_string());
-            return;
         }
         let mut file = match File::create(&args[1]) {
             Ok(file) => file,
@@ -112,14 +109,13 @@ impl Cmd for WriteToFile {
         if let Err(e) = file.write_all(&data) {
             let err_str = format!("{}.", e);
             error_msg(core, "Failed to write data to file", &err_str);
-            return;
         }
     }
     fn help(&self, core: &mut Core) {
         help(
             core,
-            &"writeToFile",
-            &"wtf",
+            "writeToFile",
+            "wtf",
             vec![("[size] [filepath]", "write data of size [size] at current location to file identified by [filepath].")],
         );
     }

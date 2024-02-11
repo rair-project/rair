@@ -55,17 +55,17 @@ named!(parse_newline, alt!(tag!("\r\n") | tag!("\n") | tag!("\r")));
 
 enum Record {
     Data(u64, Vec<u8>), // Record 00 (base address, bytes)
-    EOF,                // Record 01
-    EA(u64),            // Extended Address: Record 02, Record 04
-    SSA(u32),           //Record 03
-    SLA(u32),           // record 05
+    Eof,                // Record 01
+    Ea(u64),            // Extended Address: Record 02, Record 04
+    Ssa(u32),           //Record 03
+    Sla(u32),           // record 05
 }
 fn from_hex(input: &[u8]) -> Result<u8, std::num::ParseIntError> {
     u8::from_str_radix(str::from_utf8(input).unwrap(), 16)
 }
 
 fn is_hex_digit(c: u8) -> bool {
-    (c as char).is_digit(16)
+    (c as char).is_ascii_hexdigit()
 }
 
 fn hex_byte(input: &[u8]) -> IResult<&[u8], u8> {
@@ -100,12 +100,12 @@ fn parse_record00(input: &[u8]) -> IResult<&[u8], Record> {
 }
 
 fn parse_record01(input: &[u8]) -> IResult<&[u8], Record> {
-    // EOF Record
+    // Eof Record
     let (input, _) = tag(":00")(input)?; // size entry
     let (input, _) = hex_big_word(input)?; // addr entry
     let (input, _) = tag("01")(input)?; // record ID
     let (input, _) = hex_byte(input)?; // checksum
-    Ok((input, Record::EOF))
+    Ok((input, Record::Eof))
 }
 fn parse_record02(input: &[u8]) -> IResult<&[u8], Record> {
     // Extended Segment Address Record
@@ -115,7 +115,7 @@ fn parse_record02(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, addr) = hex_big_word(input)?; // data
     let (input, _) = hex_byte(input)?; // checksum
     let (input, _) = parse_newline(input)?; //newline
-    Ok((input, Record::EA((addr as u64) << 4)))
+    Ok((input, Record::Ea((addr as u64) << 4)))
 }
 
 fn parse_record03(input: &[u8]) -> IResult<&[u8], Record> {
@@ -126,7 +126,7 @@ fn parse_record03(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, addr) = hex_big_dword(input)?; // data
     let (input, _) = hex_byte(input)?; // checksum
     let (input, _) = parse_newline(input)?; //newline
-    Ok((input, Record::SSA(addr)))
+    Ok((input, Record::Ssa(addr)))
 }
 
 fn parse_record04(input: &[u8]) -> IResult<&[u8], Record> {
@@ -137,7 +137,7 @@ fn parse_record04(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, addr) = hex_big_word(input)?; // data
     let (input, _) = hex_byte(input)?; // checksum
     let (input, _) = parse_newline(input)?; //newline
-    Ok((input, Record::EA((addr as u64) << 16)))
+    Ok((input, Record::Ea((addr as u64) << 16)))
 }
 
 fn parse_record05(input: &[u8]) -> IResult<&[u8], Record> {
@@ -148,7 +148,7 @@ fn parse_record05(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, addr) = hex_big_dword(input)?; // data
     let (input, _) = hex_byte(input)?; // checksum
     let (input, _) = parse_newline(input)?; //newline
-    Ok((input, Record::SLA(addr)))
+    Ok((input, Record::Sla(addr)))
 }
 
 impl FileInternals {
@@ -164,15 +164,15 @@ impl FileInternals {
             };
             input = x.0;
             match x.1 {
-                Record::EOF => break,
+                Record::Eof => break,
                 Record::Data(addr, data) => {
                     for i in 0..data.len() as u64 {
                         self.bytes.insert(i + addr + base, data[i as usize]);
                     }
                 }
-                Record::EA(addr) => base = addr,
-                Record::SSA(addr) => self.ssa = Some(addr),
-                Record::SLA(addr) => self.sla = Some(addr),
+                Record::Ea(addr) => base = addr,
+                Record::Ssa(addr) => self.ssa = Some(addr),
+                Record::Sla(addr) => self.sla = Some(addr),
             }
             line += 1;
         }
@@ -264,11 +264,11 @@ impl FileInternals {
     fn save_ihex(&self) -> Result<(), IoError> {
         // truncate the current file.
         let mut file = OpenOptions::new().write(true).truncate(true).open(IHexPlugin::uri_to_path(&self.uri))?;
-        //write ssa and sla
+        //write ssa and Sla
         self.write_sa(&mut file)?;
         //write data
         self.write_data(&mut file)?;
-        // write EOF
+        // write Eof
         writeln!(file, ":00000001FF")?;
         Ok(())
     }
@@ -403,7 +403,7 @@ mod test_ihex {
         // this is simple ihex file testing,
         // no sparce file with holes, no nothing but basic record 00 and record 01
         let mut p = plugin();
-        let mut file = p.open("ihex://../../testing_binaries/rio/ihex/tiny.hex", IoMode::READ).unwrap();
+        let mut file = p.open("ihex://../../testing_binaries/rio/ihex/tiny.hex", IoMode::REaD).unwrap();
         assert_eq!(file.size, 11);
         let mut buffer = vec![0; file.size as usize];
         file.plugin_operations.read(0x0, &mut buffer).unwrap();
@@ -412,11 +412,11 @@ mod test_ihex {
     fn tiny_ihex_write_cb(path: &Path) {
         let mut p = plugin();
         let uri = String::from("ihex://") + &path.to_string_lossy();
-        let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
+        let mut file = p.open(&uri, IoMode::REaD | IoMode::WRITE).unwrap();
 
         file.plugin_operations.write(0x5, &[0x80, 0x90, 0xff]).unwrap();
         drop(file);
-        file = p.open(&uri, IoMode::READ).unwrap();
+        file = p.open(&uri, IoMode::REaD).unwrap();
         assert_eq!(file.size, 11);
         let mut buffer = vec![0; file.size as usize];
         file.plugin_operations.read(0x0, &mut buffer).unwrap();
@@ -432,7 +432,7 @@ mod test_ihex {
     fn test_tiny_sparce_ihex_read() {
         //sparce file with holes, no nothing but basic record 00 and record 01
         let mut p = plugin();
-        let mut file = p.open("ihex://../../testing_binaries/rio/ihex/tiny_sparce.hex", IoMode::READ).unwrap();
+        let mut file = p.open("ihex://../../testing_binaries/rio/ihex/tiny_sparce.hex", IoMode::REaD).unwrap();
         assert_eq!(file.size, 0x20);
         let mut buffer = vec![0; file.size as usize];
         file.plugin_operations.read(0x50, &mut buffer).unwrap();
@@ -447,11 +447,11 @@ mod test_ihex {
     fn tiny_sparce_ihex_write_cb(path: &Path) {
         let mut p = plugin();
         let uri = String::from("ihex://") + &path.to_string_lossy();
-        let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
+        let mut file = p.open(&uri, IoMode::REaD | IoMode::WRITE).unwrap();
 
         file.plugin_operations.write(0x55, &[0x80, 0x90, 0xff]).unwrap();
         drop(file);
-        file = p.open(&uri, IoMode::READ).unwrap();
+        file = p.open(&uri, IoMode::REaD).unwrap();
         assert_eq!(file.size, 0x20);
         let mut buffer = vec![0; file.size as usize];
         file.plugin_operations.read(0x50, &mut buffer).unwrap();
@@ -474,7 +474,7 @@ mod test_ihex {
     fn test_big_read() {
         //test reading from huge file with record 00 and record 01
         let mut p = plugin();
-        let mut file = p.open("ihex://../../testing_binaries/rio/ihex/record_00_01.hex", IoMode::READ).unwrap();
+        let mut file = p.open("ihex://../../testing_binaries/rio/ihex/record_00_01.hex", IoMode::REaD).unwrap();
         assert_eq!(file.size, 0xead);
         let mut buffer = [0; 4];
         file.plugin_operations.read(0x520, &mut buffer).unwrap();
@@ -488,14 +488,14 @@ mod test_ihex {
     fn big_write_cb(path: &Path) {
         let mut p = plugin();
         let uri = String::from("ihex://") + &path.to_string_lossy();
-        let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
+        let mut file = p.open(&uri, IoMode::REaD | IoMode::WRITE).unwrap();
 
         file.plugin_operations.write(0x520, &[0x80, 0x90, 0xff, 0xfe]).unwrap();
         file.plugin_operations.write(0xe87, &[0x80, 0x90, 0xff, 0xfe]).unwrap();
         file.plugin_operations.write(0xea9, &[0x80, 0x90, 0xff, 0xfe]).unwrap();
 
         drop(file);
-        file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
+        file = p.open(&uri, IoMode::REaD | IoMode::WRITE).unwrap();
         assert_eq!(file.size, 0xead);
         let mut buffer = [0; 4];
         file.plugin_operations.read(0x520, &mut buffer).unwrap();
@@ -509,8 +509,8 @@ mod test_ihex {
         file.plugin_operations.write(0xe87, &[0xd3, 0x22, 0x32, 0x32]).unwrap();
         file.plugin_operations.write(0xea9, &[0x32, 0x32, 0x32, 0x32]).unwrap();
         drop(file);
-        file = p.open(&uri, IoMode::READ).unwrap();
-        let mut file2 = p.open("ihex://../../testing_binaries/rio/ihex/record_00_01.hex", IoMode::READ).unwrap();
+        file = p.open(&uri, IoMode::REaD).unwrap();
+        let mut file2 = p.open("ihex://../../testing_binaries/rio/ihex/record_00_01.hex", IoMode::REaD).unwrap();
         assert_eq!(file.size, file2.size);
         let mut data = vec![0; file.size as usize];
         let mut data2 = vec![0; file.size as usize];
@@ -528,7 +528,7 @@ mod test_ihex {
     #[test]
     fn test_read_02_03() {
         let mut p = plugin();
-        let mut file = p.open("ihex://../../testing_binaries/rio/ihex/record_02_03.hex", IoMode::READ).unwrap();
+        let mut file = p.open("ihex://../../testing_binaries/rio/ihex/record_02_03.hex", IoMode::REaD).unwrap();
         assert_eq!(file.size, 0x5a1ec);
         let mut buffer = [0; 0x20];
         file.plugin_operations.read(0x2ce34, &mut buffer).unwrap();
@@ -552,14 +552,14 @@ mod test_ihex {
     fn write_02_03_cb(path: &Path) {
         let mut p = plugin();
         let uri = String::from("ihex://") + &path.to_string_lossy();
-        let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
+        let mut file = p.open(&uri, IoMode::REaD | IoMode::WRITE).unwrap();
 
         file.plugin_operations.write(0x2ce34, &[0x80, 0x90, 0xff, 0xfe]).unwrap();
         file.plugin_operations.write(0x2ce3c, &[0x80, 0x90, 0xff, 0xfe]).unwrap();
         file.plugin_operations.write(0x87000, &[0x80, 0x90, 0xff, 0xfe]).unwrap();
 
         drop(file);
-        file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
+        file = p.open(&uri, IoMode::REaD | IoMode::WRITE).unwrap();
         assert_eq!(file.size, 0x5a1ec);
         let mut buffer = [0; 4];
         file.plugin_operations.read(0x2ce34, &mut buffer).unwrap();
@@ -573,8 +573,8 @@ mod test_ihex {
         file.plugin_operations.write(0x2ce3c, &[0x74, 0x20, 0x69, 0x73]).unwrap();
         file.plugin_operations.write(0x87000, &[0x54, 0x68, 0x69, 0x73]).unwrap();
         drop(file);
-        file = p.open(&uri, IoMode::READ).unwrap();
-        let mut file2 = p.open("ihex://../../testing_binaries/rio/ihex/record_02_03.hex", IoMode::READ).unwrap();
+        file = p.open(&uri, IoMode::REaD).unwrap();
+        let mut file2 = p.open("ihex://../../testing_binaries/rio/ihex/record_02_03.hex", IoMode::REaD).unwrap();
         assert_eq!(file.size, file2.size);
         let mut data = vec![0; file.size as usize];
         let mut data2 = vec![0; file.size as usize];
@@ -591,7 +591,7 @@ mod test_ihex {
     #[test]
     fn test_read_04_05() {
         let mut p = plugin();
-        let mut file = p.open("ihex://../../testing_binaries/rio/ihex/record_04_05.hex", IoMode::READ).unwrap();
+        let mut file = p.open("ihex://../../testing_binaries/rio/ihex/record_04_05.hex", IoMode::REaD).unwrap();
         assert_eq!(file.size, 0xEF60);
         let mut buffer = [0; 4];
         file.plugin_operations.read(0x123400C1, &mut buffer).unwrap();
@@ -601,20 +601,20 @@ mod test_ihex {
     fn write_04_05_cb(path: &Path) {
         let mut p = plugin();
         let uri = String::from("ihex://") + &path.to_string_lossy();
-        let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
+        let mut file = p.open(&uri, IoMode::REaD | IoMode::WRITE).unwrap();
 
         file.plugin_operations.write(0x123400C1, &[0x80, 0x90, 0xff, 0xfe]).unwrap();
 
         drop(file);
-        file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
+        file = p.open(&uri, IoMode::REaD | IoMode::WRITE).unwrap();
         assert_eq!(file.size, 0xEF60);
         let mut buffer = [0; 4];
         file.plugin_operations.read(0x123400C1, &mut buffer).unwrap();
         assert_eq!(buffer, [0x80, 0x90, 0xff, 0xfe]);
         file.plugin_operations.write(0x123400C1, &[0x48, 0x85, 0x46, 0x0C]).unwrap();
         drop(file);
-        file = p.open(&uri, IoMode::READ).unwrap();
-        let mut file2 = p.open("ihex://../../testing_binaries/rio/ihex/record_04_05.hex", IoMode::READ).unwrap();
+        file = p.open(&uri, IoMode::REaD).unwrap();
+        let mut file2 = p.open("ihex://../../testing_binaries/rio/ihex/record_04_05.hex", IoMode::REaD).unwrap();
         assert_eq!(file.size, file2.size);
         let mut data = vec![0; file.size as usize];
         let mut data2 = vec![0; file.size as usize];
@@ -631,13 +631,13 @@ mod test_ihex {
     #[test]
     fn test_broken() {
         let mut p = plugin();
-        let err = p.open("ihex://../../testing_binaries/rio/ihex/broken.hex", IoMode::READ).err().unwrap();
+        let err = p.open("ihex://../../testing_binaries/rio/ihex/broken.hex", IoMode::REaD).err().unwrap();
         assert_eq!(err, IoError::Custom("Invalid Ihex entry at line: 4".to_string()));
     }
     #[test]
     fn test_empty() {
         let mut p = plugin();
-        let f = p.open("ihex://../../testing_binaries/rio/ihex/empty.hex", IoMode::READ).unwrap();
+        let f = p.open("ihex://../../testing_binaries/rio/ihex/empty.hex", IoMode::REaD).unwrap();
         assert_eq!(f.size, 0);
     }
 }
