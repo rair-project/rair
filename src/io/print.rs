@@ -135,7 +135,7 @@ impl Cmd for PrintHex {
         }
     }
     fn help(&self, core: &mut Core) {
-        help(core, "printHex", "px", vec![("[size]", "View data at current location in hex format.")]);
+        help(core, &"printHex", &"px", vec![("[size]", "View data at current location in hex format.")]);
     }
 }
 
@@ -196,7 +196,7 @@ impl Cmd for PrintBase {
         writeln!(core.stdout, "{}", data_str).unwrap();
     }
     fn help(&self, core: &mut Core) {
-        help(core, "printBase", "pb", vec![("[base] [size]", "Print data stream at current location in [base] format.")]);
+        help(core, &"printBase", &"pb", vec![("[base] [size]", "Print data stream at current location in [base] format.")]);
         writeln!(core.stdout, "Supported bases: 2, 16.").unwrap();
     }
 }
@@ -401,8 +401,8 @@ impl Cmd for PrintCSV {
     fn help(&self, core: &mut Core) {
         help(
             core,
-            "printCSV",
-            "pcsv",
+            &"printCSV",
+            &"pcsv",
             vec![("[size] [count]", "Print data at current location as unsigned comma seperated values, each value of size [size] bits.")],
         );
         writeln!(core.stdout, "Supported size: 8, 16, 32, 64, 128, 256, 512.").unwrap();
@@ -568,8 +568,8 @@ impl Cmd for PrintSignedCSV {
     fn help(&self, core: &mut Core) {
         help(
             core,
-            "printSCSV",
-            "pscsv",
+            &"printSCSV",
+            &"pscsv",
             vec![("[size] [count]", "Print data at current location as signed comma seperated values, each value of size [size] bits.")],
         );
         writeln!(core.stdout, "Supported size: 8, 16, 32, 64, 128.").unwrap();

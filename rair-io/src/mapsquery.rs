@@ -175,10 +175,17 @@ impl RIOMapQuery {
             // we will get 1 normal map and maybe many rev_maps,
             // The reason is that 1 vaddr can only point to 1 paddr
             // but 1 paddr can be pointed to by many vaddrs
-            old_map.remove_projection(&frag).into_iter().for_each(|m| self.maps.insert(m.vaddr, m.vaddr + m.size - 1, Arc::new(m)));
+            old_map
+                .remove_projection(&frag)
+                .into_iter()
+                .map(|m| m)
+                .for_each(|m| self.maps.insert(m.vaddr, m.vaddr + m.size - 1, Arc::new(m)));
             for map in old_rev_maps {
                 if map.envelop(&frag) {
-                    map.remove_projection(&frag).into_iter().for_each(|m| self.rev_maps.insert(m.paddr, m.paddr + m.size - 1, Arc::new(m)));
+                    map.remove_projection(&frag)
+                        .into_iter()
+                        .map(|m| m)
+                        .for_each(|m| self.rev_maps.insert(m.paddr, m.paddr + m.size - 1, Arc::new(m)));
                 } else {
                     self.rev_maps.insert(map.paddr, map.paddr + map.size - 1, map)
                 }

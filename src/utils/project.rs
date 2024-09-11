@@ -50,12 +50,12 @@ impl Cmd for Save {
         compressor.write_all(&data).unwrap();
         let compressed_data = compressor.finish().unwrap();
         if let Err(e) = file.write_all(&compressed_data) {
-            error_msg(core, "Failed to save project", &e.to_string())
+            return error_msg(core, "Failed to save project", &e.to_string());
         }
     }
 
     fn help(&self, core: &mut Core) {
-        help(core, "save", "", vec![("[file_path]", "Save project into given path.")]);
+        help(core, &"save", &"", vec![("[file_path]", "Save project into given path.")]);
     }
 }
 
@@ -103,7 +103,7 @@ impl Cmd for Load {
         *core = core2;
     }
     fn help(&self, core: &mut Core) {
-        help(core, "load", "", vec![("[file_path]", "load project from given path.")]);
+        help(core, &"load", &"", vec![("[file_path]", "load project from given path.")]);
     }
 }
 

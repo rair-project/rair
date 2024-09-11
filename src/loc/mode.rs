@@ -65,8 +65,8 @@ impl Cmd for Mode {
     fn help(&self, core: &mut Core) {
         help(
             core,
-            "mode",
-            "m",
+            &"mode",
+            &"m",
             vec![("vir", "Set view mode to virtual address space."), ("phy", "Set view mode to physical address space.")],
         );
     }

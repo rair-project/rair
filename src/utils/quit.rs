@@ -32,7 +32,7 @@ impl Cmd for Quit {
         process::exit(0);
     }
     fn help(&self, core: &mut Core) {
-        help(core, "quit", "q", vec![("", "Quit Current session.")]);
+        help(core, &"quit", &"q", vec![("", "Quit Current session.")]);
     }
 }
 

@@ -131,7 +131,7 @@ impl Core {
         let msg = format!("Command {} is not found.", Paint::default(command).bold());
         error_msg(self, "Execution failed", &msg);
         let commands = self.commands.lock();
-        let similar = commands.suggest(command, 2);
+        let similar = commands.suggest(&command.to_string(), 2);
         let mut s = similar.iter();
         if let Some(suggestion) = s.next() {
             let (r, g, b) = self.env.read().get_color("color.6").unwrap();
@@ -146,7 +146,7 @@ impl Core {
     pub fn run(&mut self, command: &str, args: &[String]) {
         let cmds = self.commands.clone();
         let cmds_ref = cmds.lock();
-        let cmd = cmds_ref.find(command);
+        let cmd = cmds_ref.find(&command.to_string());
         if let Some(cmd) = cmd {
             cmd.lock().run(self, args);
         } else {
@@ -164,7 +164,7 @@ impl Core {
     pub fn help(&mut self, command: &str) {
         let cmds = self.commands.clone();
         let cmds_ref = cmds.lock();
-        let cmd = cmds_ref.find(command);
+        let cmd = cmds_ref.find(&command.to_string());
         if let Some(cmd) = cmd {
             cmd.as_ref().lock().help(self);
         } else {

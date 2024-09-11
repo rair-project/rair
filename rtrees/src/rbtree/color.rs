@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #[derive(PartialEq)]
-pub enum Color {
-    Red,
-    Black,
+pub enum COLOR {
+    RED,
+    BLACK,
 }
 
-impl Color {
+impl COLOR {
     pub fn flip(&mut self) {
         match self {
-            Color::Red => *self = Color::Black,
-            Color::Black => *self = Color::Red,
+            COLOR::RED => *self = COLOR::BLACK,
+            COLOR::BLACK => *self = COLOR::RED,
         }
     }
 }

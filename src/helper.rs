@@ -40,7 +40,7 @@ pub fn str_to_num(n: &str) -> Result<u64, num::ParseIntError> {
     if n.len() > 1 && n.starts_with('0') {
         return u64::from_str_radix(&n[1..], 8);
     }
-    n.parse::<u64>()
+    u64::from_str_radix(n, 10)
 }
 
 pub fn expect(core: &mut Core, args_len: u64, expect: u64) {

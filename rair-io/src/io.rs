@@ -53,7 +53,7 @@ impl Serialize for RIO {
     where
         S: Serializer,
     {
-        RIO::serialize(self, serializer)
+        RIO::serialize(&self, serializer)
     }
 }
 
@@ -74,7 +74,7 @@ impl<'de> Deserialize<'de> for RIO {
                 }
             }
             if !found {
-                return Err(de::Error::custom(IoError::IoPluginNotFoundError));
+                return Err(IoError::IoPluginNotFoundError).map_err(de::Error::custom);
             }
         }
         Ok(io)

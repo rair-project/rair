@@ -52,8 +52,8 @@ impl Deref for FileInternals {
     type Target = [u8];
     fn deref(&self) -> &[u8] {
         match self {
-            FileInternals::Map(m) => m,
-            FileInternals::MutMap(m) => m,
+            FileInternals::Map(m) => &**m,
+            FileInternals::MutMap(m) => &**m,
         }
     }
 }
