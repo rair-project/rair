@@ -72,7 +72,7 @@ impl MallocPlugin {
         if n.len() > 1 && n.starts_with('0') {
             return u64::from_str_radix(&n[1..], 8).ok();
         }
-        u64::from_str_radix(n, 10).ok()
+        n.parse::<u64>().ok()
     }
 }
 

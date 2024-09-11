@@ -61,7 +61,7 @@ impl RIODescQuery {
         if hndl >= self.hndl_to_descs.len() as u64 || self.hndl_to_descs[hndl as usize].is_none() {
             return Err(IoError::HndlNotFoundError);
         }
-        let ret = mem::replace(&mut self.hndl_to_descs[hndl as usize], None).unwrap();
+        let ret = Option::take(&mut self.hndl_to_descs[hndl as usize]).unwrap();
         self.free_hndls.push(Reverse(hndl));
         Ok(ret)
     }

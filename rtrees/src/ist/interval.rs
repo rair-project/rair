@@ -16,13 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **/
 use std::cmp::{max, min};
-#[derive(Clone, Copy)]
-pub struct Interval2<T: Ord + Copy> {
-    pub lo: T,
-    pub hi: T,
-    pub min_lo: T,
-    pub max_hi: T,
-}
 
 #[derive(Clone, Copy, Default, Ord, Eq, PartialOrd, PartialEq)]
 pub(super) struct Interval<T: Ord + Copy> {

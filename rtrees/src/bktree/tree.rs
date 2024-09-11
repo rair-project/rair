@@ -14,8 +14,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use std::collections::HashMap;
 use std::cmp::min;
+use std::collections::HashMap;
 /// Generic BK-Tree Template used to store dictionary like
 /// structures and perform fuzzy search on them. *K* must implement trait
 /// distance before it can be used as key here.

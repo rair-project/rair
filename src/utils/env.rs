@@ -57,7 +57,7 @@ impl Environment {
             };
             res = env.write().set_bool(key, value, core);
         } else if env.read().is_i64(key) {
-            let value = match i64::from_str_radix(value, 10) {
+            let value = match value.parse::<i64>() {
                 Ok(value) => value,
                 Err(e) => return error_msg(core, "Failed to set variable.", &e.to_string()),
             };

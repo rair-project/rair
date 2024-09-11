@@ -65,7 +65,7 @@ fn from_hex(input: &[u8]) -> Result<u8, std::num::ParseIntError> {
 }
 
 fn is_hex_digit(c: u8) -> bool {
-    (c as char).is_digit(16)
+    (c as char).is_ascii_hexdigit()
 }
 
 fn hex_byte(input: &[u8]) -> IResult<&[u8], u8> {

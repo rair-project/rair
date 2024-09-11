@@ -53,7 +53,7 @@ impl Serialize for RIO {
     where
         S: Serializer,
     {
-        RIO::serialize(&self, serializer)
+        RIO::serialize(self, serializer)
     }
 }
 
