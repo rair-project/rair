@@ -65,7 +65,7 @@ impl Cmd for Map {
         }
     }
     fn help(&self, core: &mut Core) {
-        help(core, &"map", &"", vec![("[phy] [vir] [size]", "Map region from physical address space to virtual address space.")]);
+        help(core, "map", "", vec![("[phy] [vir] [size]", "Map region from physical address space to virtual address space.")]);
     }
 }
 
@@ -101,7 +101,7 @@ impl Cmd for UnMap {
         }
     }
     fn help(&self, core: &mut Core) {
-        help(core, &"unmap", &"um", vec![("[vir] [size]", "Unmap a previosly mapped memory region.")]);
+        help(core, "unmap", "um", vec![("[vir] [size]", "Unmap a previosly mapped memory region.")]);
     }
 }
 
@@ -140,7 +140,7 @@ impl Cmd for ListMap {
         }
     }
     fn help(&self, core: &mut Core) {
-        help(core, &"maps", &"", vec![("", "List all memory maps.")]);
+        help(core, "maps", "", vec![("", "List all memory maps.")]);
     }
 }
 #[cfg(test)]

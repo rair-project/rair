@@ -19,7 +19,6 @@ use crate::core::*;
 use crate::helper::*;
 use std::fs::File;
 use std::io::prelude::*;
-use std::u8;
 
 #[derive(Default)]
 pub struct WriteHex {}
@@ -60,11 +59,10 @@ impl Cmd for WriteHex {
         };
         if let Err(e) = error {
             error_msg(core, "Read Failed", &e.to_string());
-            return;
         }
     }
     fn help(&self, core: &mut Core) {
-        help(core, &"writetHex", &"wx", vec![("[hexpairs]", "write given hexpairs data into the current address.")]);
+        help(core, "writetHex", "wx", vec![("[hexpairs]", "write given hexpairs data into the current address.")]);
     }
 }
 
@@ -112,14 +110,13 @@ impl Cmd for WriteToFile {
         if let Err(e) = file.write_all(&data) {
             let err_str = format!("{}.", e);
             error_msg(core, "Failed to write data to file", &err_str);
-            return;
         }
     }
     fn help(&self, core: &mut Core) {
         help(
             core,
-            &"writeToFile",
-            &"wtf",
+            "writeToFile",
+            "wtf",
             vec![("[size] [filepath]", "write data of size [size] at current location to file identified by [filepath].")],
         );
     }
