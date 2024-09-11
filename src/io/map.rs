@@ -136,7 +136,7 @@ impl Cmd for ListMap {
         )
         .unwrap();
         for map in core.io.map_iter() {
-            writeln!(core.stdout, "{: <20}{: <20}{}", format!("0x{:x}", map.vaddr), format!("0x{:x}", map.paddr), format!("0x{:x}", map.size)).unwrap();
+            writeln!(core.stdout, "{: <20}{: <20}0x{:x}", format!("0x{:x}", map.vaddr), format!("0x{:x}", map.paddr), map.size).unwrap();
         }
     }
     fn help(&self, core: &mut Core) {
