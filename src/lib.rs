@@ -1,15 +1,3 @@
-#![warn(clippy::cargo)]
-#![allow(clippy::multiple_crate_versions)]
-#![warn(
-    future_incompatible,
-    nonstandard_style,
-    warnings,
-    rust_2018_idioms,
-    unused,
-    rust_2018_idioms,
-    //missing_docs
-)]
-
 /*
  * rcore: rair core library
  * Copyright (C) 2019  Oddcoder
