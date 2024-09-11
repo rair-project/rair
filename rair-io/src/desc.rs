@@ -59,7 +59,7 @@ impl RIODesc {
         Ok(())
     }
     pub(crate) fn read(&mut self, paddr: usize, buffer: &mut [u8]) -> Result<(), IoError> {
-        self.plugin_operations.read(paddr - self.paddr as usize + self.raddr as usize as usize, buffer)
+        self.plugin_operations.read(paddr - self.paddr as usize + self.raddr as usize, buffer)
     }
     pub(crate) fn write(&mut self, paddr: usize, buffer: &[u8]) -> Result<(), IoError> {
         self.plugin_operations.write(paddr - self.paddr as usize + self.raddr as usize, buffer)
@@ -70,7 +70,7 @@ impl RIODesc {
     }
     /// Returns *true* if paddr exists in this file descriptor and *false* otherwise.
     pub fn has_paddr(&self, paddr: u64) -> bool {
-        paddr >= self.paddr && paddr < self.paddr + self.size as u64
+        paddr >= self.paddr && paddr < self.paddr + self.size
     }
     /// Returns the base physical address of this file.
     pub fn paddr_base(&self) -> u64 {

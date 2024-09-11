@@ -74,7 +74,7 @@ impl<'de> Deserialize<'de> for RIO {
                 }
             }
             if !found {
-                return Err(IoError::IoPluginNotFoundError).map_err(de::Error::custom);
+                return Err(de::Error::custom(IoError::IoPluginNotFoundError));
             }
         }
         Ok(io)

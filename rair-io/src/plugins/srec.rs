@@ -55,7 +55,7 @@ enum Record {
     Header(Vec<u8>),    // Record S0 (header data)
     Data(u64, Vec<u8>), // Record S1, S2, S3  (base address, bytes)
     Count(u64),         // s5, s6
-    EOF(u64),           // S7, s8, s9 (start address)
+    Eof(u64),           // S7, s8, s9 (start address)
 }
 
 named!(parse_newline, alt!(tag!("\r\n") | tag!("\n") | tag!("\r")));
@@ -166,19 +166,19 @@ fn parse_record7(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, _) = tag("S705")(input)?;
     let (input, start) = hex_big_dword(input)?;
     let (input, _) = hex_byte(input)?; //checksum
-    Ok((input, Record::EOF(start as u64)))
+    Ok((input, Record::Eof(start as u64)))
 }
 fn parse_record8(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, _) = tag("S804")(input)?;
     let (input, start) = hex_big_24bits(input)?;
     let (input, _) = hex_byte(input)?; //checksum
-    Ok((input, Record::EOF(start as u64)))
+    Ok((input, Record::Eof(start as u64)))
 }
 fn parse_record9(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, _) = tag("S903")(input)?;
     let (input, start) = hex_big_word(input)?;
     let (input, _) = hex_byte(input)?; //checksum
-    Ok((input, Record::EOF(start as u64)))
+    Ok((input, Record::Eof(start as u64)))
 }
 named!(parse_record(&[u8]) -> Record, alt!(parse_record0 | parse_record1 | parse_record2 | parse_record3 | parse_record5 | parse_record6 | parse_record7 | parse_record8 | parse_record9));
 
@@ -193,7 +193,7 @@ impl SrecInternal {
             };
             input = x.0;
             match x.1 {
-                Record::EOF(start) => {
+                Record::Eof(start) => {
                     self.start_address = Some(start);
                     break;
                 }

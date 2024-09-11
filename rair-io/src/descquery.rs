@@ -21,7 +21,6 @@ use rtrees::ist::IST;
 use serde::{Deserialize, Serialize};
 use std::cmp::{min, Reverse};
 use std::collections::BinaryHeap;
-use std::mem;
 
 #[derive(Default, Serialize, Deserialize)]
 pub(crate) struct RIODescQuery {

@@ -55,10 +55,10 @@ named!(parse_newline, alt!(tag!("\r\n") | tag!("\n") | tag!("\r")));
 
 enum Record {
     Data(u64, Vec<u8>), // Record 00 (base address, bytes)
-    EOF,                // Record 01
-    EA(u64),            // Extended Address: Record 02, Record 04
-    SSA(u32),           //Record 03
-    SLA(u32),           // record 05
+    Eof,                // Record 01
+    Ea(u64),            // Extended Address: Record 02, Record 04
+    Ssa(u32),           //Record 03
+    Sla(u32),           // record 05
 }
 fn from_hex(input: &[u8]) -> Result<u8, std::num::ParseIntError> {
     u8::from_str_radix(str::from_utf8(input).unwrap(), 16)
@@ -105,7 +105,7 @@ fn parse_record01(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, _) = hex_big_word(input)?; // addr entry
     let (input, _) = tag("01")(input)?; // record ID
     let (input, _) = hex_byte(input)?; // checksum
-    Ok((input, Record::EOF))
+    Ok((input, Record::Eof))
 }
 fn parse_record02(input: &[u8]) -> IResult<&[u8], Record> {
     // Extended Segment Address Record
@@ -115,7 +115,7 @@ fn parse_record02(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, addr) = hex_big_word(input)?; // data
     let (input, _) = hex_byte(input)?; // checksum
     let (input, _) = parse_newline(input)?; //newline
-    Ok((input, Record::EA((addr as u64) << 4)))
+    Ok((input, Record::Ea((addr as u64) << 4)))
 }
 
 fn parse_record03(input: &[u8]) -> IResult<&[u8], Record> {
@@ -126,7 +126,7 @@ fn parse_record03(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, addr) = hex_big_dword(input)?; // data
     let (input, _) = hex_byte(input)?; // checksum
     let (input, _) = parse_newline(input)?; //newline
-    Ok((input, Record::SSA(addr)))
+    Ok((input, Record::Ssa(addr)))
 }
 
 fn parse_record04(input: &[u8]) -> IResult<&[u8], Record> {
@@ -137,7 +137,7 @@ fn parse_record04(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, addr) = hex_big_word(input)?; // data
     let (input, _) = hex_byte(input)?; // checksum
     let (input, _) = parse_newline(input)?; //newline
-    Ok((input, Record::EA((addr as u64) << 16)))
+    Ok((input, Record::Ea((addr as u64) << 16)))
 }
 
 fn parse_record05(input: &[u8]) -> IResult<&[u8], Record> {
@@ -148,7 +148,7 @@ fn parse_record05(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, addr) = hex_big_dword(input)?; // data
     let (input, _) = hex_byte(input)?; // checksum
     let (input, _) = parse_newline(input)?; //newline
-    Ok((input, Record::SLA(addr)))
+    Ok((input, Record::Sla(addr)))
 }
 
 impl FileInternals {
@@ -164,15 +164,15 @@ impl FileInternals {
             };
             input = x.0;
             match x.1 {
-                Record::EOF => break,
+                Record::Eof => break,
                 Record::Data(addr, data) => {
                     for i in 0..data.len() as u64 {
                         self.bytes.insert(i + addr + base, data[i as usize]);
                     }
                 }
-                Record::EA(addr) => base = addr,
-                Record::SSA(addr) => self.ssa = Some(addr),
-                Record::SLA(addr) => self.sla = Some(addr),
+                Record::Ea(addr) => base = addr,
+                Record::Ssa(addr) => self.ssa = Some(addr),
+                Record::Sla(addr) => self.sla = Some(addr),
             }
             line += 1;
         }

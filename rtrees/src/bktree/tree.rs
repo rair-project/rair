@@ -52,7 +52,7 @@ where
 
     fn find(&self, key: &K, tolerance: u64) -> (Vec<&V>, Vec<&K>) {
         let (mut exact, mut close) = (Vec::new(), Vec::new());
-        let current_distance = self.key.distance(&key);
+        let current_distance = self.key.distance(key);
         if current_distance == 0 {
             exact.push(&self.value);
         } else if current_distance <= tolerance {
@@ -103,7 +103,7 @@ where
     /// `key1.distance(key2) <= tolerance`.
     pub fn find(&self, key: &K, tolerance: u64) -> (Vec<&V>, Vec<&K>) {
         if let Some(root) = &self.root {
-            root.find(&key, tolerance)
+            root.find(key, tolerance)
         } else {
             (Vec::new(), Vec::new())
         }
