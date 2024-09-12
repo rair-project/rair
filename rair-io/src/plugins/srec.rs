@@ -523,8 +523,8 @@ mod test_srec {
         let (input, rec) = parse_record7(input).unwrap();
         assert_eq!(input, b"");
         match rec {
-            Record::EOF(addr) => assert_eq!(addr, 0x12001000),
-            _ => panic!("Expected EOF record"),
+            Record::Eof(addr) => assert_eq!(addr, 0x12001000),
+            _ => panic!("Expected Eof record"),
         }
     }
     #[test]
@@ -533,8 +533,8 @@ mod test_srec {
         let (input, rec) = parse_record8(input).unwrap();
         assert_eq!(input, b"");
         match rec {
-            Record::EOF(addr) => assert_eq!(addr, 0x100000),
-            _ => panic!("Expected EOF record"),
+            Record::Eof(addr) => assert_eq!(addr, 0x100000),
+            _ => panic!("Expected Eof record"),
         }
     }
     #[test]
@@ -543,8 +543,8 @@ mod test_srec {
         let (input, rec) = parse_record9(input).unwrap();
         assert_eq!(input, b"");
         match rec {
-            Record::EOF(addr) => assert_eq!(addr, 0x1234),
-            _ => panic!("Expected EOF record"),
+            Record::Eof(addr) => assert_eq!(addr, 0x1234),
+            _ => panic!("Expected Eof record"),
         }
     }
     #[test]
