@@ -220,7 +220,7 @@ mod default_plugin_tests {
     fn test_read_cb(path: &Path) {
         let mut plugin = plugin();
         let mut desc = plugin.open(&path.to_string_lossy(), IoMode::READ).unwrap();
-        let mut buffer: &mut [u8] = &mut [0; 8];
+        let buffer: &mut [u8] = &mut [0; 8];
         // read at the begining
         desc.plugin_operations
             .read(desc.raddr as usize, buffer)
@@ -282,7 +282,7 @@ mod default_plugin_tests {
         let mut desc = plugin
             .open(&path.to_string_lossy(), IoMode::READ | IoMode::WRITE)
             .unwrap();
-        let mut buffer: &mut [u8] = &mut [0; 8];
+        let buffer: &mut [u8] = &mut [0; 8];
         // write at the begining
         desc.plugin_operations
             .write(desc.raddr as usize, buffer)

@@ -107,7 +107,7 @@ mod default_plugin_tests {
         let mut plugin = defaultplugin::plugin();
         let mut desc = RIODesc::open(&mut *plugin, &path.to_string_lossy(), IoMode::READ).unwrap();
         desc.paddr = 0x40000;
-        let mut buffer: &mut [u8] = &mut [0; 8];
+        let buffer: &mut [u8] = &mut [0; 8];
         // read at the begining
         desc.read(desc.paddr as usize, buffer).unwrap();
         assert_eq!(buffer, [0x00, 0x01, 0x01, 0x02, 0x03, 0x05, 0x08, 0x0d]);
@@ -175,7 +175,7 @@ mod default_plugin_tests {
             IoMode::READ | IoMode::WRITE,
         )
         .unwrap();
-        let mut buffer: &mut [u8] = &mut [0; 8];
+        let buffer: &mut [u8] = &mut [0; 8];
         desc.paddr = 0x40000;
         // write at the begining
         desc.write(desc.paddr as usize, buffer).unwrap();

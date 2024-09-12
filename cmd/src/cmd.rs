@@ -1,61 +1,42 @@
-/*
- * cmd.rs: Main command parsing.
- * Copyright (C) 2019  Oddcoder
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-use error::*;
-use grammar::*;
+//! Main command parsing.
+
+use crate::{error::*, grammar::*};
 use pest::iterators::{Pair, Pairs};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub enum RedPipe {
+    #[default]
     None,
     Redirect(Box<Argument>),
     RedirectCat(Box<Argument>),
     Pipe(Vec<Argument>),
 }
 
-impl Default for RedPipe {
-    fn default() -> Self {
-        return RedPipe::None;
-    }
-}
 impl RedPipe {
     fn parse_pipe(pairs: Pairs<Rule>) -> Self {
         let mut ret = Vec::new();
         for pair in pairs {
             ret.push(Argument::parse_argument(pair))
         }
-        return RedPipe::Pipe(ret);
+        RedPipe::Pipe(ret)
     }
     fn parse_red(mut pairs: Pairs<Rule>) -> Self {
         let arg = Argument::parse_argument(pairs.next().unwrap());
-        return RedPipe::Redirect(Box::new(arg));
+        RedPipe::Redirect(Box::new(arg))
     }
     fn parse_redcat(mut pairs: Pairs<Rule>) -> Self {
         let arg = Argument::parse_argument(pairs.next().unwrap());
-        return RedPipe::RedirectCat(Box::new(arg));
+        RedPipe::RedirectCat(Box::new(arg))
     }
     fn parse_redpipe(root: Pair<Rule>) -> Self {
         let mut pairs = root.into_inner();
         let type_identifier = pairs.next().unwrap();
         match type_identifier.as_rule() {
-            Rule::Pipe => return RedPipe::parse_pipe(pairs),
-            Rule::Red => return RedPipe::parse_red(pairs),
-            Rule::RedCat => return RedPipe::parse_redcat(pairs),
+            Rule::Pipe => RedPipe::parse_pipe(pairs),
+            Rule::Red => RedPipe::parse_red(pairs),
+            Rule::RedCat => RedPipe::parse_redcat(pairs),
             _ => unimplemented_pair(type_identifier),
-        };
+        }
     }
 }
 
@@ -63,7 +44,7 @@ impl RedPipe {
 pub enum Argument {
     NonLiteral(Cmd),
     Literal(String),
-    Err(ParserError),
+    Err(Box<ParserError>),
 }
 impl Argument {
     fn parse_arguments(root: Pair<Rule>) -> Vec<Self> {
@@ -72,15 +53,15 @@ impl Argument {
         for pair in root.into_inner() {
             args.push(Argument::parse_argument(pair));
         }
-        return args;
+        args
     }
     fn parse_argument(root: Pair<Rule>) -> Self {
         let arg = root.as_str();
         if arg.starts_with('`') && arg.ends_with('`') {
             let res = Cmd::parse_cmd(root.into_inner().next().unwrap());
             match res {
-                Ok(cmd) => return Argument::NonLiteral(cmd),
-                Err(e) => return Argument::Err(e),
+                Ok(cmd) => Argument::NonLiteral(cmd),
+                Err(e) => Argument::Err(Box::new(e)),
             }
         } else if arg.starts_with('"') && arg.ends_with('"') {
             return Argument::Literal(arg[1..arg.len() - 1].to_owned());
@@ -102,12 +83,12 @@ fn pair_to_num(root: Pair<Rule>) -> Result<u64, ParserError> {
         Rule::BIN => u64::from_str_radix(&root.as_str()[2..], 2),
         Rule::HEX => u64::from_str_radix(&root.as_str()[2..], 16),
         Rule::OCT => u64::from_str_radix(&root.as_str()[1..], 8),
-        Rule::DEC => u64::from_str_radix(root.as_str(), 10),
+        Rule::DEC => root.as_str().parse::<u64>(),
         _ => unimplemented_pair(root),
     };
     match result {
-        Ok(x) => return Ok(x),
-        Err(e) => return Err(ParserError::Num(e)),
+        Ok(x) => Ok(x),
+        Err(e) => Err(ParserError::Num(e)),
     }
 }
 impl Cmd {
@@ -123,14 +104,14 @@ impl Cmd {
                 _ => unimplemented_pair(pair),
             }
         }
-        return Ok(cmd);
+        Ok(cmd)
     }
 }
 
 #[cfg(test)]
 mod test_normal_cmd {
     use super::*;
-    use grammar::CliParser;
+    use crate::grammar::CliParser;
     use pest::Parser;
     #[test]
     fn test_cmd() {

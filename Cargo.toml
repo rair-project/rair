@@ -8,3 +8,8 @@ members = [
   "test_file",
   "trees",
 ]
+
+[workspace.dependencies]
+pest = "2.1"
+pest_derive = "2.1"
+err-derive = "0.2"

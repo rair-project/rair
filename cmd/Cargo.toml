@@ -1,18 +1,16 @@
 [package]
 name = "rair-cmd"
+edition = "2021"
 version = "0.1.0"
 authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
 license = "GPL-3.0-or-later"
-repository = "https://github.com/oddcoder/rair"
+repository = "https://github.com/Rair-Project/rair"
 keywords = ["Parser", "cmd", "Command", "Line"]
 description = "IO subsystem for RAIR"
 categories = ["CLI"]
 readme = "readme.md"
 
-
-
 [dependencies]
-pest = "2.1"
-pest_derive = "2.1"
-err-derive = "0.2"
-
+err-derive = {workspace = true}
+pest = {workspace = true}
+pest_derive = {workspace = true}

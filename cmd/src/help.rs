@@ -1,21 +1,6 @@
-/*
- * help.rs: Help part of AST.
- * Copyright (C) 2019  Oddcoder
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+//! Help part of AST.
 
-use grammar::Rule;
+use crate::grammar::Rule;
 use pest::iterators::Pair;
 
 #[derive(Default, Debug, PartialEq)]
@@ -35,7 +20,7 @@ impl HelpCmd {
 #[cfg(test)]
 mod test_help_cmd {
     use super::*;
-    use grammar::CliParser;
+    use crate::grammar::CliParser;
     use pest::Parser;
     #[test]
     fn test_help_no_space() {
