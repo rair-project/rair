@@ -1,19 +1,4 @@
-/*
- * lineformatter.rs: Autocompletion / hinting / colorzing input.
- * Copyright (C) 2019  Oddcoder
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+//! Autocompletion / hinting / colorzing input.
 
 use parking_lot::Mutex;
 use rair_cmd::*;
@@ -36,7 +21,10 @@ pub struct LineFormatter {
 
 impl LineFormatter {
     pub fn new(commands: Arc<Mutex<Commands>>) -> Self {
-        LineFormatter { hinter: HistoryHinter {}, commands }
+        LineFormatter {
+            hinter: HistoryHinter {},
+            commands,
+        }
     }
     fn tree_complete(&self, tree: ParseTree) -> Result<(usize, Vec<Pair>), ReadlineError> {
         match tree {
@@ -47,7 +35,10 @@ impl LineFormatter {
                 for suggestion in self.commands.lock().prefix(&help.command) {
                     let display = (*suggestion).to_string();
                     let replacement = (*suggestion).to_string() + "?";
-                    ret.push(Pair { display, replacement });
+                    ret.push(Pair {
+                        display,
+                        replacement,
+                    });
                 }
                 return Ok((0, ret));
             }
@@ -61,7 +52,10 @@ impl LineFormatter {
                 for suggestion in self.commands.lock().prefix(&cmd.command) {
                     let display = (*suggestion).to_string();
                     let replacement = (*suggestion).to_string();
-                    ret.push(Pair { display, replacement });
+                    ret.push(Pair {
+                        display,
+                        replacement,
+                    });
                 }
                 return Ok((0, ret));
             }
@@ -73,7 +67,12 @@ impl LineFormatter {
 impl Completer for LineFormatter {
     type Candidate = Pair;
 
-    fn complete(&self, line: &str, pos: usize, _ctx: &Context<'_>) -> Result<(usize, Vec<Pair>), ReadlineError> {
+    fn complete(
+        &self,
+        line: &str,
+        pos: usize,
+        _ctx: &Context<'_>,
+    ) -> Result<(usize, Vec<Pair>), ReadlineError> {
         // first figure which token are we completing
         // we will do so by starting at line[pos] and keep incrementing till:
         //  A- we get to see a white space

@@ -1,21 +1,6 @@
-/*
- * rpel.rs: Read-Parse-Evaluate-Loop implementation.
- * Copyright (C) 2019  Oddcoder
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-use files::*;
-use lineformatter::LineFormatter;
+//! Read-Parse-Evaluate-Loop implementation.
+
+use crate::{files::*, lineformatter::LineFormatter};
 use rair_cmd::*;
 use rair_core::{Core, Writer};
 use rustyline::error::ReadlineError;
@@ -98,7 +83,11 @@ fn run_cmd(core: &mut Core, cmd: Cmd) {
     //if we have a pipe feed into the pipe ..
     if let Some(process) = child {
         let mut s = String::new();
-        process.stdin.unwrap().write_all(core.stdout.bytes_ref().unwrap()).unwrap();
+        process
+            .stdin
+            .unwrap()
+            .write_all(core.stdout.bytes_ref().unwrap())
+            .unwrap();
         process.stdout.unwrap().read_to_string(&mut s).unwrap();
         writeln!(stdout.as_mut().unwrap(), "{}", s).unwrap();
     }
@@ -124,12 +113,20 @@ fn create_redirect_cat(core: &mut Core, arg: Argument) -> Result<Writer, String>
     }
 }
 
-fn create_pipe(core: &mut Core, unprocessed_args: Vec<Argument>) -> Result<(Child, Writer), String> {
+fn create_pipe(
+    core: &mut Core,
+    unprocessed_args: Vec<Argument>,
+) -> Result<(Child, Writer), String> {
     let mut args = Vec::with_capacity(unprocessed_args.len());
     for arg in unprocessed_args {
         args.push(eval_arg(core, arg)?);
     }
-    match Command::new(&args[0]).args(&args[1..]).stdin(Stdio::piped()).stdout(Stdio::piped()).spawn() {
+    match Command::new(&args[0])
+        .args(&args[1..])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+    {
         Err(why) => return Err(why.to_string()),
         Ok(process) => return Ok((process, Writer::new_buf())),
     };

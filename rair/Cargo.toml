@@ -4,24 +4,25 @@ description = "Reverse Engineering framework written in rust."
 version = "0.1.0"
 authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
 license = "GPL-3.0-or-later"
-repository = "https://github.com/oddcoder/rair"
+repository = "https://github.com/Rair-Project/rair"
 readme = "readme.md"
 keywords = ["Reverse Engineering", "Assembly", "Disassembly", "Malware", "Static Analysis"]
 categories = ["command-line-utilities", "Reverse-Engineering"]
+edition = "2021"
 
 [[bin]]
 name = "rair"
 path = "src/rair.rs"
 
 [dependencies]
-clap = {version = "2.33", features = ["yaml"]}
-rustyline = "5.0"
-rustyline-derive = "0.2"
-app_dirs = "1.2"
-yansi = "0.5"
-parking_lot = "0.10"
+clap = {workspace = true, features = ["yaml"]}
+rustyline = {workspace = true}
+rustyline-derive = {workspace = true}
+app_dirs = {workspace = true}
+yansi = {workspace = true}
+parking_lot = {workspace = true}
 
-rair-cmd = {path = "../cmd"}
-rair-trees = {path = "../trees"}
-rair-io = {path = "../io"}
-rair-core = {path = "../core"}
+rair-cmd = {workspace = true}
+rair-trees = {workspace = true}
+rair-io = {workspace = true}
+rair-core = {workspace = true}
