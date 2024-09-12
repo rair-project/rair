@@ -18,7 +18,7 @@ extern crate flate2;
 extern crate parking_lot;
 extern crate rair_env;
 extern crate rair_io;
-extern crate rtrees;
+extern crate rair_trees;
 extern crate serde;
 #[cfg(test)]
 extern crate test_file;

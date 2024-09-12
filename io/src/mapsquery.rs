@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use crate::utils::*;
-use rtrees::ist::IST;
+use rair_trees::ist::IST;
 use serde::{Deserialize, Serialize};
 use std::cmp::min;
 use std::sync::Arc;

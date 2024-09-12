@@ -3,6 +3,6 @@ members = [
   "core",
   "env",
   "io",
-  "rtrees",
+  "trees",
   "test_file",
 ]

@@ -16,7 +16,7 @@
  */
 
 use crate::helper::*;
-use rtrees::bktree::SpellTree;
+use rair_trees::bktree::SpellTree;
 use std::collections::BTreeMap; // for suffex search
 
 #[derive(Default)]

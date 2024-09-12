@@ -17,7 +17,7 @@
 use crate::desc::RIODesc;
 use crate::plugin::RIOPlugin;
 use crate::utils::{IoError, IoMode};
-use rtrees::ist::IST;
+use rair_trees::ist::IST;
 use serde::{Deserialize, Serialize};
 use std::cmp::{min, Reverse};
 use std::collections::BinaryHeap;

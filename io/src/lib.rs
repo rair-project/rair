@@ -21,7 +21,7 @@ extern crate bitflags;
 extern crate nom;
 extern crate base64;
 extern crate memmap;
-extern crate rtrees;
+extern crate rair_trees;
 extern crate serde;
 #[cfg(test)]
 extern crate test_file;

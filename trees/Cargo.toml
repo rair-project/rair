@@ -1,5 +1,5 @@
 [package]
-name = "rtrees"
+name = "rair-trees"
 version = "0.1.0"
 authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
 license = "LGPL-3.0-or-later"
