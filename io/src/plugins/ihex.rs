@@ -393,9 +393,9 @@ mod test_ihex {
     #[test]
     fn test_accept_uri() {
         let p = plugin();
-        assert_eq!(p.accept_uri("ihex:///bin/ls"), true);
-        assert_eq!(p.accept_uri("ihx:///bin/ls"), false);
-        assert_eq!(p.accept_uri("/bin/ls"), false);
+        assert!(p.accept_uri("ihex:///bin/ls"));
+        assert!(!p.accept_uri("ihx:///bin/ls"));
+        assert!(!p.accept_uri("/bin/ls"));
     }
 
     #[test]

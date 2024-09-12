@@ -103,13 +103,13 @@ mod default_plugin_tests {
         desc.paddr = 0x40000;
         let mut buffer: &mut [u8] = &mut [0; 8];
         // read at the begining
-        desc.read(desc.paddr as usize, &mut buffer).unwrap();
+        desc.read(desc.paddr as usize, buffer).unwrap();
         assert_eq!(buffer, [0x00, 0x01, 0x01, 0x02, 0x03, 0x05, 0x08, 0x0d]);
         // read at the middle
-        desc.read((desc.paddr + 0x10) as usize, &mut buffer).unwrap();
+        desc.read((desc.paddr + 0x10) as usize, buffer).unwrap();
         assert_eq!(buffer, [0xdb, 0x3d, 0x18, 0x55, 0x6d, 0xc2, 0x2f, 0xf1]);
         // read at the end
-        desc.read((desc.paddr + 97) as usize, &mut buffer).unwrap();
+        desc.read((desc.paddr + 97) as usize, buffer).unwrap();
         assert_eq!(buffer, [0x41, 0xc1, 0x02, 0xc3, 0xc5, 0x88, 0x4d, 0xd5]);
     }
     #[test]
@@ -120,10 +120,10 @@ mod default_plugin_tests {
         let mut plugin = defaultplugin::plugin();
         let mut desc = RIODesc::open(&mut *plugin, &path.to_string_lossy(), IoMode::READ).unwrap();
         desc.paddr = 0x40000;
-        assert_eq!(desc.has_paddr(0x40000), true);
-        assert_eq!(desc.has_paddr(0x5), false);
-        assert_eq!(desc.has_paddr(0x40000 + DATA.len() as u64), false);
-        assert_eq!(desc.has_paddr(0x40000 + DATA.len() as u64 - 1), true);
+        assert!(desc.has_paddr(0x40000));
+        assert!(!desc.has_paddr(0x5));
+        assert!(!desc.has_paddr(0x40000 + DATA.len() as u64));
+        assert!(desc.has_paddr(0x40000 + DATA.len() as u64 - 1));
     }
     #[test]
     fn test_desc_has_paddr() {
@@ -135,13 +135,13 @@ mod default_plugin_tests {
         desc.paddr = 0x40000;
         let mut buffer: &mut [u8] = &mut [0; 8];
         // read past the end
-        let mut e = desc.read((desc.paddr + desc.size) as usize, &mut buffer);
+        let mut e = desc.read((desc.paddr + desc.size) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => assert!(true, "UnexpectedEof Error should have been generated"),
         };
         // read at the middle past the the end
-        e = desc.read((desc.paddr + desc.size - 5) as usize, &mut buffer);
+        e = desc.read((desc.paddr + desc.size - 5) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => assert!(true, "UnexpectedEof Error should have been generated"),
@@ -150,7 +150,7 @@ mod default_plugin_tests {
         // read at the start past the end
         let mut v: Vec<u8> = vec![0; (desc.size + 8) as usize];
         buffer = &mut v;
-        e = desc.read(desc.paddr as usize, &mut buffer);
+        e = desc.read(desc.paddr as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => assert!(true, "UnexpectedEof Error should have been generated"),
@@ -167,16 +167,16 @@ mod default_plugin_tests {
         let mut buffer: &mut [u8] = &mut [0; 8];
         desc.paddr = 0x40000;
         // write at the begining
-        desc.write(desc.paddr as usize, &buffer).unwrap();
-        desc.read(desc.paddr as usize, &mut buffer).unwrap();
+        desc.write(desc.paddr as usize, buffer).unwrap();
+        desc.read(desc.paddr as usize, buffer).unwrap();
         assert_eq!(buffer, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
         // write at the middle
-        desc.write((desc.paddr + 0x10) as usize, &buffer).unwrap();
-        desc.read((desc.paddr + 0x10) as usize, &mut buffer).unwrap();
+        desc.write((desc.paddr + 0x10) as usize, buffer).unwrap();
+        desc.read((desc.paddr + 0x10) as usize, buffer).unwrap();
         assert_eq!(buffer, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
         // write at the end
-        desc.write((desc.paddr + 97) as usize, &buffer).unwrap();
-        desc.read((desc.paddr + 97) as usize, &mut buffer).unwrap();
+        desc.write((desc.paddr + 97) as usize, buffer).unwrap();
+        desc.read((desc.paddr + 97) as usize, buffer).unwrap();
         assert_eq!(buffer, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
     }
 
@@ -191,13 +191,13 @@ mod default_plugin_tests {
         let mut buffer: &[u8] = &[0; 8];
         desc.paddr = 0x40000;
         // write past the end
-        let mut e = desc.write((desc.paddr + desc.size) as usize, &buffer);
+        let mut e = desc.write((desc.paddr + desc.size) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => assert!(true, "UnexpectedEof Error should have been generated"),
         };
         // middle at the middle past the the end
-        e = desc.write((desc.paddr + desc.size - 5) as usize, &buffer);
+        e = desc.write((desc.paddr + desc.size - 5) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => assert!(true, "UnexpectedEof Error should have been generated"),
@@ -205,7 +205,7 @@ mod default_plugin_tests {
         // read at the start past the end
         let v: Vec<u8> = vec![0; (desc.size + 8) as usize];
         buffer = &v;
-        e = desc.write(desc.paddr as usize, &mut buffer);
+        e = desc.write(desc.paddr as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => assert!(true, "UnexpectedEof Error should have been generated"),

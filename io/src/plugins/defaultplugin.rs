@@ -147,9 +147,9 @@ mod default_plugin_tests {
     fn test_plugin() {
         let plugin = plugin();
         let meta = plugin.get_metadata();
-        assert_eq!(plugin.accept_uri("/bin/ls"), true);
-        assert_eq!(plugin.accept_uri("file:///bin/ls"), true);
-        assert_eq!(plugin.accept_uri("ihex:///bin/ls"), false);
+        assert!(plugin.accept_uri("/bin/ls"));
+        assert!(plugin.accept_uri("file:///bin/ls"));
+        assert!(!plugin.accept_uri("ihex:///bin/ls"));
         assert_eq!(meta.name, METADATA.name);
         assert_eq!(meta.desc, METADATA.desc);
         assert_eq!(meta.author, METADATA.author);
@@ -190,13 +190,13 @@ mod default_plugin_tests {
         let mut desc = plugin.open(&path.to_string_lossy(), IoMode::READ).unwrap();
         let mut buffer: &mut [u8] = &mut [0; 8];
         // read at the begining
-        desc.plugin_operations.read(desc.raddr as usize, &mut buffer).unwrap();
+        desc.plugin_operations.read(desc.raddr as usize, buffer).unwrap();
         assert_eq!(buffer, [0x00, 0x01, 0x01, 0x02, 0x03, 0x05, 0x08, 0x0d]);
         // read at the middle
-        desc.plugin_operations.read((desc.raddr + 0x10) as usize, &mut buffer).unwrap();
+        desc.plugin_operations.read((desc.raddr + 0x10) as usize, buffer).unwrap();
         assert_eq!(buffer, [0xdb, 0x3d, 0x18, 0x55, 0x6d, 0xc2, 0x2f, 0xf1]);
         // read at the end
-        desc.plugin_operations.read((desc.raddr + 97) as usize, &mut buffer).unwrap();
+        desc.plugin_operations.read((desc.raddr + 97) as usize, buffer).unwrap();
         assert_eq!(buffer, [0x41, 0xc1, 0x02, 0xc3, 0xc5, 0x88, 0x4d, 0xd5]);
     }
     #[test]
@@ -209,13 +209,13 @@ mod default_plugin_tests {
         let mut desc = plugin.open(&path.to_string_lossy(), IoMode::READ).unwrap();
         let mut buffer: &mut [u8] = &mut [0; 8];
         // read past the end
-        let mut e = desc.plugin_operations.read((desc.raddr + desc.size) as usize, &mut buffer);
+        let mut e = desc.plugin_operations.read((desc.raddr + desc.size) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => assert!(true, "UnexpectedEof Error should have been generated"),
         };
         // read at the middle past the the end
-        e = desc.plugin_operations.read((desc.raddr + desc.size - 5) as usize, &mut buffer);
+        e = desc.plugin_operations.read((desc.raddr + desc.size - 5) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => assert!(true, "UnexpectedEof Error should have been generated"),
@@ -224,7 +224,7 @@ mod default_plugin_tests {
         // read at the start past the end
         let mut v: Vec<u8> = vec![0; (desc.size + 8) as usize];
         buffer = &mut v;
-        e = desc.plugin_operations.read(desc.raddr as usize, &mut buffer);
+        e = desc.plugin_operations.read(desc.raddr as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => assert!(true, "UnexpectedEof Error should have been generated"),
@@ -240,16 +240,16 @@ mod default_plugin_tests {
         let mut desc = plugin.open(&path.to_string_lossy(), IoMode::READ | IoMode::WRITE).unwrap();
         let mut buffer: &mut [u8] = &mut [0; 8];
         // write at the begining
-        desc.plugin_operations.write(desc.raddr as usize, &buffer).unwrap();
-        desc.plugin_operations.read(desc.raddr as usize, &mut buffer).unwrap();
+        desc.plugin_operations.write(desc.raddr as usize, buffer).unwrap();
+        desc.plugin_operations.read(desc.raddr as usize, buffer).unwrap();
         assert_eq!(buffer, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
         // write at the middle
-        desc.plugin_operations.write((desc.raddr + 0x10) as usize, &buffer).unwrap();
-        desc.plugin_operations.read((desc.raddr + 0x10) as usize, &mut buffer).unwrap();
+        desc.plugin_operations.write((desc.raddr + 0x10) as usize, buffer).unwrap();
+        desc.plugin_operations.read((desc.raddr + 0x10) as usize, buffer).unwrap();
         assert_eq!(buffer, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
         // write at the end
-        desc.plugin_operations.write((desc.raddr + 97) as usize, &buffer).unwrap();
-        desc.plugin_operations.read((desc.raddr + 97) as usize, &mut buffer).unwrap();
+        desc.plugin_operations.write((desc.raddr + 97) as usize, buffer).unwrap();
+        desc.plugin_operations.read((desc.raddr + 97) as usize, buffer).unwrap();
         assert_eq!(buffer, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
     }
 
@@ -263,13 +263,13 @@ mod default_plugin_tests {
         let mut desc = plugin.open(&path.to_string_lossy(), IoMode::READ | IoMode::WRITE).unwrap();
         let mut buffer: &[u8] = &[0; 8];
         // write past the end
-        let mut e = desc.plugin_operations.write((desc.raddr + desc.size) as usize, &buffer);
+        let mut e = desc.plugin_operations.write((desc.raddr + desc.size) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => assert!(true, "UnexpectedEof Error should have been generated"),
         };
         // middle at the middle past the the end
-        e = desc.plugin_operations.write((desc.raddr + desc.size - 5) as usize, &buffer);
+        e = desc.plugin_operations.write((desc.raddr + desc.size - 5) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => assert!(true, "UnexpectedEof Error should have been generated"),
@@ -277,7 +277,7 @@ mod default_plugin_tests {
         // read at the start past the end
         let v: Vec<u8> = vec![0; (desc.size + 8) as usize];
         buffer = &v;
-        e = desc.plugin_operations.write(desc.raddr as usize, &mut buffer);
+        e = desc.plugin_operations.write(desc.raddr as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => assert!(true, "UnexpectedEof Error should have been generated"),

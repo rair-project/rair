@@ -506,20 +506,20 @@ impl<T> Environment<T> {
 mod test_environment {
     use super::*;
     fn even_str(_: &str, value: &str, _: &Environment<Option<()>>, _: &mut Option<()>) -> bool {
-        return value.len() % 2 == 0;
+        value.len() % 2 == 0
     }
     fn even_u64(_: &str, value: u64, _: &Environment<Option<()>>, _: &mut Option<()>) -> bool {
-        return value % 2 == 0;
+        value % 2 == 0
     }
     fn negative_i64(_: &str, value: i64, _: &Environment<Option<()>>, _: &mut Option<()>) -> bool {
-        return value < 0;
+        value < 0
     }
     fn always_false(_: &str, value: bool, _: &Environment<Option<()>>, _: &mut Option<()>) -> bool {
-        return !value;
+        !value
     }
     fn grayscale(_: &str, color: (u8, u8, u8), _: &Environment<Option<()>>, _: &mut Option<()>) -> bool {
         let (r, g, b) = color;
-        return r == g && g == b;
+        r == g && g == b
     }
     fn prep_env() -> Environment<Option<()>> {
         let mut data = None;
@@ -534,7 +534,7 @@ mod test_environment {
         env.add_bool_with_cb("b2", false, "Second Bool", &mut data, always_false).unwrap();
         env.add_color("c1", (31, 33, 37), "First Color").unwrap();
         env.add_color_with_cb("c2", (50, 50, 50), "Second Color", &mut data, grayscale).unwrap();
-        return env;
+        env
     }
     #[test]
     fn test_str() {
@@ -543,9 +543,9 @@ mod test_environment {
         assert_eq!(env.add_str_with_cb("s03", "value02", "", &mut data, even_str).err().unwrap(), EnvErr::CbFailed);
         assert_eq!(env.add_str("s1", "v3", "").err().unwrap(), EnvErr::AlreadyExist);
         assert_eq!(env.add_str_with_cb("s1", "value1", "", &mut data, even_str).err().unwrap(), EnvErr::AlreadyExist);
-        assert_eq!(env.is_str("s1"), true);
-        assert_eq!(env.is_str("u1"), false);
-        assert_eq!(env.is_str("s3"), false);
+        assert!(env.is_str("s1"));
+        assert!(!env.is_str("u1"));
+        assert!(!env.is_str("s3"));
         assert_eq!(env.get_str("s1").unwrap(), "value1");
         assert_eq!(env.get_str("s2").unwrap(), "value2");
         assert_eq!(env.get_str("s3").err().unwrap(), EnvErr::NotFound);
@@ -573,9 +573,9 @@ mod test_environment {
         assert_eq!(env.add_u64_with_cb("u3", 3, "", &mut data, even_u64).err().unwrap(), EnvErr::CbFailed);
         assert_eq!(env.add_u64("u2", 5, "").err().unwrap(), EnvErr::AlreadyExist);
         assert_eq!(env.add_u64_with_cb("s1", 4, "", &mut data, even_u64).err().unwrap(), EnvErr::AlreadyExist);
-        assert_eq!(env.is_u64("u1"), true);
-        assert_eq!(env.is_u64("s1"), false);
-        assert_eq!(env.is_u64("u3"), false);
+        assert!(env.is_u64("u1"));
+        assert!(!env.is_u64("s1"));
+        assert!(!env.is_u64("u3"));
         assert_eq!(env.get_u64("u1").unwrap(), 1);
         assert_eq!(env.get_u64("u2").unwrap(), 2);
         assert_eq!(env.get_u64("u3").err().unwrap(), EnvErr::NotFound);
@@ -600,9 +600,9 @@ mod test_environment {
         assert_eq!(env.add_i64_with_cb("i3", 3, "", &mut data, negative_i64).err().unwrap(), EnvErr::CbFailed);
         assert_eq!(env.add_i64("i2", 5, "").err().unwrap(), EnvErr::AlreadyExist);
         assert_eq!(env.add_i64_with_cb("s1", 4, "", &mut data, negative_i64).err().unwrap(), EnvErr::AlreadyExist);
-        assert_eq!(env.is_i64("i1"), true);
-        assert_eq!(env.is_i64("u1"), false);
-        assert_eq!(env.is_i64("i3"), false);
+        assert!(env.is_i64("i1"));
+        assert!(!env.is_i64("u1"));
+        assert!(!env.is_i64("i3"));
         assert_eq!(env.get_i64("i1").unwrap(), 1);
         assert_eq!(env.get_i64("i2").unwrap(), -1);
         assert_eq!(env.get_i64("u3").err().unwrap(), EnvErr::NotFound);
@@ -627,22 +627,22 @@ mod test_environment {
         assert_eq!(env.add_bool_with_cb("b3", true, "", &mut data, always_false).err().unwrap(), EnvErr::CbFailed);
         assert_eq!(env.add_bool("b2", true, "").err().unwrap(), EnvErr::AlreadyExist);
         assert_eq!(env.add_bool_with_cb("b1", false, "", &mut data, always_false).err().unwrap(), EnvErr::AlreadyExist);
-        assert_eq!(env.is_bool("b1"), true);
-        assert_eq!(env.is_bool("u1"), false);
-        assert_eq!(env.is_bool("b3"), false);
-        assert_eq!(env.get_bool("b1").unwrap(), true);
-        assert_eq!(env.get_bool("b2").unwrap(), false);
+        assert!(env.is_bool("b1"));
+        assert!(!env.is_bool("u1"));
+        assert!(!env.is_bool("b3"));
+        assert!(env.get_bool("b1").unwrap());
+        assert!(!env.get_bool("b2").unwrap());
         assert_eq!(env.get_bool("u3").err().unwrap(), EnvErr::NotFound);
         assert_eq!(env.get_bool("s1").err().unwrap(), EnvErr::DifferentType);
         env.set_bool("b1", false, &mut data).unwrap();
-        assert_eq!(env.get_bool("b1").unwrap(), false);
+        assert!(!env.get_bool("b1").unwrap());
         assert_eq!(env.set_bool("b2", true, &mut data).err().unwrap(), EnvErr::CbFailed);
-        assert_eq!(env.get_bool("b2").unwrap(), false);
+        assert!(!env.get_bool("b2").unwrap());
         assert_eq!(env.set_bool("b3", true, &mut data).err().unwrap(), EnvErr::NotFound);
         assert_eq!(env.set_bool("s1", false, &mut data).err().unwrap(), EnvErr::DifferentType);
         assert_eq!(env.get("b1").unwrap(), EnvData::Bool(false));
         env.reset("b1", &mut data).unwrap();
-        assert_eq!(env.get_bool("b1").unwrap(), true);
+        assert!(env.get_bool("b1").unwrap());
         assert_eq!(env.get_help("b1").unwrap(), "First Bool");
     }
 
@@ -653,9 +653,9 @@ mod test_environment {
         assert_eq!(env.add_color_with_cb("c3", (50, 60, 70), "", &mut data, grayscale).err().unwrap(), EnvErr::CbFailed);
         assert_eq!(env.add_color("c2", (20, 30, 40), "").err().unwrap(), EnvErr::AlreadyExist);
         assert_eq!(env.add_color_with_cb("c1", (100, 100, 100), "", &mut data, grayscale).err().unwrap(), EnvErr::AlreadyExist);
-        assert_eq!(env.is_color("c1"), true);
-        assert_eq!(env.is_color("u1"), false);
-        assert_eq!(env.is_color("c3"), false);
+        assert!(env.is_color("c1"));
+        assert!(!env.is_color("u1"));
+        assert!(!env.is_color("c3"));
         /**/
         assert_eq!(env.get_color("c1").unwrap(), (31, 33, 37));
         assert_eq!(env.get_color("c2").unwrap(), (50, 50, 50));

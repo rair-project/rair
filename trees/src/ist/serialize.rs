@@ -85,15 +85,15 @@ mod test_ist_serialize {
     #[test]
     fn test_serialize() {
         let mut ist: IST<u64, &'static str> = IST::new();
-        ist.insert(50, 60, &"[50, 60]");
-        ist.insert(20, 30, &"[20, 30]");
-        ist.insert(80, 90, &"[80, 90]");
-        ist.insert(10, 100, &"[10, 100]");
-        ist.insert(30, 40, &"[30, 40]");
-        ist.insert(65, 70, &"[65, 70]");
-        ist.insert(85, 95, &"[85, 95]");
-        ist.insert(25, 35, &"[25, 35]");
-        ist.insert(66, 200, &"[66, 200]");
+        ist.insert(50, 60, "[50, 60]");
+        ist.insert(20, 30, "[20, 30]");
+        ist.insert(80, 90, "[80, 90]");
+        ist.insert(10, 100, "[10, 100]");
+        ist.insert(30, 40, "[30, 40]");
+        ist.insert(65, 70, "[65, 70]");
+        ist.insert(85, 95, "[85, 95]");
+        ist.insert(25, 35, "[25, 35]");
+        ist.insert(66, 200, "[66, 200]");
         ist.insert(50, 60, "Attempt2");
         let serialized = serde_json::to_string(&ist).unwrap();
         let deserialized: IST<u64, &str> = serde_json::from_str(&serialized).unwrap();

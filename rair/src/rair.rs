@@ -66,10 +66,7 @@ fn check_matches(matches: &ArgMatches) -> Result<Matches, &'static str> {
     }
 }
 fn match_file(core: &mut Core, matches: &ArgMatches) {
-    let paddr = match matches.value_of("Base") {
-        Some(addr) => Some(str_to_num(addr).unwrap_or_else(|e| panic_msg(core, &e.to_string(), ""))),
-        None => None,
-    };
+    let paddr = matches.value_of("Base").map(|addr| str_to_num(addr).unwrap_or_else(|e| panic_msg(core, &e.to_string(), "")));
     let uri = matches.value_of("File").unwrap();
     let mut perm: IoMode = IoMode::READ;
     if let Some(p) = matches.value_of("Permission") {
@@ -106,7 +103,7 @@ fn main() {
     let yaml = load_yaml!("cli.yaml");
     let matches = App::from_yaml(yaml).version(crate_version!()).version_short("v").get_matches();
     let editor = init_editor_from_core(&mut core);
-    let match_type = check_matches(&matches).unwrap_or_else(|e| panic_msg(&mut core, &e.to_string(), ""));
+    let match_type = check_matches(&matches).unwrap_or_else(|e| panic_msg(&mut core, e, ""));
     match match_type {
         Matches::File => match_file(&mut core, &matches),
         Matches::Project => match_project(&mut core, &matches),

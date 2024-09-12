@@ -510,16 +510,16 @@ mod ist_tests {
          *                                        min_lo = 25                          min_lo = 66
          */
         let mut ist: IST<u64, &'static str> = IST::new();
-        ist.insert(50, 60, &"[50, 60]");
-        ist.insert(20, 30, &"[20, 30]");
-        ist.insert(80, 90, &"[80, 90]");
-        ist.insert(10, 100, &"[10, 100]");
-        ist.insert(30, 40, &"[30, 40]");
-        ist.insert(65, 70, &"[65, 70]");
-        ist.insert(85, 95, &"[85, 95]");
-        ist.insert(25, 35, &"[25, 35]");
-        ist.insert(66, 200, &"[66, 200]");
-        return ist;
+        ist.insert(50, 60, "[50, 60]");
+        ist.insert(20, 30, "[20, 30]");
+        ist.insert(80, 90, "[80, 90]");
+        ist.insert(10, 100, "[10, 100]");
+        ist.insert(30, 40, "[30, 40]");
+        ist.insert(65, 70, "[65, 70]");
+        ist.insert(85, 95, "[85, 95]");
+        ist.insert(25, 35, "[25, 35]");
+        ist.insert(66, 200, "[66, 200]");
+        ist
     }
 
     #[test]
@@ -553,13 +553,13 @@ mod ist_tests {
         ist.insert(25, 30, "[25, 30]");
         assert_eq!(ist.get_level(), 1);
         assert_eq!(ist.size(), 1);
-        ist.insert(20, 30, &"[20, 30]");
+        ist.insert(20, 30, "[20, 30]");
         assert_eq!(ist.get_level(), 2);
         assert_eq!(ist.size(), 2);
-        ist.insert(26, 30, &"[26, 30]");
+        ist.insert(26, 30, "[26, 30]");
         assert_eq!(ist.get_level(), 2);
         assert_eq!(ist.size(), 3);
-        ist.insert(10, 30, &"[10, 30]");
+        ist.insert(10, 30, "[10, 30]");
         assert_eq!(ist.get_level(), 3);
         assert_eq!(ist.size(), 4);
     }

@@ -543,30 +543,30 @@ mod rbtree_tests {
     type Tree = RBTree<u64, PlaceHolder, u64>;
     fn dfs(tree: &Tree, counter: &mut u64, blackcounter: u64, blackvec: &mut Vec<u64>) -> u64 {
         if !tree.is_node() {
-            assert_eq!(tree.is_red(), false);
+            assert!(!tree.is_red());
             blackvec.push(blackcounter + 1);
             return 0;
         }
         let newbc;
         if tree.is_red() {
-            assert_eq!(tree.left_ref().is_red(), false);
-            assert_eq!(tree.right_ref().is_red(), false);
+            assert!(!tree.left_ref().is_red());
+            assert!(!tree.right_ref().is_red());
             newbc = blackcounter;
         } else {
             newbc = blackcounter + 1
         }
         let l1 = dfs(tree.left_ref(), counter, newbc, blackvec);
         assert_eq!(tree.data_ref(), &tree.key());
-        *counter = *counter + 1;
+        *counter += 1;
         let l2 = dfs(tree.right_ref(), counter, newbc, blackvec);
-        return 1 + std::cmp::max(l1, l2);
+        1 + std::cmp::max(l1, l2)
     }
     fn verify_tree(tree: &Tree) {
         let mut counter = 0;
         let mut blackvec = Vec::with_capacity(tree.size() as usize / 2);
         let level = dfs(tree, &mut counter, 0, &mut blackvec);
         blackvec.sort();
-        assert_eq!(tree.is_red(), false);
+        assert!(!tree.is_red());
         assert_eq!(counter, tree.size());
         assert_eq!(level, tree.get_level());
         assert_eq!(blackvec[0], blackvec[blackvec.len() - 1]);

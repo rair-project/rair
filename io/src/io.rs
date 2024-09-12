@@ -746,7 +746,7 @@ mod rio_tests {
     }
     #[test]
     fn test_hndl_to_desc() {
-        operate_on_file(&hndl_to_desc_cb, &DATA)
+        operate_on_file(&hndl_to_desc_cb, DATA)
     }
     fn serde_cb(paths: &[&Path]) {
         let mut io = RIO::new();

@@ -47,7 +47,7 @@ fn parse_evaluate(core: &mut Core, line: &str) {
     if let Ok(tree) = t {
         evaluate(core, tree);
     } else {
-        writeln!(core.stderr, "{}", t.err().unwrap().to_string()).unwrap();
+        writeln!(core.stderr, "{}", t.err().unwrap()).unwrap();
     }
 }
 
@@ -118,7 +118,7 @@ fn create_redirect(core: &mut Core, arg: Argument) -> Result<Writer, String> {
 
 fn create_redirect_cat(core: &mut Core, arg: Argument) -> Result<Writer, String> {
     let file_name = eval_arg(core, arg)?;
-    match OpenOptions::new().write(true).append(true).open(file_name) {
+    match OpenOptions::new().append(true).open(file_name) {
         Ok(f) => return Ok(Writer::new_write(Box::new(f))),
         Err(e) => return Err(e.to_string()),
     }
