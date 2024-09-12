@@ -11,7 +11,7 @@ members = [
 ]
 
 [workspace.dependencies]
-base64 = "0.11.0" #break
+base64 = "0.22.1"
 bitflags = "1.2" #break
 clap = "2.33" #break
 directories = "5.0.1"
