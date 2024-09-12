@@ -1,36 +1,24 @@
-/*
- * srec.rs: RIO plugin that opens  Motorola S-records files.
- * Copyright (C) 2019  Oddcoder
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+//! RIO plugin that opens  Motorola S-records files.
 
-use super::defaultplugin;
-use super::dummy::Dummy;
-use crate::plugin::*;
-use crate::utils::*;
-use nom::bytes::complete::tag;
-use nom::bytes::complete::take_while_m_n;
-use nom::combinator::map_res;
-use nom::sequence::tuple;
-use nom::IResult;
-use std::collections::BTreeMap;
-use std::fmt::Write as FmtWrite;
-use std::fs::{File, OpenOptions};
-use std::io;
-use std::io::Write as IoWrite;
-use std::path::Path;
-use std::str;
+use super::{defaultplugin, dummy::Dummy};
+use crate::{plugin::*, utils::*};
+use nom::{
+    alt,
+    bytes::complete::{tag, take_while_m_n},
+    combinator::map_res,
+    named,
+    sequence::tuple,
+    tag, IResult,
+};
+use std::{
+    collections::BTreeMap,
+    fmt::Write as _,
+    fs::{File, OpenOptions},
+    io,
+    io::Write as _,
+    path::Path,
+    str,
+};
 
 const METADATA: RIOPluginMetadata = RIOPluginMetadata {
     name: "Srec",

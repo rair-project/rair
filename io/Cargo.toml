@@ -3,25 +3,22 @@ name = "rair-io"
 version = "0.1.0"
 authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
 license = " LGPL-3.0-or-later"
-repository = "https://github.com/oddcoder/rair"
+repository = "https://github.com/Rair-Project/rair"
 keywords = ["IO", "Memory", "mapping", "Address", "Space"]
 description = "IO subsystem for RAIR"
 categories = ["Memory management"]
 readme = "readme.md"
-
-
+edition = "2021"
 
 [dependencies]
-rair-trees = {path = "../trees", features = ["serialize"]}
-#rtrees = {version = "0.1", features = ["serialize"]}
-serde = { version = "1.0", features = ["derive", "rc"]}
-bitflags = "1.2"
-memmap = "0.7"
-nom = "5"
-base64 = "0.11.0"
+rair-trees = {workspace = true, features = ["serialize"]}
+serde = {workspace = true, features = ["derive", "rc"]}
+bitflags = {workspace = true}
+memmap = {workspace = true}
+nom = {workspace = true}
+base64 = {workspace = true}
 
 [dev-dependencies]
-test_file = {path = "../test_file"}
-#test_file = {path = "test_file"}
-serde_json = "1.0"
+test_file = {workspace = true}
+serde_json = {workspace = true}
 

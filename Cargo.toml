@@ -11,13 +11,18 @@ members = [
 ]
 
 [workspace.dependencies]
-flate2 = "1.0"
+base64 = "0.11.0"
+bitflags = "1.2"
 err-derive = "0.2"
+flate2 = "1.0"
+memmap = "0.7"
+nom = "5"
 parking_lot="0.10"
 pest = "2.1"
 pest_derive = "2.1"
 serde = "1.0"
 serde_cbor = "0.10"
+serde_json = "1.0"
 yansi = "0.5"
 
 rair-env = {path = "./env"}
