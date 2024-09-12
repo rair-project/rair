@@ -18,7 +18,7 @@ path = "src/rair.rs"
 clap = {workspace = true, features = ["yaml"]}
 rustyline = {workspace = true}
 rustyline-derive = {workspace = true}
-app_dirs = {workspace = true}
+directories = {workspace = true}
 yansi = {workspace = true}
 parking_lot = {workspace = true}
 
