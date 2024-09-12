@@ -30,7 +30,11 @@ pub fn register_utils(core: &mut Core) {
     core.add_command("save", "", Arc::new(Mutex::new(Save::new())));
     core.add_command("load", "", Arc::new(Mutex::new(Load::new())));
     core.add_command("environment", "e", Arc::new(Mutex::new(Environment::new())));
-    core.add_command("environmentReset", "er", Arc::new(Mutex::new(EnvironmentReset::new())));
+    core.add_command(
+        "environmentReset",
+        "er",
+        Arc::new(Mutex::new(EnvironmentReset::new())),
+    );
     let eh = Arc::new(Mutex::new(EnvironmentHelp::new(core)));
     core.add_command("environmentHelp", "eh", eh);
 }

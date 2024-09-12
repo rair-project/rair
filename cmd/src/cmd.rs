@@ -134,7 +134,10 @@ mod test_normal_cmd {
     use pest::Parser;
     #[test]
     fn test_cmd() {
-        let root = CliParser::parse(Rule::CommandLine, "aa").unwrap().next().unwrap();
+        let root = CliParser::parse(Rule::CommandLine, "aa")
+            .unwrap()
+            .next()
+            .unwrap();
         let cmd = Cmd::parse_cmd(root).unwrap();
         let mut target: Cmd = Default::default();
         target.command = "aa".to_string();
@@ -142,7 +145,10 @@ mod test_normal_cmd {
     }
     #[test]
     fn test_cmd_argument() {
-        let root = CliParser::parse(Rule::CommandLine, "aa bb \"cc dd\" `ee ff`").unwrap().next().unwrap();
+        let root = CliParser::parse(Rule::CommandLine, "aa bb \"cc dd\" `ee ff`")
+            .unwrap()
+            .next()
+            .unwrap();
         let cmd = Cmd::parse_cmd(root).unwrap();
         let mut target: Cmd = Default::default();
         target.command = "aa".to_string();
@@ -158,7 +164,10 @@ mod test_normal_cmd {
     }
     #[test]
     fn test_cmd_argument_bug() {
-        let root = CliParser::parse(Rule::CommandLine, "aa bb cc").unwrap().next().unwrap();
+        let root = CliParser::parse(Rule::CommandLine, "aa bb cc")
+            .unwrap()
+            .next()
+            .unwrap();
         let cmd = Cmd::parse_cmd(root).unwrap();
         let mut target: Cmd = Default::default();
         target.command = "aa".to_string();
@@ -169,29 +178,44 @@ mod test_normal_cmd {
 
     #[test]
     fn test_cmd_loc() {
-        let mut root = CliParser::parse(Rule::CommandLine, "aa @ 0x500").unwrap().next().unwrap();
+        let mut root = CliParser::parse(Rule::CommandLine, "aa @ 0x500")
+            .unwrap()
+            .next()
+            .unwrap();
         let mut cmd = Cmd::parse_cmd(root).unwrap();
         let mut target: Cmd = Default::default();
         target.command = "aa".to_string();
         target.loc = Some(0x500);
         assert_eq!(cmd, target);
 
-        root = CliParser::parse(Rule::CommandLine, "aa @ 500").unwrap().next().unwrap();
+        root = CliParser::parse(Rule::CommandLine, "aa @ 500")
+            .unwrap()
+            .next()
+            .unwrap();
         cmd = Cmd::parse_cmd(root).unwrap();
         target.loc = Some(500);
         assert_eq!(cmd, target);
 
-        root = CliParser::parse(Rule::CommandLine, "aa @ 0500").unwrap().next().unwrap();
+        root = CliParser::parse(Rule::CommandLine, "aa @ 0500")
+            .unwrap()
+            .next()
+            .unwrap();
         cmd = Cmd::parse_cmd(root).unwrap();
         target.loc = Some(0o500);
         assert_eq!(cmd, target);
 
-        root = CliParser::parse(Rule::CommandLine, "aa @ 0500").unwrap().next().unwrap();
+        root = CliParser::parse(Rule::CommandLine, "aa @ 0500")
+            .unwrap()
+            .next()
+            .unwrap();
         cmd = Cmd::parse_cmd(root).unwrap();
         target.loc = Some(0o500);
         assert_eq!(cmd, target);
 
-        root = CliParser::parse(Rule::CommandLine, "aa @ 0b10100").unwrap().next().unwrap();
+        root = CliParser::parse(Rule::CommandLine, "aa @ 0b10100")
+            .unwrap()
+            .next()
+            .unwrap();
         cmd = Cmd::parse_cmd(root).unwrap();
         target.loc = Some(0b10100);
         assert_eq!(cmd, target);
@@ -199,26 +223,47 @@ mod test_normal_cmd {
 
     #[test]
     fn test_cmd_red_pipe() {
-        let mut root = CliParser::parse(Rule::CommandLine, "aa | \"/bin/ls\"").unwrap().next().unwrap();
+        let mut root = CliParser::parse(Rule::CommandLine, "aa | \"/bin/ls\"")
+            .unwrap()
+            .next()
+            .unwrap();
         let mut cmd = Cmd::parse_cmd(root).unwrap();
         let mut target: Cmd = Default::default();
         target.command = "aa".to_string();
-        target.red_pipe = Box::new(RedPipe::Pipe(vec![Argument::Literal("/bin/ls".to_string())]));
+        target.red_pipe = Box::new(RedPipe::Pipe(vec![Argument::Literal(
+            "/bin/ls".to_string(),
+        )]));
         assert_eq!(cmd, target);
 
-        root = CliParser::parse(Rule::CommandLine, "aa > outfile").unwrap().next().unwrap();
+        root = CliParser::parse(Rule::CommandLine, "aa > outfile")
+            .unwrap()
+            .next()
+            .unwrap();
         cmd = Cmd::parse_cmd(root).unwrap();
-        target.red_pipe = Box::new(RedPipe::Redirect(Box::new(Argument::Literal("outfile".to_string()))));
+        target.red_pipe = Box::new(RedPipe::Redirect(Box::new(Argument::Literal(
+            "outfile".to_string(),
+        ))));
         assert_eq!(cmd, target);
 
-        root = CliParser::parse(Rule::CommandLine, "aa >>outfile").unwrap().next().unwrap();
+        root = CliParser::parse(Rule::CommandLine, "aa >>outfile")
+            .unwrap()
+            .next()
+            .unwrap();
         cmd = Cmd::parse_cmd(root).unwrap();
-        target.red_pipe = Box::new(RedPipe::RedirectCat(Box::new(Argument::Literal("outfile".to_string()))));
+        target.red_pipe = Box::new(RedPipe::RedirectCat(Box::new(Argument::Literal(
+            "outfile".to_string(),
+        ))));
         assert_eq!(cmd, target);
 
-        root = CliParser::parse(Rule::CommandLine, "aa | ls -lah").unwrap().next().unwrap();
+        root = CliParser::parse(Rule::CommandLine, "aa | ls -lah")
+            .unwrap()
+            .next()
+            .unwrap();
         cmd = Cmd::parse_cmd(root).unwrap();
-        target.red_pipe = Box::new(RedPipe::Pipe(vec![Argument::Literal("ls".to_string()), Argument::Literal("-lah".to_string())]));
+        target.red_pipe = Box::new(RedPipe::Pipe(vec![
+            Argument::Literal("ls".to_string()),
+            Argument::Literal("-lah".to_string()),
+        ]));
         assert_eq!(cmd, target);
     }
 }

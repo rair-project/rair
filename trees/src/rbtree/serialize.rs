@@ -56,12 +56,20 @@ where
         VI: SeqAccess<'de>,
     {
         // size must be there
-        let size: u64 = seq.next_element()?.ok_or_else(|| de::Error::invalid_length(0, &self))?;
+        let size: u64 = seq
+            .next_element()?
+            .ok_or_else(|| de::Error::invalid_length(0, &self))?;
         let mut tree = RBTree::new();
         for _ in 0..size {
-            let key = seq.next_element()?.ok_or_else(|| de::Error::invalid_length(0, &self))?;
-            let data = seq.next_element()?.ok_or_else(|| de::Error::invalid_length(0, &self))?;
-            let aug_data = seq.next_element()?.ok_or_else(|| de::Error::invalid_length(0, &self))?;
+            let key = seq
+                .next_element()?
+                .ok_or_else(|| de::Error::invalid_length(0, &self))?;
+            let data = seq
+                .next_element()?
+                .ok_or_else(|| de::Error::invalid_length(0, &self))?;
+            let aug_data = seq
+                .next_element()?
+                .ok_or_else(|| de::Error::invalid_length(0, &self))?;
             tree.insert(key, aug_data, data);
         }
         Ok(tree)
@@ -97,7 +105,8 @@ mod test_rb_tree_serializing {
             rbtree.insert(i, PlaceHolder(), i);
         }
         let serialized = serde_json::to_string(&rbtree).unwrap();
-        let mut deserialized: RBTree<u64, PlaceHolder, u64> = serde_json::from_str(&serialized).unwrap();
+        let mut deserialized: RBTree<u64, PlaceHolder, u64> =
+            serde_json::from_str(&serialized).unwrap();
         for i in 0..100 {
             assert_eq!(deserialized.delete_min().unwrap(), i);
         }

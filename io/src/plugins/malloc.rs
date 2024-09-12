@@ -32,7 +32,9 @@ struct MallocInternal {
 }
 impl MallocInternal {
     fn new(size: u64) -> Self {
-        MallocInternal { data: vec![0; size as usize] }
+        MallocInternal {
+            data: vec![0; size as usize],
+        }
     }
     fn len(&self) -> usize {
         self.data.len()
@@ -42,7 +44,10 @@ impl MallocInternal {
 impl RIOPluginOperations for MallocInternal {
     fn read(&mut self, raddr: usize, buffer: &mut [u8]) -> Result<(), IoError> {
         if self.len() < raddr + buffer.len() {
-            return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
+            return Err(IoError::Parse(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "BufferOverflow",
+            )));
         }
         buffer.copy_from_slice(&self.data[raddr..raddr + buffer.len()]);
         Ok(())
@@ -50,7 +55,10 @@ impl RIOPluginOperations for MallocInternal {
 
     fn write(&mut self, raddr: usize, buf: &[u8]) -> Result<(), IoError> {
         if raddr + buf.len() > self.len() {
-            return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
+            return Err(IoError::Parse(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "BufferOverflow",
+            )));
         }
         self.data[raddr..raddr + buf.len()].copy_from_slice(buf);
         Ok(())
@@ -83,18 +91,31 @@ impl RIOPlugin for MallocPlugin {
 
     fn open(&mut self, uri: &str, flags: IoMode) -> Result<RIOPluginDesc, IoError> {
         if flags.contains(IoMode::COW) {
-            return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Can't open file with permission Copy-On-Write")));
+            return Err(IoError::Parse(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "Can't open file with permission Copy-On-Write",
+            )));
         }
 
         if !flags.contains(IoMode::READ) {
-            return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Memory based files must have read permission")));
+            return Err(IoError::Parse(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "Memory based files must have read permission",
+            )));
         }
         if !flags.contains(IoMode::WRITE) {
-            return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Memory based files must have write permission")));
+            return Err(IoError::Parse(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "Memory based files must have write permission",
+            )));
         }
         let file = match MallocPlugin::uri_to_size(uri) {
             Some(size) => MallocInternal::new(size),
-            None => return Err(IoError::Custom("Failed to parse given uri as usize".to_string())),
+            None => {
+                return Err(IoError::Custom(
+                    "Failed to parse given uri as usize".to_string(),
+                ))
+            }
         };
         let desc = RIOPluginDesc {
             name: uri.to_owned(),
@@ -123,7 +144,9 @@ mod test_malloc {
     #[test]
     fn test_malloc() {
         let mut p = plugin();
-        let mut file = p.open("malloc://0x500", IoMode::READ | IoMode::WRITE).unwrap();
+        let mut file = p
+            .open("malloc://0x500", IoMode::READ | IoMode::WRITE)
+            .unwrap();
         assert_eq!(file.size, 0x500);
         let mut buffer = [1; 100];
         file.plugin_operations.read(0x0, &mut buffer).unwrap();
@@ -131,33 +154,77 @@ mod test_malloc {
         file.plugin_operations.write(0x0, &[0xab; 0x100]).unwrap();
         file.plugin_operations.read(0x0, &mut buffer).unwrap();
         assert_eq!(&buffer[..], &[0xab; 100][..]);
-        p.open("malloc://0b100", IoMode::READ | IoMode::WRITE).unwrap();
-        p.open("malloc://0500", IoMode::READ | IoMode::WRITE).unwrap();
-        p.open("malloc://500", IoMode::READ | IoMode::WRITE).unwrap();
+        p.open("malloc://0b100", IoMode::READ | IoMode::WRITE)
+            .unwrap();
+        p.open("malloc://0500", IoMode::READ | IoMode::WRITE)
+            .unwrap();
+        p.open("malloc://500", IoMode::READ | IoMode::WRITE)
+            .unwrap();
     }
 
     #[test]
     fn test_malloc_errors() {
         let mut p = plugin();
-        let mut err = p.open("malloc://0x", IoMode::READ | IoMode::WRITE).err().unwrap();
-        assert_eq!(err, IoError::Custom("Failed to parse given uri as usize".to_string()));
+        let mut err = p
+            .open("malloc://0x", IoMode::READ | IoMode::WRITE)
+            .err()
+            .unwrap();
+        assert_eq!(
+            err,
+            IoError::Custom("Failed to parse given uri as usize".to_string())
+        );
         err = p.open("malloc://0x500", IoMode::READ).err().unwrap();
-        assert_eq!(err, IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Memory based files must have write permission")));
+        assert_eq!(
+            err,
+            IoError::Parse(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "Memory based files must have write permission"
+            ))
+        );
         err = p.open("malloc://0x500", IoMode::WRITE).err().unwrap();
-        assert_eq!(err, IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Memory based files must have read permission")));
-        err = p.open("malloc://0x500", IoMode::READ | IoMode::WRITE | IoMode::COW).err().unwrap();
-        assert_eq!(err, IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Can't open file with permission Copy-On-Write")));
+        assert_eq!(
+            err,
+            IoError::Parse(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "Memory based files must have read permission"
+            ))
+        );
+        err = p
+            .open("malloc://0x500", IoMode::READ | IoMode::WRITE | IoMode::COW)
+            .err()
+            .unwrap();
+        assert_eq!(
+            err,
+            IoError::Parse(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "Can't open file with permission Copy-On-Write"
+            ))
+        );
     }
 
     #[test]
     fn test_read_write_error() {
         let mut p = plugin();
-        let mut file = p.open("malloc://0x50", IoMode::READ | IoMode::WRITE).unwrap();
+        let mut file = p
+            .open("malloc://0x50", IoMode::READ | IoMode::WRITE)
+            .unwrap();
         assert_eq!(file.size, 0x50);
         let mut buffer = [1; 0x51];
         let mut err = file.plugin_operations.read(0, &mut buffer).err().unwrap();
-        assert_eq!(err, IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
+        assert_eq!(
+            err,
+            IoError::Parse(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "BufferOverflow"
+            ))
+        );
         err = file.plugin_operations.write(0, &buffer).err().unwrap();
-        assert_eq!(err, IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
+        assert_eq!(
+            err,
+            IoError::Parse(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "BufferOverflow"
+            ))
+        );
     }
 }

@@ -34,7 +34,13 @@ impl PrintHex {
     pub fn new(core: &mut Core) -> Self {
         let env = core.env.clone();
         env.write()
-            .add_str_with_cb("printHex.headerColor", "color.6", "Color used in the header of `printHex` command", core, is_color)
+            .add_str_with_cb(
+                "printHex.headerColor",
+                "color.6",
+                "Color used in the header of `printHex` command",
+                core,
+                is_color,
+            )
             .unwrap();
         env.write()
             .add_str_with_cb(
@@ -55,7 +61,13 @@ impl PrintHex {
             )
             .unwrap();
         env.write()
-            .add_str_with_cb("printHex.gapReplace", "#", "Text used to replace gaps when using the `printHex` command", core, one_byte)
+            .add_str_with_cb(
+                "printHex.gapReplace",
+                "#",
+                "Text used to replace gaps when using the `printHex` command",
+                core,
+                one_byte,
+            )
             .unwrap();
 
         Default::default()
@@ -76,7 +88,10 @@ impl Cmd for PrintHex {
                 return error_msg(
                     core,
                     &e.to_string(),
-                    &format!("Expect Hex, binary, Octal or Decimal value but found {} instead.", Paint::default(&args[0]).italic()),
+                    &format!(
+                        "Expect Hex, binary, Octal or Decimal value but found {} instead.",
+                        Paint::default(&args[0]).italic()
+                    ),
                 )
             }
         };
@@ -103,11 +118,21 @@ impl Cmd for PrintHex {
         writeln!(
             core.stdout,
             "{}",
-            Paint::rgb(banner.0, banner.1, banner.2, "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF")
+            Paint::rgb(
+                banner.0,
+                banner.1,
+                banner.2,
+                "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF"
+            )
         )
         .unwrap();
         for i in (0..size).step_by(16) {
-            write!(core.stdout, "{} ", Paint::rgb(banner.0, banner.1, banner.2, format!("0x{:08x}", loc + i))).unwrap();
+            write!(
+                core.stdout,
+                "{} ",
+                Paint::rgb(banner.0, banner.1, banner.2, format!("0x{:08x}", loc + i))
+            )
+            .unwrap();
             let mut ascii = Writer::new_buf();
             let mut hex = Writer::new_buf();
             for j in i..cmp::min(i + 16, size) {
@@ -131,11 +156,22 @@ impl Cmd for PrintHex {
                     write!(ascii, "{}", Paint::rgb(na.0, na.1, na.2, gap)).unwrap();
                 }
             }
-            writeln!(core.stdout, "{: <40} {}", hex.utf8_string().unwrap(), ascii.utf8_string().unwrap()).unwrap();
+            writeln!(
+                core.stdout,
+                "{: <40} {}",
+                hex.utf8_string().unwrap(),
+                ascii.utf8_string().unwrap()
+            )
+            .unwrap();
         }
     }
     fn help(&self, core: &mut Core) {
-        help(core, "printHex", "px", vec![("[size]", "View data at current location in hex format.")]);
+        help(
+            core,
+            "printHex",
+            "px",
+            vec![("[size]", "View data at current location in hex format.")],
+        );
     }
 }
 
@@ -196,7 +232,15 @@ impl Cmd for PrintBase {
         writeln!(core.stdout, "{}", data_str).unwrap();
     }
     fn help(&self, core: &mut Core) {
-        help(core, "printBase", "pb", vec![("[base] [size]", "Print data stream at current location in [base] format.")]);
+        help(
+            core,
+            "printBase",
+            "pb",
+            vec![(
+                "[base] [size]",
+                "Print data stream at current location in [base] format.",
+            )],
+        );
         writeln!(core.stdout, "Supported bases: 2, 16.").unwrap();
     }
 }
@@ -1046,7 +1090,10 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.run("px", &[]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 1 argument(s), found 0.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Arguments Error: Expected 1 argument(s), found 0.\n"
+        );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
@@ -1064,7 +1111,12 @@ mod test_print_hex {
         let mut pb = PrintBase::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io
+            .open(
+                "../../testing_binaries/rio/base64/no_padding.b64",
+                IoMode::READ,
+            )
+            .unwrap();
         pb.run(&mut core, &["2".to_string(), "16".to_string()]);
         core.io.map(0, 0x500, 16).unwrap();
         assert_eq!(
@@ -1095,17 +1147,28 @@ mod test_print_hex {
         let mut pb = PrintBase::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io
+            .open(
+                "../../testing_binaries/rio/base64/no_padding.b64",
+                IoMode::READ,
+            )
+            .unwrap();
         core.io.map(0, 0x500, 16).unwrap();
         pb.run(&mut core, &["16".to_string(), "16".to_string()]);
-        assert_eq!(core.stdout.utf8_string().unwrap(), "5647686c4948463161574e7249474a79\n");
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "5647686c4948463161574e7249474a79\n"
+        );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         core.mode = AddrMode::Vir;
         core.set_loc(0x500);
         pb.run(&mut core, &["16".to_string(), "16".to_string()]);
-        assert_eq!(core.stdout.utf8_string().unwrap(), "5647686c4948463161574e7249474a79\n");
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "5647686c4948463161574e7249474a79\n"
+        );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
 
@@ -1115,28 +1178,45 @@ mod test_print_hex {
         let mut pb = PrintBase::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io
+            .open(
+                "../../testing_binaries/rio/base64/no_padding.b64",
+                IoMode::READ,
+            )
+            .unwrap();
         pb.run(&mut core, &["16".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 2 argument(s), found 1.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Arguments Error: Expected 2 argument(s), found 1.\n"
+        );
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         pb.run(&mut core, &["16".to_string(), "x".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to parse size\ninvalid digit found in string\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to parse size\ninvalid digit found in string\n"
+        );
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         pb.run(&mut core, &["16".to_string(), "0x5000".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Read Failed\nCannot resolve address.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Read Failed\nCannot resolve address.\n"
+        );
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         pb.run(&mut core, &["5".to_string(), "5".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to print data\nInvalid base\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to print data\nInvalid base\n"
+        );
     }
     #[test]
     fn test_pcsv_8() {
@@ -1144,7 +1224,12 @@ mod test_print_hex {
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io
+            .open(
+                "../../testing_binaries/rio/base64/no_padding.b64",
+                IoMode::READ,
+            )
+            .unwrap();
         core.io.map(0, 0x500, 35).unwrap();
         pcsv.run(&mut core, &["8".to_string(), "35".to_string()]);
         assert_eq!(
@@ -1173,7 +1258,12 @@ mod test_print_hex {
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io
+            .open(
+                "../../testing_binaries/rio/base64/no_padding.b64",
+                IoMode::READ,
+            )
+            .unwrap();
         core.io.map(0, 0x500, 52).unwrap();
         pcsv.run(&mut core, &["16".to_string(), "26".to_string()]);
         assert_eq!(
@@ -1203,7 +1293,12 @@ mod test_print_hex {
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io
+            .open(
+                "../../testing_binaries/rio/base64/no_padding.b64",
+                IoMode::READ,
+            )
+            .unwrap();
         core.io.map(0, 0x500, 60).unwrap();
         pcsv.run(&mut core, &["32".to_string(), "15".to_string()]);
         assert_eq!(
@@ -1231,7 +1326,12 @@ mod test_print_hex {
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
+        core.io
+            .open(
+                "../../testing_binaries/rio/srec/record_0_1_9.srec",
+                IoMode::READ,
+            )
+            .unwrap();
         core.io.map(0, 0x500, 700).unwrap();
         pcsv.run(&mut core, &["64".to_string(), "15".to_string()]);
         assert_eq!(
@@ -1262,7 +1362,12 @@ mod test_print_hex {
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
+        core.io
+            .open(
+                "../../testing_binaries/rio/srec/record_0_1_9.srec",
+                IoMode::READ,
+            )
+            .unwrap();
         core.io.map(0, 0x500, 700).unwrap();
         pcsv.run(&mut core, &["128".to_string(), "7".to_string()]);
         assert_eq!(
@@ -1293,7 +1398,12 @@ mod test_print_hex {
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
+        core.io
+            .open(
+                "../../testing_binaries/rio/srec/record_0_1_9.srec",
+                IoMode::READ,
+            )
+            .unwrap();
         core.io.map(0, 0x500, 700).unwrap();
         pcsv.run(&mut core, &["256".to_string(), "5".to_string()]);
         assert_eq!(
@@ -1323,7 +1433,12 @@ mod test_print_hex {
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
+        core.io
+            .open(
+                "../../testing_binaries/rio/srec/record_0_1_9.srec",
+                IoMode::READ,
+            )
+            .unwrap();
         core.io.map(0, 0x500, 700).unwrap();
         pcsv.run(&mut core, &["512".to_string(), "3".to_string()]);
         assert_eq!(
@@ -1353,34 +1468,54 @@ mod test_print_hex {
         let mut pcsv = PrintCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
+        core.io
+            .open(
+                "../../testing_binaries/rio/srec/record_0_1_9.srec",
+                IoMode::READ,
+            )
+            .unwrap();
         pcsv.run(&mut core, &["512".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 2 argument(s), found 1.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Arguments Error: Expected 2 argument(s), found 1.\n"
+        );
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         pcsv.run(&mut core, &["512".to_string(), "50x".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to parse count\ninvalid digit found in string\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to parse count\ninvalid digit found in string\n"
+        );
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         pcsv.run(&mut core, &["51x".to_string(), "50".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to parse size\ninvalid digit found in string\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to parse size\ninvalid digit found in string\n"
+        );
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         pcsv.run(&mut core, &["51".to_string(), "50".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to print data\nInvalid size\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to print data\nInvalid size\n"
+        );
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         pcsv.run(&mut core, &["512".to_string(), "500000".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Read Failed\nCannot resolve address.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Read Failed\nCannot resolve address.\n"
+        );
     }
 
     #[test]
@@ -1389,34 +1524,54 @@ mod test_print_hex {
         let mut pscsv = PrintSignedCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
+        core.io
+            .open(
+                "../../testing_binaries/rio/srec/record_0_1_9.srec",
+                IoMode::READ,
+            )
+            .unwrap();
         pscsv.run(&mut core, &["128".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 2 argument(s), found 1.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Arguments Error: Expected 2 argument(s), found 1.\n"
+        );
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         pscsv.run(&mut core, &["128".to_string(), "50x".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to parse count\ninvalid digit found in string\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to parse count\ninvalid digit found in string\n"
+        );
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         pscsv.run(&mut core, &["12x".to_string(), "50".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to parse size\ninvalid digit found in string\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to parse size\ninvalid digit found in string\n"
+        );
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         pscsv.run(&mut core, &["12".to_string(), "50".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to print data\nInvalid size\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to print data\nInvalid size\n"
+        );
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         pscsv.run(&mut core, &["128".to_string(), "500000".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Read Failed\nCannot resolve address.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Read Failed\nCannot resolve address.\n"
+        );
     }
 
     #[test]
@@ -1425,7 +1580,12 @@ mod test_print_hex {
         let mut pscsv = PrintSignedCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io
+            .open(
+                "../../testing_binaries/rio/base64/no_padding.b64",
+                IoMode::READ,
+            )
+            .unwrap();
         core.io.map(0, 0x500, 35).unwrap();
         pscsv.run(&mut core, &["8".to_string(), "35".to_string()]);
         assert_eq!(
@@ -1454,7 +1614,12 @@ mod test_print_hex {
         let mut pscsv = PrintSignedCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io
+            .open(
+                "../../testing_binaries/rio/base64/no_padding.b64",
+                IoMode::READ,
+            )
+            .unwrap();
         core.io.map(0, 0x500, 52).unwrap();
         pscsv.run(&mut core, &["16".to_string(), "26".to_string()]);
         assert_eq!(
@@ -1484,7 +1649,12 @@ mod test_print_hex {
         let mut pscsv = PrintSignedCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        core.io
+            .open(
+                "../../testing_binaries/rio/base64/no_padding.b64",
+                IoMode::READ,
+            )
+            .unwrap();
         core.io.map(0, 0x500, 60).unwrap();
         pscsv.run(&mut core, &["32".to_string(), "15".to_string()]);
         assert_eq!(
@@ -1512,7 +1682,12 @@ mod test_print_hex {
         let mut pscsv = PrintSignedCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
+        core.io
+            .open(
+                "../../testing_binaries/rio/srec/record_0_1_9.srec",
+                IoMode::READ,
+            )
+            .unwrap();
         core.io.map(0, 0x500, 700).unwrap();
         pscsv.run(&mut core, &["64".to_string(), "15".to_string()]);
         assert_eq!(
@@ -1543,7 +1718,12 @@ mod test_print_hex {
         let mut pscsv = PrintSignedCSV::new();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.io.open("../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
+        core.io
+            .open(
+                "../../testing_binaries/rio/srec/record_0_1_9.srec",
+                IoMode::READ,
+            )
+            .unwrap();
         core.io.map(0, 0x500, 700).unwrap();
         pscsv.run(&mut core, &["128".to_string(), "7".to_string()]);
         assert_eq!(

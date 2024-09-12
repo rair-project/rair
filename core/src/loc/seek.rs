@@ -194,7 +194,10 @@ mod test_seek {
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0b101011);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Seek Error\nHistory is empty.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Seek Error\nHistory is empty.\n"
+        );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         for _ in 0..4 {
@@ -208,7 +211,10 @@ mod test_seek {
         core.stdout = Writer::new_buf();
         seek.run(&mut core, &["-".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Seek Error\nHistory is empty.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Seek Error\nHistory is empty.\n"
+        );
     }
     #[test]
     fn test_seek_overflow() {
@@ -222,7 +228,10 @@ mod test_seek {
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0x0);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Seek Error\nAttempt to subtract with overflow.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Seek Error\nAttempt to subtract with overflow.\n"
+        );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
@@ -238,7 +247,10 @@ mod test_seek {
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0xffffffffffffffff);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Seek Error\nAttempt to add with overflow.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Seek Error\nAttempt to add with overflow.\n"
+        );
     }
 
     #[test]
@@ -254,7 +266,10 @@ mod test_seek {
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0x0);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 1 argument(s), found 0.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Arguments Error: Expected 1 argument(s), found 0.\n"
+        );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
@@ -262,7 +277,10 @@ mod test_seek {
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0x0);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Seek Error\ninvalid digit found in string\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Seek Error\ninvalid digit found in string\n"
+        );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
@@ -270,7 +288,10 @@ mod test_seek {
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0x0);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Seek Error\ninvalid digit found in string\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Seek Error\ninvalid digit found in string\n"
+        );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
@@ -278,7 +299,10 @@ mod test_seek {
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0x0);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Seek Error\ninvalid digit found in string\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Seek Error\ninvalid digit found in string\n"
+        );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
     }

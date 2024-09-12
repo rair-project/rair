@@ -54,7 +54,10 @@ struct SrecInternal {
 enum Record {
     Header(Vec<u8>),    // Record S0 (header data)
     Data(u64, Vec<u8>), // Record S1, S2, S3  (base address, bytes)
-    #[allow(dead_code, reason = "it is bunch of logic that we do no use, but it is ok to keep")]
+    #[allow(
+        dead_code,
+        reason = "it is bunch of logic that we do no use, but it is ok to keep"
+    )]
     Count(u64), // s5, s6
     Eof(u64),           // S7, s8, s9 (start address)
 }
@@ -190,7 +193,12 @@ impl SrecInternal {
         loop {
             let x = match parse_record(input) {
                 Ok(x) => x,
-                Err(_) => return Err(IoError::Custom(format!("Invalid S-record at line: {}", line))),
+                Err(_) => {
+                    return Err(IoError::Custom(format!(
+                        "Invalid S-record at line: {}",
+                        line
+                    )))
+                }
             };
             input = x.0;
             match x.1 {
@@ -232,7 +240,9 @@ impl SrecInternal {
     }
     fn write_header(&mut self, file: &mut File) -> Result<(), IoError> {
         if self.header.len() > 0xff {
-            return Err(IoError::Custom("Cannot write S0 Entry with size > 0xff".to_string()));
+            return Err(IoError::Custom(
+                "Cannot write S0 Entry with size > 0xff".to_string(),
+            ));
         }
         write!(file, "S0{:02x}0000", self.header.len() + 3).unwrap();
         let mut checksum = self.header.len() as u16;
@@ -327,7 +337,10 @@ impl SrecInternal {
         Ok(())
     }
     fn save_srec(&mut self) -> Result<(), IoError> {
-        let mut file = OpenOptions::new().write(true).truncate(true).open(SrecPlugin::uri_to_path(&self.uri))?;
+        let mut file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(SrecPlugin::uri_to_path(&self.uri))?;
         self.write_header(&mut file)?;
         self.write_data(&mut file)?;
         self.write_eof(&mut file)?;
@@ -351,7 +364,10 @@ impl RIOPluginOperations for SrecInternal {
     fn write(&mut self, raddr: usize, buf: &[u8]) -> Result<(), IoError> {
         // if we are dealing with cow or write first write data to the sparce array
         if !self.prot.contains(IoMode::COW) && !self.prot.contains(IoMode::WRITE) {
-            return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "File Not Writable")));
+            return Err(IoError::Parse(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "File Not Writable",
+            )));
         }
         for (i, item) in buf.iter().enumerate() {
             self.bytes.insert((i + raddr) as u64, *item);
@@ -364,7 +380,10 @@ impl RIOPluginOperations for SrecInternal {
             self.save_srec()?;
             // mmap new file
             let mut plug = defaultplugin::plugin();
-            let def_desc = plug.open(&SrecPlugin::uri_to_path(&self.uri).to_string_lossy(), IoMode::READ)?;
+            let def_desc = plug.open(
+                &SrecPlugin::uri_to_path(&self.uri).to_string_lossy(),
+                IoMode::READ,
+            )?;
             self.file = def_desc.plugin_operations;
         }
         Ok(())
@@ -394,7 +413,10 @@ impl RIOPlugin for SrecPlugin {
 
     fn open(&mut self, uri: &str, flags: IoMode) -> Result<RIOPluginDesc, IoError> {
         assert!(self.accept_uri(uri));
-        let def_desc = self.defaultplugin.open(&SrecPlugin::uri_to_path(uri).to_string_lossy(), IoMode::READ)?;
+        let def_desc = self.defaultplugin.open(
+            &SrecPlugin::uri_to_path(uri).to_string_lossy(),
+            IoMode::READ,
+        )?;
         let mut internal = SrecInternal {
             file: def_desc.plugin_operations,
             bytes: BTreeMap::new(),
@@ -452,8 +474,9 @@ mod test_srec {
             assert_eq!(
                 data,
                 [
-                    0x42, 0x79, 0x00, 0x00, 0x11, 0x42, 0x10, 0x3C, 0x00, 0x20, 0x12, 0x3C, 0x00, 0x00, 0x4E, 0x4F, 0x12, 0x3C, 0x00, 0x01, 0x4E, 0x4F, 0x28, 0x41, 0x12, 0x3C, 0x00, 0x02, 0x4E, 0x4F,
-                    0x26, 0x41
+                    0x42, 0x79, 0x00, 0x00, 0x11, 0x42, 0x10, 0x3C, 0x00, 0x20, 0x12, 0x3C, 0x00,
+                    0x00, 0x4E, 0x4F, 0x12, 0x3C, 0x00, 0x01, 0x4E, 0x4F, 0x28, 0x41, 0x12, 0x3C,
+                    0x00, 0x02, 0x4E, 0x4F, 0x26, 0x41
                 ]
             );
         } else {
@@ -471,8 +494,9 @@ mod test_srec {
             assert_eq!(
                 data,
                 [
-                    0x79, 0x00, 0x00, 0x11, 0x42, 0x10, 0x3C, 0x00, 0x20, 0x12, 0x3C, 0x00, 0x00, 0x4E, 0x4F, 0x12, 0x3C, 0x00, 0x01, 0x4E, 0x4F, 0x28, 0x41, 0x12, 0x3C, 0x00, 0x02, 0x4E, 0x4F, 0x26,
-                    0x41
+                    0x79, 0x00, 0x00, 0x11, 0x42, 0x10, 0x3C, 0x00, 0x20, 0x12, 0x3C, 0x00, 0x00,
+                    0x4E, 0x4F, 0x12, 0x3C, 0x00, 0x01, 0x4E, 0x4F, 0x28, 0x41, 0x12, 0x3C, 0x00,
+                    0x02, 0x4E, 0x4F, 0x26, 0x41
                 ]
             );
         } else {
@@ -489,7 +513,11 @@ mod test_srec {
             assert_eq!(data.len(), 0x1e);
             assert_eq!(
                 data,
-                [0x79, 0x00, 0x11, 0x42, 0x10, 0x3C, 0x00, 0x20, 0x12, 0x3C, 0x00, 0x00, 0x4E, 0x4F, 0x12, 0x3C, 0x00, 0x01, 0x4E, 0x4F, 0x28, 0x41, 0x12, 0x3C, 0x00, 0x02, 0x4E, 0x4F, 0x26, 0x41]
+                [
+                    0x79, 0x00, 0x11, 0x42, 0x10, 0x3C, 0x00, 0x20, 0x12, 0x3C, 0x00, 0x00, 0x4E,
+                    0x4F, 0x12, 0x3C, 0x00, 0x01, 0x4E, 0x4F, 0x28, 0x41, 0x12, 0x3C, 0x00, 0x02,
+                    0x4E, 0x4F, 0x26, 0x41
+                ]
             );
         } else {
             panic!("Expected Data record");
@@ -550,13 +578,30 @@ mod test_srec {
     #[test]
     fn test_s0_s1_s9_file() {
         let mut p = plugin();
-        let mut file = p.open("srec://../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
+        let mut file = p
+            .open(
+                "srec://../../testing_binaries/rio/srec/record_0_1_9.srec",
+                IoMode::READ,
+            )
+            .unwrap();
         assert_eq!(file.size, 0x142);
         let mut data = vec![0u8; 16];
         file.plugin_operations.read(0x1000, &mut data).unwrap();
-        assert_eq!(data, [0x42, 0x79, 0x00, 0x00, 0x11, 0x42, 0x10, 0x3C, 0x00, 0x20, 0x12, 0x3C, 0x00, 0x00, 0x4E, 0x4F,]);
+        assert_eq!(
+            data,
+            [
+                0x42, 0x79, 0x00, 0x00, 0x11, 0x42, 0x10, 0x3C, 0x00, 0x20, 0x12, 0x3C, 0x00, 0x00,
+                0x4E, 0x4F,
+            ]
+        );
         file.plugin_operations.read(0x1070, &mut data).unwrap();
-        assert_eq!(data, [0x67, 0xB0, 0x8A, 0xFC, 0x00, 0x3C, 0xBA, 0x7C, 0x00, 0x00, 0x66, 0x04, 0x3A, 0x3C, 0x00, 0x0C,]);
+        assert_eq!(
+            data,
+            [
+                0x67, 0xB0, 0x8A, 0xFC, 0x00, 0x3C, 0xBA, 0x7C, 0x00, 0x00, 0x66, 0x04, 0x3A, 0x3C,
+                0x00, 0x0C,
+            ]
+        );
     }
 
     fn write_s0_s1_s9_cb(path: &Path) {
@@ -564,20 +609,45 @@ mod test_srec {
         let uri = String::from("srec://") + &path.to_string_lossy();
         let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
 
-        file.plugin_operations.write(0x1000, &[0x80, 0x90, 0xff, 0xfe]).unwrap();
-        file.plugin_operations.write(0x1070, &[0x80, 0x90, 0xff, 0xfe]).unwrap();
+        file.plugin_operations
+            .write(0x1000, &[0x80, 0x90, 0xff, 0xfe])
+            .unwrap();
+        file.plugin_operations
+            .write(0x1070, &[0x80, 0x90, 0xff, 0xfe])
+            .unwrap();
         drop(file);
         file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
         assert_eq!(file.size, 0x142);
         let mut data = vec![0u8; 16];
         file.plugin_operations.read(0x1000, &mut data).unwrap();
-        assert_eq!(data, [0x80, 0x90, 0xff, 0xfe, 0x11, 0x42, 0x10, 0x3C, 0x00, 0x20, 0x12, 0x3C, 0x00, 0x00, 0x4E, 0x4F,]);
+        assert_eq!(
+            data,
+            [
+                0x80, 0x90, 0xff, 0xfe, 0x11, 0x42, 0x10, 0x3C, 0x00, 0x20, 0x12, 0x3C, 0x00, 0x00,
+                0x4E, 0x4F,
+            ]
+        );
         file.plugin_operations.read(0x1070, &mut data).unwrap();
-        assert_eq!(data, [0x80, 0x90, 0xff, 0xfe, 0x00, 0x3C, 0xBA, 0x7C, 0x00, 0x00, 0x66, 0x04, 0x3A, 0x3C, 0x00, 0x0C,]);
-        file.plugin_operations.write(0x1000, &[0x42, 0x79, 0x00, 0x00]).unwrap();
-        file.plugin_operations.write(0x1070, &[0x67, 0xB0, 0x8A, 0xFC]).unwrap();
+        assert_eq!(
+            data,
+            [
+                0x80, 0x90, 0xff, 0xfe, 0x00, 0x3C, 0xBA, 0x7C, 0x00, 0x00, 0x66, 0x04, 0x3A, 0x3C,
+                0x00, 0x0C,
+            ]
+        );
+        file.plugin_operations
+            .write(0x1000, &[0x42, 0x79, 0x00, 0x00])
+            .unwrap();
+        file.plugin_operations
+            .write(0x1070, &[0x67, 0xB0, 0x8A, 0xFC])
+            .unwrap();
         drop(file);
-        let mut original = p.open("srec://../../testing_binaries/rio/srec/record_0_1_9.srec", IoMode::READ).unwrap();
+        let mut original = p
+            .open(
+                "srec://../../testing_binaries/rio/srec/record_0_1_9.srec",
+                IoMode::READ,
+            )
+            .unwrap();
         let mut file = p.open(&uri, IoMode::READ).unwrap();
         let mut d1 = [0; 0x142];
         let mut d2 = [0; 0x142];
@@ -588,33 +658,62 @@ mod test_srec {
 
     #[test]
     fn test_write_s0_s1_s9() {
-        operate_on_copy(&write_s0_s1_s9_cb, "../../testing_binaries/rio/srec/record_0_1_9.srec");
+        operate_on_copy(
+            &write_s0_s1_s9_cb,
+            "../../testing_binaries/rio/srec/record_0_1_9.srec",
+        );
     }
 
     #[test]
     fn test_read_s2() {
         let mut p = plugin();
-        let mut file = p.open("srec://../../testing_binaries/rio/srec/record_0_2_8.srec", IoMode::READ).unwrap();
+        let mut file = p
+            .open(
+                "srec://../../testing_binaries/rio/srec/record_0_2_8.srec",
+                IoMode::READ,
+            )
+            .unwrap();
         assert_eq!(file.size, 0x1f);
         let mut data = vec![0u8; 16];
         file.plugin_operations.read(0x111e4c, &mut data).unwrap();
-        assert_eq!(data, [0xDF, 0x01, 0x08, 0x4E, 0x75, 0x48, 0xE7, 0x40, 0x00, 0x42, 0x41, 0xC0, 0xBC, 0x00, 0x00, 0x00]);
+        assert_eq!(
+            data,
+            [
+                0xDF, 0x01, 0x08, 0x4E, 0x75, 0x48, 0xE7, 0x40, 0x00, 0x42, 0x41, 0xC0, 0xBC, 0x00,
+                0x00, 0x00
+            ]
+        );
     }
     fn write_s2_cb(path: &Path) {
         let mut p = plugin();
         let uri = String::from("srec://") + &path.to_string_lossy();
         let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
 
-        file.plugin_operations.write(0x111e4c, &[0x80, 0x90, 0xff, 0xfe]).unwrap();
+        file.plugin_operations
+            .write(0x111e4c, &[0x80, 0x90, 0xff, 0xfe])
+            .unwrap();
         drop(file);
         file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
         assert_eq!(file.size, 0x1f);
         let mut data = vec![0u8; 16];
         file.plugin_operations.read(0x111e4c, &mut data).unwrap();
-        assert_eq!(data, [0x80, 0x90, 0xff, 0xfe, 0x75, 0x48, 0xE7, 0x40, 0x00, 0x42, 0x41, 0xC0, 0xBC, 0x00, 0x00, 0x00]);
-        file.plugin_operations.write(0x111e4c, &[0xDF, 0x01, 0x08, 0x4E]).unwrap();
+        assert_eq!(
+            data,
+            [
+                0x80, 0x90, 0xff, 0xfe, 0x75, 0x48, 0xE7, 0x40, 0x00, 0x42, 0x41, 0xC0, 0xBC, 0x00,
+                0x00, 0x00
+            ]
+        );
+        file.plugin_operations
+            .write(0x111e4c, &[0xDF, 0x01, 0x08, 0x4E])
+            .unwrap();
         drop(file);
-        let mut original = p.open("srec://../../testing_binaries/rio/srec/record_0_2_8.srec", IoMode::READ).unwrap();
+        let mut original = p
+            .open(
+                "srec://../../testing_binaries/rio/srec/record_0_2_8.srec",
+                IoMode::READ,
+            )
+            .unwrap();
         let mut file = p.open(&uri, IoMode::READ).unwrap();
         let mut d1 = [0; 0x1f];
         let mut d2 = [0; 0x1f];
@@ -625,17 +724,31 @@ mod test_srec {
 
     #[test]
     fn test_write_s2() {
-        operate_on_copy(&write_s2_cb, "../../testing_binaries/rio/srec/record_0_2_8.srec");
+        operate_on_copy(
+            &write_s2_cb,
+            "../../testing_binaries/rio/srec/record_0_2_8.srec",
+        );
     }
 
     #[test]
     fn test_read_s3() {
         let mut p = plugin();
-        let mut file = p.open("srec://../../testing_binaries/rio/srec/record_0_3_7.srec", IoMode::READ).unwrap();
+        let mut file = p
+            .open(
+                "srec://../../testing_binaries/rio/srec/record_0_3_7.srec",
+                IoMode::READ,
+            )
+            .unwrap();
         assert_eq!(file.size, 0x1e);
         let mut data = vec![0u8; 16];
         file.plugin_operations.read(0x111e4cdf, &mut data).unwrap();
-        assert_eq!(data, [0x01, 0x08, 0x4E, 0x75, 0x48, 0xE7, 0x40, 0x00, 0x42, 0x41, 0xC0, 0xBC, 0x00, 0x00, 0x00, 0xFF]);
+        assert_eq!(
+            data,
+            [
+                0x01, 0x08, 0x4E, 0x75, 0x48, 0xE7, 0x40, 0x00, 0x42, 0x41, 0xC0, 0xBC, 0x00, 0x00,
+                0x00, 0xFF
+            ]
+        );
     }
 
     fn write_s3_cb(path: &Path) {
@@ -643,33 +756,63 @@ mod test_srec {
         let uri = String::from("srec://") + &path.to_string_lossy();
         let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
 
-        file.plugin_operations.write(0x111e4cdf, &[0x80, 0x90, 0xff, 0xfe]).unwrap();
+        file.plugin_operations
+            .write(0x111e4cdf, &[0x80, 0x90, 0xff, 0xfe])
+            .unwrap();
         drop(file);
         file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
         assert_eq!(file.size, 0x1e);
         let mut data = vec![0u8; 16];
         file.plugin_operations.read(0x111e4cdf, &mut data).unwrap();
-        assert_eq!(data, [0x80, 0x90, 0xff, 0xfe, 0x48, 0xE7, 0x40, 0x00, 0x42, 0x41, 0xC0, 0xBC, 0x00, 0x00, 0x00, 0xFF]);
-        file.plugin_operations.write(0x111e4cdf, &[0x01, 0x08, 0x4E, 0x75]).unwrap();
+        assert_eq!(
+            data,
+            [
+                0x80, 0x90, 0xff, 0xfe, 0x48, 0xE7, 0x40, 0x00, 0x42, 0x41, 0xC0, 0xBC, 0x00, 0x00,
+                0x00, 0xFF
+            ]
+        );
+        file.plugin_operations
+            .write(0x111e4cdf, &[0x01, 0x08, 0x4E, 0x75])
+            .unwrap();
         drop(file);
-        let mut original = p.open("srec://../../testing_binaries/rio/srec/record_0_3_7.srec", IoMode::READ).unwrap();
+        let mut original = p
+            .open(
+                "srec://../../testing_binaries/rio/srec/record_0_3_7.srec",
+                IoMode::READ,
+            )
+            .unwrap();
         let mut file = p.open(&uri, IoMode::READ).unwrap();
         let mut d1 = [0; 0x1e];
         let mut d2 = [0; 0x1e];
         file.plugin_operations.read(0x111e4cdf, &mut d1).unwrap();
-        original.plugin_operations.read(0x111e4cdf, &mut d2).unwrap();
+        original
+            .plugin_operations
+            .read(0x111e4cdf, &mut d2)
+            .unwrap();
         assert_eq!(d1[..], d2[..]);
     }
 
     #[test]
     fn test_write_s3() {
-        operate_on_copy(&write_s3_cb, "../../testing_binaries/rio/srec/record_0_3_7.srec");
+        operate_on_copy(
+            &write_s3_cb,
+            "../../testing_binaries/rio/srec/record_0_3_7.srec",
+        );
     }
 
     #[test]
     fn test_corrupted() {
         let mut p = plugin();
-        let err = p.open("srec://../../testing_binaries/rio/srec/corrupted.srec", IoMode::READ).err().unwrap();
-        assert_eq!(err, IoError::Custom("Invalid S-record at line: 2".to_string()));
+        let err = p
+            .open(
+                "srec://../../testing_binaries/rio/srec/corrupted.srec",
+                IoMode::READ,
+            )
+            .err()
+            .unwrap();
+        assert_eq!(
+            err,
+            IoError::Custom("Invalid S-record at line: 2".to_string())
+        );
     }
 }

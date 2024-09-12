@@ -26,7 +26,8 @@ pub(super) type RBTreeOp<K, A, V> = Option<Box<Node<K, A, V>>>;
 /// Tuple of 3 elements used with [RBTree::mut_me]. The first element is mutable reference to the left subtree,
 /// the second element is a mutable reference to the right subtree and the third element is a mutable reference
 /// to the data stored in the current node.
-pub type LeftRightDataTuple<'a, K, A, V> = (&'a mut RBTree<K, A, V>, &'a mut RBTree<K, A, V>, &'a mut V);
+pub type LeftRightDataTuple<'a, K, A, V> =
+    (&'a mut RBTree<K, A, V>, &'a mut RBTree<K, A, V>, &'a mut V);
 
 ///  Used to recalculate augmented data stored in each node.
 /// This trait is mainly meant to be only implemented for [RBTree]
@@ -427,7 +428,10 @@ where
         }
         let mut result;
         if key < self.key() {
-            if !self.left_ref().is_red() && self.left_ref().is_node() && !self.left_ref().left_ref().is_red() {
+            if !self.left_ref().is_red()
+                && self.left_ref().is_node()
+                && !self.left_ref().left_ref().is_red()
+            {
                 self = self.unwrap().move_red_left().into();
             }
             result = self.left().delete_random_node(key);
@@ -441,7 +445,10 @@ where
                 return (RBTree::new(), Some(self.data()));
             }
             // do we really need self.right().is_node()
-            if !self.right_ref().is_red() && self.right_ref().is_node() && !self.right_ref().left_ref().is_red() {
+            if !self.right_ref().is_red()
+                && self.right_ref().is_node()
+                && !self.right_ref().left_ref().is_red()
+            {
                 self = self.unwrap().move_red_right().into();
             }
             if self.key() == key {

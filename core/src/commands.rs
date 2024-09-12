@@ -27,7 +27,11 @@ pub struct Commands {
 
 impl Commands {
     // Returns false if the command with the same name exists
-    pub fn add_command(&mut self, command_name: &'static str, functionality: MRc<dyn Cmd + Sync + Send>) -> bool {
+    pub fn add_command(
+        &mut self,
+        command_name: &'static str,
+        functionality: MRc<dyn Cmd + Sync + Send>,
+    ) -> bool {
         // first check that command_name doesn't exist
         if self.search.contains_key(command_name) {
             false
@@ -45,6 +49,10 @@ impl Commands {
         self.suggestions.find(&command.to_string(), tolerance).1
     }
     pub fn prefix<'a>(&'a self, command: &'a str) -> Vec<&&str> {
-        self.search.range(command..).take_while(|(k, _)| k.starts_with(command)).map(|(k, _)| k).collect()
+        self.search
+            .range(command..)
+            .take_while(|(k, _)| k.starts_with(command))
+            .map(|(k, _)| k)
+            .collect()
     }
 }

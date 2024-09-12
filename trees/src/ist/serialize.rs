@@ -53,12 +53,20 @@ where
         VI: SeqAccess<'de>,
     {
         // size must be there
-        let size: u64 = seq.next_element()?.ok_or_else(|| de::Error::invalid_length(0, &self))?;
+        let size: u64 = seq
+            .next_element()?
+            .ok_or_else(|| de::Error::invalid_length(0, &self))?;
         let mut tree = IST::new();
         for _ in 0..size {
-            let lo = seq.next_element()?.ok_or_else(|| de::Error::invalid_length(0, &self))?;
-            let hi = seq.next_element()?.ok_or_else(|| de::Error::invalid_length(0, &self))?;
-            let data = seq.next_element()?.ok_or_else(|| de::Error::invalid_length(0, &self))?;
+            let lo = seq
+                .next_element()?
+                .ok_or_else(|| de::Error::invalid_length(0, &self))?;
+            let hi = seq
+                .next_element()?
+                .ok_or_else(|| de::Error::invalid_length(0, &self))?;
+            let data = seq
+                .next_element()?
+                .ok_or_else(|| de::Error::invalid_length(0, &self))?;
             tree.insert(lo, hi, data);
         }
         Ok(tree)

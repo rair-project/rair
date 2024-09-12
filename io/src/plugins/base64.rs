@@ -37,7 +37,11 @@ impl Base64Internal {
     fn len(&self) -> u64 {
         self.len
     }
-    fn read_first_unaligned_block<'a>(&mut self, raddr: usize, buffer: &'a mut [u8]) -> Result<(usize, &'a mut [u8]), IoError> {
+    fn read_first_unaligned_block<'a>(
+        &mut self,
+        raddr: usize,
+        buffer: &'a mut [u8],
+    ) -> Result<(usize, &'a mut [u8]), IoError> {
         let offset = raddr % 3;
         if offset == 0 {
             return Ok((raddr, buffer));
@@ -55,7 +59,11 @@ impl Base64Internal {
         Ok((raddr + size, &mut buffer[size..]))
     }
 
-    fn read_last_unaligned_block<'a>(&mut self, raddr: usize, buffer: &'a mut [u8]) -> Result<(usize, &'a mut [u8]), IoError> {
+    fn read_last_unaligned_block<'a>(
+        &mut self,
+        raddr: usize,
+        buffer: &'a mut [u8],
+    ) -> Result<(usize, &'a mut [u8]), IoError> {
         // we assume that raddr is always aligned on the start
         let size = buffer.len() % 3;
         if size == 0 {
@@ -74,7 +82,11 @@ impl Base64Internal {
         Ok((raddr, &mut buffer[..offset]))
     }
     // returns new raddr and new buffer to fill;
-    fn read_unaligned_blocks<'a>(&mut self, raddr: usize, buffer: &'a mut [u8]) -> Result<(usize, &'a mut [u8]), IoError> {
+    fn read_unaligned_blocks<'a>(
+        &mut self,
+        raddr: usize,
+        buffer: &'a mut [u8],
+    ) -> Result<(usize, &'a mut [u8]), IoError> {
         let (raddr, buffer) = self.read_first_unaligned_block(raddr, buffer)?;
         let (raddr, buffer) = self.read_last_unaligned_block(raddr, buffer)?;
         Ok((raddr, buffer))
@@ -92,7 +104,11 @@ impl Base64Internal {
         }
         Ok(())
     }
-    fn write_first_unaligned_block<'a>(&mut self, raddr: usize, buffer: &'a [u8]) -> Result<(usize, &'a [u8]), IoError> {
+    fn write_first_unaligned_block<'a>(
+        &mut self,
+        raddr: usize,
+        buffer: &'a [u8],
+    ) -> Result<(usize, &'a [u8]), IoError> {
         let offset = raddr % 3;
         if offset == 0 {
             return Ok((raddr, buffer));
@@ -113,7 +129,11 @@ impl Base64Internal {
         Ok((raddr + size, &buffer[size..]))
     }
 
-    fn write_last_unaligned_block<'a>(&mut self, raddr: usize, buffer: &'a [u8]) -> Result<(usize, &'a [u8]), IoError> {
+    fn write_last_unaligned_block<'a>(
+        &mut self,
+        raddr: usize,
+        buffer: &'a [u8],
+    ) -> Result<(usize, &'a [u8]), IoError> {
         // we assume that raddr is always aligned on the start
         let size = buffer.len() % 3;
         if size == 0 {
@@ -134,7 +154,11 @@ impl Base64Internal {
         Ok((raddr, &buffer[..offset]))
     }
 
-    fn write_unaligned_blocks<'a>(&mut self, raddr: usize, buffer: &'a [u8]) -> Result<(usize, &'a [u8]), IoError> {
+    fn write_unaligned_blocks<'a>(
+        &mut self,
+        raddr: usize,
+        buffer: &'a [u8],
+    ) -> Result<(usize, &'a [u8]), IoError> {
         let (raddr, buffer) = self.write_first_unaligned_block(raddr, buffer)?;
         let (raddr, buffer) = self.write_last_unaligned_block(raddr, buffer)?;
         Ok((raddr, buffer))
@@ -155,7 +179,10 @@ impl Base64Internal {
 impl RIOPluginOperations for Base64Internal {
     fn read(&mut self, raddr: usize, buffer: &mut [u8]) -> Result<(), IoError> {
         if (self.len() as usize) < raddr + buffer.len() {
-            return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
+            return Err(IoError::Parse(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "BufferOverflow",
+            )));
         }
         let (raddr, buffer) = self.read_unaligned_blocks(raddr, buffer)?;
         self.read_aligned_blocks(raddr, buffer)?;
@@ -164,7 +191,10 @@ impl RIOPluginOperations for Base64Internal {
 
     fn write(&mut self, raddr: usize, buffer: &[u8]) -> Result<(), IoError> {
         if raddr + buffer.len() > (self.len() as usize) {
-            return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
+            return Err(IoError::Parse(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "BufferOverflow",
+            )));
         }
         let (raddr, buffer) = self.write_unaligned_blocks(raddr, buffer)?;
         self.write_aligned_blocks(raddr, buffer)?;
@@ -194,9 +224,15 @@ impl RIOPlugin for Base64Plugin {
     }
 
     fn open(&mut self, uri: &str, flags: IoMode) -> Result<RIOPluginDesc, IoError> {
-        let mut def_desc = self.defaultplugin.open(&Base64Plugin::uri_to_path(uri).to_string_lossy(), flags)?;
+        let mut def_desc = self
+            .defaultplugin
+            .open(&Base64Plugin::uri_to_path(uri).to_string_lossy(), flags)?;
         let mut paddings = [0; 4];
-        if def_desc.plugin_operations.read(def_desc.size as usize - paddings.len(), &mut paddings).is_err() {
+        if def_desc
+            .plugin_operations
+            .read(def_desc.size as usize - paddings.len(), &mut paddings)
+            .is_err()
+        {
             return Err(IoError::Custom("Corrupted base64 data".to_string()));
         };
         let padding_size = paddings.iter().filter(|&n| *n == b'=').count();
@@ -233,7 +269,12 @@ mod test_base64 {
     #[test]
     fn test_nopad_read() {
         let mut p = plugin();
-        let mut file = p.open("b64://../../testing_binaries/rio/base64/no_padding.b64", IoMode::READ).unwrap();
+        let mut file = p
+            .open(
+                "b64://../../testing_binaries/rio/base64/no_padding.b64",
+                IoMode::READ,
+            )
+            .unwrap();
         assert_eq!(file.size, 45);
         let bytes = b"The quick brown fox jumped over the lazy dog.";
         //read from the start
@@ -252,7 +293,12 @@ mod test_base64 {
     #[test]
     fn test_one_pad_read() {
         let mut p = plugin();
-        let mut file = p.open("b64://../../testing_binaries/rio/base64/one_pad.b64", IoMode::READ).unwrap();
+        let mut file = p
+            .open(
+                "b64://../../testing_binaries/rio/base64/one_pad.b64",
+                IoMode::READ,
+            )
+            .unwrap();
         assert_eq!(file.size, 2);
         let mut b1 = [0; 1];
         file.plugin_operations.read(0, &mut b1).unwrap();
@@ -263,19 +309,36 @@ mod test_base64 {
         file.plugin_operations.read(0, &mut b2).unwrap();
         assert_eq!(b2, [b'T', b'h']);
         let e = file.plugin_operations.read(1, &mut b2).err().unwrap();
-        assert_eq!(e, IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
+        assert_eq!(
+            e,
+            IoError::Parse(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "BufferOverflow"
+            ))
+        );
     }
 
     #[test]
     fn test_two_pad_read() {
         let mut p = plugin();
-        let mut file = p.open("b64://../../testing_binaries/rio/base64/two_pad.b64", IoMode::READ).unwrap();
+        let mut file = p
+            .open(
+                "b64://../../testing_binaries/rio/base64/two_pad.b64",
+                IoMode::READ,
+            )
+            .unwrap();
         assert_eq!(file.size, 1);
         let mut b1 = [0; 1];
         file.plugin_operations.read(0, &mut b1).unwrap();
         assert_eq!(b1, [b'T']);
         let e = file.plugin_operations.read(1, &mut b1).err().unwrap();
-        assert_eq!(e, IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
+        assert_eq!(
+            e,
+            IoError::Parse(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "BufferOverflow"
+            ))
+        );
     }
     fn nopad_write_cb(path: &Path) {
         let mut p = plugin();
@@ -292,11 +355,17 @@ mod test_base64 {
         file.plugin_operations.write(36, b"LAZY_DOG;").unwrap();
         let mut data = [0; 45];
         file.plugin_operations.read(0, &mut data).unwrap();
-        assert_eq!(&data[..], &b"tHE_QUICK_BROWN_FOX_JUMPED_OVER_THE_LAZY_DOG;"[..]);
+        assert_eq!(
+            &data[..],
+            &b"tHE_QUICK_BROWN_FOX_JUMPED_OVER_THE_LAZY_DOG;"[..]
+        );
     }
     #[test]
     fn test_nopad_write() {
-        operate_on_copy(&nopad_write_cb, "../../testing_binaries/rio/base64/no_padding.b64");
+        operate_on_copy(
+            &nopad_write_cb,
+            "../../testing_binaries/rio/base64/no_padding.b64",
+        );
     }
 
     fn one_pad_write_cb(path: &Path) {
@@ -312,12 +381,21 @@ mod test_base64 {
         file.plugin_operations.read(0, &mut d2).unwrap();
         assert_eq!(&d2[..], &b"Th"[..]);
         let e = file.plugin_operations.write(1, &mut d2).err().unwrap();
-        assert_eq!(e, IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
+        assert_eq!(
+            e,
+            IoError::Parse(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "BufferOverflow"
+            ))
+        );
     }
 
     #[test]
     fn test_one_pad_write() {
-        operate_on_copy(&one_pad_write_cb, "../../testing_binaries/rio/base64/one_pad.b64");
+        operate_on_copy(
+            &one_pad_write_cb,
+            "../../testing_binaries/rio/base64/one_pad.b64",
+        );
     }
 
     fn two_pad_write_cb(path: &Path) {
@@ -332,10 +410,19 @@ mod test_base64 {
         file.plugin_operations.read(0, &mut d2).unwrap();
         assert_eq!(&d2[..], &b"T"[..]);
         let e = file.plugin_operations.write(1, b"H").err().unwrap();
-        assert_eq!(e, IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
+        assert_eq!(
+            e,
+            IoError::Parse(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "BufferOverflow"
+            ))
+        );
     }
     #[test]
     fn test_two_pad_write() {
-        operate_on_copy(&two_pad_write_cb, "../../testing_binaries/rio/base64/two_pad.b64");
+        operate_on_copy(
+            &two_pad_write_cb,
+            "../../testing_binaries/rio/base64/two_pad.b64",
+        );
     }
 }

@@ -38,7 +38,10 @@ where
     RBTree<K, A, V>: Augment<A>,
 {
     pub(crate) fn new(root: &'a RBTree<K, A, V>) -> TreeRefIterator<'a, K, A, V> {
-        let mut iter = TreeRefIterator { right: vec![], current: None };
+        let mut iter = TreeRefIterator {
+            right: vec![],
+            current: None,
+        };
         iter.add_subtree(root);
         iter
     }

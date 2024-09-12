@@ -36,11 +36,19 @@ pub fn register_io(core: &mut Core) {
     core.add_command("printHex", "px", px);
     core.add_command("printBase", "pb", Arc::new(Mutex::new(PrintBase::new())));
     core.add_command("printCSV", "pcsv", Arc::new(Mutex::new(PrintCSV::new())));
-    core.add_command("printSignedCSV", "pscsv", Arc::new(Mutex::new(PrintSignedCSV::new())));
+    core.add_command(
+        "printSignedCSV",
+        "pscsv",
+        Arc::new(Mutex::new(PrintSignedCSV::new())),
+    );
     core.add_command("unmap", "um", Arc::new(Mutex::new(UnMap::new())));
     core.add_command("files", "", files);
     core.add_command("open", "o", Arc::new(Mutex::new(OpenFile::new())));
     core.add_command("close", "", Arc::new(Mutex::new(CloseFile::new())));
     core.add_command("writeHex", "wx", Arc::new(Mutex::new(WriteHex::new())));
-    core.add_command("writeToFile", "wtf", Arc::new(Mutex::new(WriteToFile::new())));
+    core.add_command(
+        "writeToFile",
+        "wtf",
+        Arc::new(Mutex::new(WriteToFile::new())),
+    );
 }

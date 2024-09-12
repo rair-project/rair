@@ -85,7 +85,14 @@ impl Core {
     fn init_colors(&mut self, enable: bool) {
         let locked_env = self.env.clone();
         let mut env = locked_env.write();
-        env.add_bool_with_cb("color.enable", enable, "Enable/Disable color theme globally", self, set_global_color).unwrap();
+        env.add_bool_with_cb(
+            "color.enable",
+            enable,
+            "Enable/Disable color theme globally",
+            self,
+            set_global_color,
+        )
+        .unwrap();
         env.add_color("color.1", (0x58, 0x68, 0x75), "").unwrap();
         env.add_color("color.2", (0xb5, 0x89, 0x00), "").unwrap();
         env.add_color("color.3", (0xcb, 0x4b, 0x16), "").unwrap();
@@ -116,7 +123,12 @@ impl Core {
         self.loc
     }
 
-    pub fn add_command(&mut self, long: &'static str, short: &'static str, funcs: MRc<dyn Cmd + Sync + Send>) {
+    pub fn add_command(
+        &mut self,
+        long: &'static str,
+        short: &'static str,
+        funcs: MRc<dyn Cmd + Sync + Send>,
+    ) {
         if !long.is_empty() && !self.commands.lock().add_command(long, funcs.clone()) {
             let msg = format!("Command {} already existed.", Paint::default(long).bold());
             error_msg(self, "Cannot add this command.", &msg);
@@ -135,7 +147,12 @@ impl Core {
         let mut s = similar.iter();
         if let Some(suggestion) = s.next() {
             let (r, g, b) = self.env.read().get_color("color.6").unwrap();
-            write!(self.stderr, "Similar command: {}", Paint::rgb(r, g, b, suggestion)).unwrap();
+            write!(
+                self.stderr,
+                "Similar command: {}",
+                Paint::rgb(r, g, b, suggestion)
+            )
+            .unwrap();
             for suggestion in s {
                 write!(self.stderr, ", {}", Paint::rgb(r, g, b, suggestion)).unwrap();
             }
@@ -191,17 +208,27 @@ mod test_core {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.add_command("a_non_existing_command", "a", Arc::new(Mutex::new(Quit::new())));
+        core.add_command(
+            "a_non_existing_command",
+            "a",
+            Arc::new(Mutex::new(Quit::new())),
+        );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         core.add_command("test_command", "s", Arc::new(Mutex::new(Quit::new())));
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Cannot add this command.\nCommand s already existed.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Cannot add this command.\nCommand s already existed.\n"
+        );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         core.add_command("seek", "test_stuff", Arc::new(Mutex::new(Quit::new())));
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Cannot add this command.\nCommand seek already existed.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Cannot add this command.\nCommand seek already existed.\n"
+        );
     }
     #[test]
     fn test_help() {
@@ -210,7 +237,10 @@ mod test_core {
         core.stdout = Writer::new_buf();
         core.help("seeker");
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Execution failed\nCommand seeker is not found.\nSimilar command: seek.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Execution failed\nCommand seeker is not found.\nSimilar command: seek.\n"
+        );
     }
     #[test]
     fn test_run_at() {

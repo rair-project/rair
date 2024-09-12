@@ -55,7 +55,12 @@ impl Cmd for Save {
     }
 
     fn help(&self, core: &mut Core) {
-        help(core, "save", "", vec![("[file_path]", "Save project into given path.")]);
+        help(
+            core,
+            "save",
+            "",
+            vec![("[file_path]", "Save project into given path.")],
+        );
     }
 }
 
@@ -103,7 +108,12 @@ impl Cmd for Load {
         *core = core2;
     }
     fn help(&self, core: &mut Core) {
-        help(core, "load", "", vec![("[file_path]", "load project from given path.")]);
+        help(
+            core,
+            "load",
+            "",
+            vec![("[file_path]", "load project from given path.")],
+        );
     }
 }
 
@@ -141,8 +151,12 @@ mod test_project {
         core.stdout = Writer::new_buf();
         let mut load = Load::new();
         let mut save = Save::new();
-        core.io.open("malloc://0x500", IoMode::READ | IoMode::WRITE).unwrap();
-        core.io.open_at("malloc://0x1337", IoMode::READ | IoMode::WRITE, 0x31000).unwrap();
+        core.io
+            .open("malloc://0x500", IoMode::READ | IoMode::WRITE)
+            .unwrap();
+        core.io
+            .open_at("malloc://0x1337", IoMode::READ | IoMode::WRITE, 0x31000)
+            .unwrap();
         core.io.map(0x31000, 0xfff31000, 0x337).unwrap();
         save.run(&mut core, &["rair_project".to_string()]);
         core.io.close_all();

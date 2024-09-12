@@ -60,7 +60,10 @@ impl Deref for FileInternals {
 impl RIOPluginOperations for FileInternals {
     fn read(&mut self, raddr: usize, buffer: &mut [u8]) -> Result<(), IoError> {
         if self.len() < raddr + buffer.len() {
-            return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
+            return Err(IoError::Parse(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "BufferOverflow",
+            )));
         }
         buffer.copy_from_slice(&self[raddr..raddr + buffer.len()]);
         Ok(())
@@ -69,12 +72,18 @@ impl RIOPluginOperations for FileInternals {
     fn write(&mut self, raddr: usize, buf: &[u8]) -> Result<(), IoError> {
         if let Some(mutmap) = self.as_mut() {
             if raddr + buf.len() > mutmap.len() {
-                return Err(IoError::Parse(io::Error::new(io::ErrorKind::UnexpectedEof, "BufferOverflow")));
+                return Err(IoError::Parse(io::Error::new(
+                    io::ErrorKind::UnexpectedEof,
+                    "BufferOverflow",
+                )));
             }
             mutmap[raddr..raddr + buf.len()].copy_from_slice(buf);
             Ok(())
         } else {
-            Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "File Not Writable")))
+            Err(IoError::Parse(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "File Not Writable",
+            )))
         }
     }
 }
@@ -96,7 +105,10 @@ impl RIOPlugin for FilePlugin {
     fn open(&mut self, uri: &str, flags: IoMode) -> Result<RIOPluginDesc, IoError> {
         let file: FileInternals;
         if !flags.contains(IoMode::READ) && flags.contains(IoMode::WRITE) {
-            return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "Can't Open File for writing without reading")));
+            return Err(IoError::Parse(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "Can't Open File for writing without reading",
+            )));
         }
         // we can't have write with cow bcause this mean we had writer without read or read with cow lol
         if flags.contains(IoMode::READ) && flags.contains(IoMode::COW) {
@@ -106,13 +118,20 @@ impl RIOPlugin for FilePlugin {
             )));
         }
         if flags.contains(IoMode::COW) {
-            let f = OpenOptions::new().read(true).open(FilePlugin::uri_to_path(uri))?;
+            let f = OpenOptions::new()
+                .read(true)
+                .open(FilePlugin::uri_to_path(uri))?;
             file = FileInternals::MutMap(unsafe { MmapOptions::new().map_copy(&f)? });
         } else if flags.contains(IoMode::WRITE) {
-            let f = OpenOptions::new().read(true).write(true).open(FilePlugin::uri_to_path(uri))?;
+            let f = OpenOptions::new()
+                .read(true)
+                .write(true)
+                .open(FilePlugin::uri_to_path(uri))?;
             file = FileInternals::MutMap(unsafe { MmapOptions::new().map_mut(&f)? });
         } else {
-            let f = OpenOptions::new().read(true).open(FilePlugin::uri_to_path(uri))?;
+            let f = OpenOptions::new()
+                .read(true)
+                .open(FilePlugin::uri_to_path(uri))?;
             file = FileInternals::Map(unsafe { MmapOptions::new().map(&f)? });
         }
         let desc = RIOPluginDesc {
@@ -161,23 +180,36 @@ mod default_plugin_tests {
         let mut plugin = plugin();
         let custom_path = String::from("file://") + &paths[0].to_string_lossy();
         plugin.open(&custom_path, IoMode::COW).unwrap();
-        plugin.open(&paths[1].to_string_lossy(), IoMode::READ).unwrap();
-        plugin.open(&paths[2].to_string_lossy(), IoMode::READ | IoMode::WRITE).unwrap();
+        plugin
+            .open(&paths[1].to_string_lossy(), IoMode::READ)
+            .unwrap();
+        plugin
+            .open(&paths[2].to_string_lossy(), IoMode::READ | IoMode::WRITE)
+            .unwrap();
         let mut e = plugin.open(&paths[3].to_string_lossy(), IoMode::WRITE);
         match e {
-            Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied),
+            Err(IoError::Parse(io_err)) => {
+                assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied)
+            }
             _ => assert!(false, "Permission Denied Error should have been generated"),
         };
 
         e = plugin.open(&paths[3].to_string_lossy(), IoMode::READ | IoMode::COW);
         match e {
-            Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied),
+            Err(IoError::Parse(io_err)) => {
+                assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied)
+            }
             _ => assert!(false, "Permission Denied Error should have been generated"),
         };
 
-        e = plugin.open(&paths[3].to_string_lossy(), IoMode::READ | IoMode::WRITE | IoMode::COW);
+        e = plugin.open(
+            &paths[3].to_string_lossy(),
+            IoMode::READ | IoMode::WRITE | IoMode::COW,
+        );
         match e {
-            Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied),
+            Err(IoError::Parse(io_err)) => {
+                assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied)
+            }
             _ => assert!(false, "Permission Denied Error should have been generated"),
         };
     }
@@ -190,13 +222,19 @@ mod default_plugin_tests {
         let mut desc = plugin.open(&path.to_string_lossy(), IoMode::READ).unwrap();
         let mut buffer: &mut [u8] = &mut [0; 8];
         // read at the begining
-        desc.plugin_operations.read(desc.raddr as usize, buffer).unwrap();
+        desc.plugin_operations
+            .read(desc.raddr as usize, buffer)
+            .unwrap();
         assert_eq!(buffer, [0x00, 0x01, 0x01, 0x02, 0x03, 0x05, 0x08, 0x0d]);
         // read at the middle
-        desc.plugin_operations.read((desc.raddr + 0x10) as usize, buffer).unwrap();
+        desc.plugin_operations
+            .read((desc.raddr + 0x10) as usize, buffer)
+            .unwrap();
         assert_eq!(buffer, [0xdb, 0x3d, 0x18, 0x55, 0x6d, 0xc2, 0x2f, 0xf1]);
         // read at the end
-        desc.plugin_operations.read((desc.raddr + 97) as usize, buffer).unwrap();
+        desc.plugin_operations
+            .read((desc.raddr + 97) as usize, buffer)
+            .unwrap();
         assert_eq!(buffer, [0x41, 0xc1, 0x02, 0xc3, 0xc5, 0x88, 0x4d, 0xd5]);
     }
     #[test]
@@ -209,13 +247,17 @@ mod default_plugin_tests {
         let mut desc = plugin.open(&path.to_string_lossy(), IoMode::READ).unwrap();
         let mut buffer: &mut [u8] = &mut [0; 8];
         // read past the end
-        let mut e = desc.plugin_operations.read((desc.raddr + desc.size) as usize, buffer);
+        let mut e = desc
+            .plugin_operations
+            .read((desc.raddr + desc.size) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => assert!(true, "UnexpectedEof Error should have been generated"),
         };
         // read at the middle past the the end
-        e = desc.plugin_operations.read((desc.raddr + desc.size - 5) as usize, buffer);
+        e = desc
+            .plugin_operations
+            .read((desc.raddr + desc.size - 5) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => assert!(true, "UnexpectedEof Error should have been generated"),
@@ -237,19 +279,33 @@ mod default_plugin_tests {
 
     fn test_write_cb(path: &Path) {
         let mut plugin = plugin();
-        let mut desc = plugin.open(&path.to_string_lossy(), IoMode::READ | IoMode::WRITE).unwrap();
+        let mut desc = plugin
+            .open(&path.to_string_lossy(), IoMode::READ | IoMode::WRITE)
+            .unwrap();
         let mut buffer: &mut [u8] = &mut [0; 8];
         // write at the begining
-        desc.plugin_operations.write(desc.raddr as usize, buffer).unwrap();
-        desc.plugin_operations.read(desc.raddr as usize, buffer).unwrap();
+        desc.plugin_operations
+            .write(desc.raddr as usize, buffer)
+            .unwrap();
+        desc.plugin_operations
+            .read(desc.raddr as usize, buffer)
+            .unwrap();
         assert_eq!(buffer, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
         // write at the middle
-        desc.plugin_operations.write((desc.raddr + 0x10) as usize, buffer).unwrap();
-        desc.plugin_operations.read((desc.raddr + 0x10) as usize, buffer).unwrap();
+        desc.plugin_operations
+            .write((desc.raddr + 0x10) as usize, buffer)
+            .unwrap();
+        desc.plugin_operations
+            .read((desc.raddr + 0x10) as usize, buffer)
+            .unwrap();
         assert_eq!(buffer, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
         // write at the end
-        desc.plugin_operations.write((desc.raddr + 97) as usize, buffer).unwrap();
-        desc.plugin_operations.read((desc.raddr + 97) as usize, buffer).unwrap();
+        desc.plugin_operations
+            .write((desc.raddr + 97) as usize, buffer)
+            .unwrap();
+        desc.plugin_operations
+            .read((desc.raddr + 97) as usize, buffer)
+            .unwrap();
         assert_eq!(buffer, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
     }
 
@@ -260,16 +316,22 @@ mod default_plugin_tests {
 
     fn test_write_errors_cb(path: &Path) {
         let mut plugin = plugin();
-        let mut desc = plugin.open(&path.to_string_lossy(), IoMode::READ | IoMode::WRITE).unwrap();
+        let mut desc = plugin
+            .open(&path.to_string_lossy(), IoMode::READ | IoMode::WRITE)
+            .unwrap();
         let mut buffer: &[u8] = &[0; 8];
         // write past the end
-        let mut e = desc.plugin_operations.write((desc.raddr + desc.size) as usize, buffer);
+        let mut e = desc
+            .plugin_operations
+            .write((desc.raddr + desc.size) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => assert!(true, "UnexpectedEof Error should have been generated"),
         };
         // middle at the middle past the the end
-        e = desc.plugin_operations.write((desc.raddr + desc.size - 5) as usize, buffer);
+        e = desc
+            .plugin_operations
+            .write((desc.raddr + desc.size - 5) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => assert!(true, "UnexpectedEof Error should have been generated"),

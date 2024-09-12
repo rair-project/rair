@@ -39,14 +39,30 @@ mod test_help_cmd {
     use pest::Parser;
     #[test]
     fn test_help_no_space() {
-        let root = CliParser::parse(Rule::HelpLine, "aa?").unwrap().next().unwrap();
+        let root = CliParser::parse(Rule::HelpLine, "aa?")
+            .unwrap()
+            .next()
+            .unwrap();
         let help = HelpCmd::parse_help(root);
-        assert_eq!(help, HelpCmd { command: "aa".to_string() });
+        assert_eq!(
+            help,
+            HelpCmd {
+                command: "aa".to_string()
+            }
+        );
     }
     #[test]
     fn test_help_space() {
-        let root = CliParser::parse(Rule::HelpLine, "aa          ?").unwrap().next().unwrap();
+        let root = CliParser::parse(Rule::HelpLine, "aa          ?")
+            .unwrap()
+            .next()
+            .unwrap();
         let help = HelpCmd::parse_help(root);
-        assert_eq!(help, HelpCmd { command: "aa".to_string() });
+        assert_eq!(
+            help,
+            HelpCmd {
+                command: "aa".to_string()
+            }
+        );
     }
 }

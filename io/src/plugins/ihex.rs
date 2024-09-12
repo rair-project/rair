@@ -160,7 +160,12 @@ impl FileInternals {
         loop {
             let x = match parse_record(input) {
                 Ok(x) => x,
-                Err(_) => return Err(IoError::Custom(format!("Invalid Ihex entry at line: {}", line))),
+                Err(_) => {
+                    return Err(IoError::Custom(format!(
+                        "Invalid Ihex entry at line: {}",
+                        line
+                    )))
+                }
             };
             input = x.0;
             match x.1 {
@@ -263,7 +268,10 @@ impl FileInternals {
     }
     fn save_ihex(&self) -> Result<(), IoError> {
         // truncate the current file.
-        let mut file = OpenOptions::new().write(true).truncate(true).open(IHexPlugin::uri_to_path(&self.uri))?;
+        let mut file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(IHexPlugin::uri_to_path(&self.uri))?;
         //write ssa and sla
         self.write_sa(&mut file)?;
         //write data
@@ -310,7 +318,10 @@ impl RIOPluginOperations for FileInternals {
     fn write(&mut self, raddr: usize, buf: &[u8]) -> Result<(), IoError> {
         // if we are dealing with cow or write firs write data to the sparce array
         if !self.prot.contains(IoMode::COW) && !self.prot.contains(IoMode::WRITE) {
-            return Err(IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "File Not Writable")));
+            return Err(IoError::Parse(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "File Not Writable",
+            )));
         }
         for (i, item) in buf.iter().enumerate() {
             self.bytes.insert((i + raddr) as u64, *item);
@@ -323,7 +334,10 @@ impl RIOPluginOperations for FileInternals {
             self.save_ihex()?;
             // mmap new file
             let mut plug = defaultplugin::plugin();
-            let def_desc = plug.open(&IHexPlugin::uri_to_path(&self.uri).to_string_lossy(), IoMode::READ)?;
+            let def_desc = plug.open(
+                &IHexPlugin::uri_to_path(&self.uri).to_string_lossy(),
+                IoMode::READ,
+            )?;
             self.file = def_desc.plugin_operations;
         }
         Ok(())
@@ -353,7 +367,10 @@ impl RIOPlugin for IHexPlugin {
 
     fn open(&mut self, uri: &str, flags: IoMode) -> Result<RIOPluginDesc, IoError> {
         assert!(self.accept_uri(uri));
-        let def_desc = self.defaultplugin.open(&IHexPlugin::uri_to_path(uri).to_string_lossy(), IoMode::READ)?;
+        let def_desc = self.defaultplugin.open(
+            &IHexPlugin::uri_to_path(uri).to_string_lossy(),
+            IoMode::READ,
+        )?;
         let mut internal = FileInternals {
             file: def_desc.plugin_operations,
             bytes: BTreeMap::new(),
@@ -403,44 +420,66 @@ mod test_ihex {
         // this is simple ihex file testing,
         // no sparce file with holes, no nothing but basic record 00 and record 01
         let mut p = plugin();
-        let mut file = p.open("ihex://../../testing_binaries/rio/ihex/tiny.hex", IoMode::READ).unwrap();
+        let mut file = p
+            .open(
+                "ihex://../../testing_binaries/rio/ihex/tiny.hex",
+                IoMode::READ,
+            )
+            .unwrap();
         assert_eq!(file.size, 11);
         let mut buffer = vec![0; file.size as usize];
         file.plugin_operations.read(0x0, &mut buffer).unwrap();
-        assert_eq!(buffer, [0x02, 0x00, 0x00, 0x02, 0x00, 0x09, 0x02, 0x00, 0x03, 0x80, 0xfe]);
+        assert_eq!(
+            buffer,
+            [0x02, 0x00, 0x00, 0x02, 0x00, 0x09, 0x02, 0x00, 0x03, 0x80, 0xfe]
+        );
     }
     fn tiny_ihex_write_cb(path: &Path) {
         let mut p = plugin();
         let uri = String::from("ihex://") + &path.to_string_lossy();
         let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
 
-        file.plugin_operations.write(0x5, &[0x80, 0x90, 0xff]).unwrap();
+        file.plugin_operations
+            .write(0x5, &[0x80, 0x90, 0xff])
+            .unwrap();
         drop(file);
         file = p.open(&uri, IoMode::READ).unwrap();
         assert_eq!(file.size, 11);
         let mut buffer = vec![0; file.size as usize];
         file.plugin_operations.read(0x0, &mut buffer).unwrap();
-        assert_eq!(buffer, [0x02, 0x00, 0x00, 0x02, 0x00, 0x80, 0x90, 0xff, 0x03, 0x80, 0xfe]);
+        assert_eq!(
+            buffer,
+            [0x02, 0x00, 0x00, 0x02, 0x00, 0x80, 0x90, 0xff, 0x03, 0x80, 0xfe]
+        );
     }
     #[test]
     fn test_tiny_ihex_write() {
         // this is simple ihex file testing,
         // no sparce file with holes, no nothing but basic record 00 and record 01
-        operate_on_copy(&tiny_ihex_write_cb, "../../testing_binaries/rio/ihex/tiny.hex");
+        operate_on_copy(
+            &tiny_ihex_write_cb,
+            "../../testing_binaries/rio/ihex/tiny.hex",
+        );
     }
     #[test]
     fn test_tiny_sparce_ihex_read() {
         //sparce file with holes, no nothing but basic record 00 and record 01
         let mut p = plugin();
-        let mut file = p.open("ihex://../../testing_binaries/rio/ihex/tiny_sparce.hex", IoMode::READ).unwrap();
+        let mut file = p
+            .open(
+                "ihex://../../testing_binaries/rio/ihex/tiny_sparce.hex",
+                IoMode::READ,
+            )
+            .unwrap();
         assert_eq!(file.size, 0x20);
         let mut buffer = vec![0; file.size as usize];
         file.plugin_operations.read(0x50, &mut buffer).unwrap();
         assert_eq!(
             buffer,
             [
-                0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x24, 0x68, 0xac, 0xef, 0xaa, 0xbb,
-                0xee, 0xff
+                0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x24, 0x68, 0xac, 0xef,
+                0xaa, 0xbb, 0xee, 0xff
             ]
         );
     }
@@ -449,7 +488,9 @@ mod test_ihex {
         let uri = String::from("ihex://") + &path.to_string_lossy();
         let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
 
-        file.plugin_operations.write(0x55, &[0x80, 0x90, 0xff]).unwrap();
+        file.plugin_operations
+            .write(0x55, &[0x80, 0x90, 0xff])
+            .unwrap();
         drop(file);
         file = p.open(&uri, IoMode::READ).unwrap();
         assert_eq!(file.size, 0x20);
@@ -458,8 +499,9 @@ mod test_ihex {
         assert_eq!(
             buffer,
             [
-                0x02, 0x00, 0x00, 0x00, 0x00, 0x80, 0x90, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x24, 0x68, 0xac, 0xef, 0xaa, 0xbb,
-                0xee, 0xff
+                0x02, 0x00, 0x00, 0x00, 0x00, 0x80, 0x90, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x24, 0x68, 0xac, 0xef,
+                0xaa, 0xbb, 0xee, 0xff
             ]
         );
     }
@@ -467,14 +509,22 @@ mod test_ihex {
     fn test_tiny_sparce_ihex_write() {
         // this is simple ihex file testing,
         // no sparce file with holes, no nothing but basic record 00 and record 01
-        operate_on_copy(&tiny_sparce_ihex_write_cb, "../../testing_binaries/rio/ihex/tiny_sparce.hex");
+        operate_on_copy(
+            &tiny_sparce_ihex_write_cb,
+            "../../testing_binaries/rio/ihex/tiny_sparce.hex",
+        );
     }
 
     #[test]
     fn test_big_read() {
         //test reading from huge file with record 00 and record 01
         let mut p = plugin();
-        let mut file = p.open("ihex://../../testing_binaries/rio/ihex/record_00_01.hex", IoMode::READ).unwrap();
+        let mut file = p
+            .open(
+                "ihex://../../testing_binaries/rio/ihex/record_00_01.hex",
+                IoMode::READ,
+            )
+            .unwrap();
         assert_eq!(file.size, 0xead);
         let mut buffer = [0; 4];
         file.plugin_operations.read(0x520, &mut buffer).unwrap();
@@ -490,9 +540,15 @@ mod test_ihex {
         let uri = String::from("ihex://") + &path.to_string_lossy();
         let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
 
-        file.plugin_operations.write(0x520, &[0x80, 0x90, 0xff, 0xfe]).unwrap();
-        file.plugin_operations.write(0xe87, &[0x80, 0x90, 0xff, 0xfe]).unwrap();
-        file.plugin_operations.write(0xea9, &[0x80, 0x90, 0xff, 0xfe]).unwrap();
+        file.plugin_operations
+            .write(0x520, &[0x80, 0x90, 0xff, 0xfe])
+            .unwrap();
+        file.plugin_operations
+            .write(0xe87, &[0x80, 0x90, 0xff, 0xfe])
+            .unwrap();
+        file.plugin_operations
+            .write(0xea9, &[0x80, 0x90, 0xff, 0xfe])
+            .unwrap();
 
         drop(file);
         file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
@@ -505,12 +561,23 @@ mod test_ihex {
         file.plugin_operations.read(0xea9, &mut buffer).unwrap();
         assert_eq!(buffer, [0x80, 0x90, 0xff, 0xfe]);
 
-        file.plugin_operations.write(0x520, &[0x80, 0x40, 0x06, 0x7c]).unwrap();
-        file.plugin_operations.write(0xe87, &[0xd3, 0x22, 0x32, 0x32]).unwrap();
-        file.plugin_operations.write(0xea9, &[0x32, 0x32, 0x32, 0x32]).unwrap();
+        file.plugin_operations
+            .write(0x520, &[0x80, 0x40, 0x06, 0x7c])
+            .unwrap();
+        file.plugin_operations
+            .write(0xe87, &[0xd3, 0x22, 0x32, 0x32])
+            .unwrap();
+        file.plugin_operations
+            .write(0xea9, &[0x32, 0x32, 0x32, 0x32])
+            .unwrap();
         drop(file);
         file = p.open(&uri, IoMode::READ).unwrap();
-        let mut file2 = p.open("ihex://../../testing_binaries/rio/ihex/record_00_01.hex", IoMode::READ).unwrap();
+        let mut file2 = p
+            .open(
+                "ihex://../../testing_binaries/rio/ihex/record_00_01.hex",
+                IoMode::READ,
+            )
+            .unwrap();
         assert_eq!(file.size, file2.size);
         let mut data = vec![0; file.size as usize];
         let mut data2 = vec![0; file.size as usize];
@@ -522,29 +589,39 @@ mod test_ihex {
     #[test]
     fn test_big_write() {
         //test writing to huge file with record 00 and record 01
-        operate_on_copy(&big_write_cb, "../../testing_binaries/rio/ihex/record_00_01.hex");
+        operate_on_copy(
+            &big_write_cb,
+            "../../testing_binaries/rio/ihex/record_00_01.hex",
+        );
     }
 
     #[test]
     fn test_read_02_03() {
         let mut p = plugin();
-        let mut file = p.open("ihex://../../testing_binaries/rio/ihex/record_02_03.hex", IoMode::READ).unwrap();
+        let mut file = p
+            .open(
+                "ihex://../../testing_binaries/rio/ihex/record_02_03.hex",
+                IoMode::READ,
+            )
+            .unwrap();
         assert_eq!(file.size, 0x5a1ec);
         let mut buffer = [0; 0x20];
         file.plugin_operations.read(0x2ce34, &mut buffer).unwrap();
         assert_eq!(
             buffer,
             [
-                0x54, 0x68, 0x69, 0x73, 0x20, 0x70, 0x61, 0x72, 0x74, 0x20, 0x69, 0x73, 0x20, 0x69, 0x6e, 0x20, 0x61, 0x20, 0x6c, 0x6f, 0x77, 0x20, 0x73, 0x65, 0x67, 0x6d, 0x65, 0x6e, 0x74, 0x00,
-                0x00, 0x00,
+                0x54, 0x68, 0x69, 0x73, 0x20, 0x70, 0x61, 0x72, 0x74, 0x20, 0x69, 0x73, 0x20, 0x69,
+                0x6e, 0x20, 0x61, 0x20, 0x6c, 0x6f, 0x77, 0x20, 0x73, 0x65, 0x67, 0x6d, 0x65, 0x6e,
+                0x74, 0x00, 0x00, 0x00,
             ]
         );
         file.plugin_operations.read(0x87000, &mut buffer).unwrap();
         assert_eq!(
             buffer,
             [
-                0x54, 0x68, 0x69, 0x73, 0x20, 0x70, 0x61, 0x72, 0x74, 0x20, 0x69, 0x73, 0x20, 0x69, 0x6e, 0x20, 0x74, 0x68, 0x65, 0x20, 0x68, 0x69, 0x67, 0x68, 0x20, 0x73, 0x65, 0x67, 0x6d, 0x65,
-                0x6e, 0x74,
+                0x54, 0x68, 0x69, 0x73, 0x20, 0x70, 0x61, 0x72, 0x74, 0x20, 0x69, 0x73, 0x20, 0x69,
+                0x6e, 0x20, 0x74, 0x68, 0x65, 0x20, 0x68, 0x69, 0x67, 0x68, 0x20, 0x73, 0x65, 0x67,
+                0x6d, 0x65, 0x6e, 0x74,
             ]
         );
     }
@@ -554,9 +631,15 @@ mod test_ihex {
         let uri = String::from("ihex://") + &path.to_string_lossy();
         let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
 
-        file.plugin_operations.write(0x2ce34, &[0x80, 0x90, 0xff, 0xfe]).unwrap();
-        file.plugin_operations.write(0x2ce3c, &[0x80, 0x90, 0xff, 0xfe]).unwrap();
-        file.plugin_operations.write(0x87000, &[0x80, 0x90, 0xff, 0xfe]).unwrap();
+        file.plugin_operations
+            .write(0x2ce34, &[0x80, 0x90, 0xff, 0xfe])
+            .unwrap();
+        file.plugin_operations
+            .write(0x2ce3c, &[0x80, 0x90, 0xff, 0xfe])
+            .unwrap();
+        file.plugin_operations
+            .write(0x87000, &[0x80, 0x90, 0xff, 0xfe])
+            .unwrap();
 
         drop(file);
         file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
@@ -569,12 +652,23 @@ mod test_ihex {
         file.plugin_operations.read(0x2ce3c, &mut buffer).unwrap();
         assert_eq!(buffer, [0x80, 0x90, 0xff, 0xfe]);
 
-        file.plugin_operations.write(0x2ce34, &[0x54, 0x68, 0x69, 0x73]).unwrap();
-        file.plugin_operations.write(0x2ce3c, &[0x74, 0x20, 0x69, 0x73]).unwrap();
-        file.plugin_operations.write(0x87000, &[0x54, 0x68, 0x69, 0x73]).unwrap();
+        file.plugin_operations
+            .write(0x2ce34, &[0x54, 0x68, 0x69, 0x73])
+            .unwrap();
+        file.plugin_operations
+            .write(0x2ce3c, &[0x74, 0x20, 0x69, 0x73])
+            .unwrap();
+        file.plugin_operations
+            .write(0x87000, &[0x54, 0x68, 0x69, 0x73])
+            .unwrap();
         drop(file);
         file = p.open(&uri, IoMode::READ).unwrap();
-        let mut file2 = p.open("ihex://../../testing_binaries/rio/ihex/record_02_03.hex", IoMode::READ).unwrap();
+        let mut file2 = p
+            .open(
+                "ihex://../../testing_binaries/rio/ihex/record_02_03.hex",
+                IoMode::READ,
+            )
+            .unwrap();
         assert_eq!(file.size, file2.size);
         let mut data = vec![0; file.size as usize];
         let mut data2 = vec![0; file.size as usize];
@@ -585,16 +679,26 @@ mod test_ihex {
 
     #[test]
     fn test_write_02_03() {
-        operate_on_copy(&write_02_03_cb, "../../testing_binaries/rio/ihex/record_02_03.hex");
+        operate_on_copy(
+            &write_02_03_cb,
+            "../../testing_binaries/rio/ihex/record_02_03.hex",
+        );
     }
 
     #[test]
     fn test_read_04_05() {
         let mut p = plugin();
-        let mut file = p.open("ihex://../../testing_binaries/rio/ihex/record_04_05.hex", IoMode::READ).unwrap();
+        let mut file = p
+            .open(
+                "ihex://../../testing_binaries/rio/ihex/record_04_05.hex",
+                IoMode::READ,
+            )
+            .unwrap();
         assert_eq!(file.size, 0xEF60);
         let mut buffer = [0; 4];
-        file.plugin_operations.read(0x123400C1, &mut buffer).unwrap();
+        file.plugin_operations
+            .read(0x123400C1, &mut buffer)
+            .unwrap();
         assert_eq!(buffer, [0x48, 0x85, 0x46, 0x0C]);
     }
 
@@ -603,18 +707,29 @@ mod test_ihex {
         let uri = String::from("ihex://") + &path.to_string_lossy();
         let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
 
-        file.plugin_operations.write(0x123400C1, &[0x80, 0x90, 0xff, 0xfe]).unwrap();
+        file.plugin_operations
+            .write(0x123400C1, &[0x80, 0x90, 0xff, 0xfe])
+            .unwrap();
 
         drop(file);
         file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
         assert_eq!(file.size, 0xEF60);
         let mut buffer = [0; 4];
-        file.plugin_operations.read(0x123400C1, &mut buffer).unwrap();
+        file.plugin_operations
+            .read(0x123400C1, &mut buffer)
+            .unwrap();
         assert_eq!(buffer, [0x80, 0x90, 0xff, 0xfe]);
-        file.plugin_operations.write(0x123400C1, &[0x48, 0x85, 0x46, 0x0C]).unwrap();
+        file.plugin_operations
+            .write(0x123400C1, &[0x48, 0x85, 0x46, 0x0C])
+            .unwrap();
         drop(file);
         file = p.open(&uri, IoMode::READ).unwrap();
-        let mut file2 = p.open("ihex://../../testing_binaries/rio/ihex/record_04_05.hex", IoMode::READ).unwrap();
+        let mut file2 = p
+            .open(
+                "ihex://../../testing_binaries/rio/ihex/record_04_05.hex",
+                IoMode::READ,
+            )
+            .unwrap();
         assert_eq!(file.size, file2.size);
         let mut data = vec![0; file.size as usize];
         let mut data2 = vec![0; file.size as usize];
@@ -625,19 +740,36 @@ mod test_ihex {
 
     #[test]
     fn test_write_04_05() {
-        operate_on_copy(&write_04_05_cb, "../../testing_binaries/rio/ihex/record_04_05.hex");
+        operate_on_copy(
+            &write_04_05_cb,
+            "../../testing_binaries/rio/ihex/record_04_05.hex",
+        );
     }
 
     #[test]
     fn test_broken() {
         let mut p = plugin();
-        let err = p.open("ihex://../../testing_binaries/rio/ihex/broken.hex", IoMode::READ).err().unwrap();
-        assert_eq!(err, IoError::Custom("Invalid Ihex entry at line: 4".to_string()));
+        let err = p
+            .open(
+                "ihex://../../testing_binaries/rio/ihex/broken.hex",
+                IoMode::READ,
+            )
+            .err()
+            .unwrap();
+        assert_eq!(
+            err,
+            IoError::Custom("Invalid Ihex entry at line: 4".to_string())
+        );
     }
     #[test]
     fn test_empty() {
         let mut p = plugin();
-        let f = p.open("ihex://../../testing_binaries/rio/ihex/empty.hex", IoMode::READ).unwrap();
+        let f = p
+            .open(
+                "ihex://../../testing_binaries/rio/ihex/empty.hex",
+                IoMode::READ,
+            )
+            .unwrap();
         assert_eq!(f.size, 0);
     }
 }

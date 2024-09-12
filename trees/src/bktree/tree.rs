@@ -39,7 +39,11 @@ where
     K: Distance,
 {
     fn new(key: K, value: V) -> Self {
-        BKTreeNode { key, value, children: HashMap::new() }
+        BKTreeNode {
+            key,
+            value,
+            children: HashMap::new(),
+        }
     }
     fn insert(&mut self, key: K, value: V) {
         let distance = self.key.distance(&key);
@@ -58,7 +62,9 @@ where
         } else if current_distance <= tolerance {
             close.push(&self.key);
         }
-        for i in current_distance.saturating_sub(tolerance)..=current_distance.saturating_add(tolerance) {
+        for i in
+            current_distance.saturating_sub(tolerance)..=current_distance.saturating_add(tolerance)
+        {
             if let Some(child) = self.children.get(&i) {
                 let mut result = child.find(key, tolerance);
                 exact.append(&mut result.0);
@@ -171,7 +177,11 @@ mod bktree_tests {
     use super::*;
     #[test]
     fn test_dl_distance() {
-        let s = [("hello world", "hello world", 0), ("hello world", "hello world ", 1), ("hello world", "h ello World", 2)];
+        let s = [
+            ("hello world", "hello world", 0),
+            ("hello world", "hello world ", 1),
+            ("hello world", "h ello World", 2),
+        ];
         for (s1, s2, d) in s.iter() {
             assert_eq!(osa_distance(s1, s2), *d);
         }
@@ -179,7 +189,15 @@ mod bktree_tests {
     #[test]
     fn test_spell_tree_one_level() {
         let mut tree: SpellTree<&str> = SpellTree::new();
-        let words = ["hello", "hell", "held", "helicopter", "helium", "helix", "helmet"];
+        let words = [
+            "hello",
+            "hell",
+            "held",
+            "helicopter",
+            "helium",
+            "helix",
+            "helmet",
+        ];
         for word in words.iter() {
             tree.insert(word.to_string(), word);
         }

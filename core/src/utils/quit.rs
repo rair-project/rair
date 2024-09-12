@@ -47,7 +47,10 @@ mod test_quit {
         core.stdout = Writer::new_buf();
         let quit = Quit::new();
         quit.help(&mut core);
-        assert_eq!(core.stdout.utf8_string().unwrap(), "Commands: [quit | q]\n\nUsage:\nq\tQuit Current session.\n");
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "Commands: [quit | q]\n\nUsage:\nq\tQuit Current session.\n"
+        );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
 }

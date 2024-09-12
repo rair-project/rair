@@ -36,14 +36,36 @@ type Accept<K> = dyn Fn(&Interval<K>, &Interval<K>) -> bool;
 type Recurse<K> = dyn Fn(&AugData<K>, &Interval<K>) -> bool;
 
 pub(super) trait ISTHelpers<K: Ord + Copy, V> {
-    fn generic_search(&self, int: Interval<K>, recurse: &Recurse<K>, accept: &Accept<K>) -> Vec<&V>;
-    fn generic_search_mut(&mut self, int: Interval<K>, recurse: &Recurse<K>, accept: &Accept<K>) -> Vec<&mut V>;
-    fn generic_key_search(&self, int: Interval<K>, recurse: &Recurse<K>, accept: &Accept<K>) -> Vec<Interval<K>>;
-    fn generic_delete(&mut self, int: Interval<K>, recurse: &Recurse<K>, accept: &Accept<K>) -> Vec<V>;
+    fn generic_search(&self, int: Interval<K>, recurse: &Recurse<K>, accept: &Accept<K>)
+        -> Vec<&V>;
+    fn generic_search_mut(
+        &mut self,
+        int: Interval<K>,
+        recurse: &Recurse<K>,
+        accept: &Accept<K>,
+    ) -> Vec<&mut V>;
+    fn generic_key_search(
+        &self,
+        int: Interval<K>,
+        recurse: &Recurse<K>,
+        accept: &Accept<K>,
+    ) -> Vec<Interval<K>>;
+    fn generic_delete(
+        &mut self,
+        int: Interval<K>,
+        recurse: &Recurse<K>,
+        accept: &Accept<K>,
+    ) -> Vec<V>;
 }
 impl<K: Ord + Copy, V> ISTHelpers<K, V> for RBTree<Interval<K>, AugData<K>, Vec<V>> {
-    fn generic_search(&self, int: Interval<K>, recurse: &Recurse<K>, accept: &Accept<K>) -> Vec<&V> {
-        let mut result = if self.left_ref().is_node() && recurse(&self.left_ref().aug_data(), &int) {
+    fn generic_search(
+        &self,
+        int: Interval<K>,
+        recurse: &Recurse<K>,
+        accept: &Accept<K>,
+    ) -> Vec<&V> {
+        let mut result = if self.left_ref().is_node() && recurse(&self.left_ref().aug_data(), &int)
+        {
             self.left_ref().generic_search(int, recurse, accept)
         } else {
             Vec::new()
@@ -56,7 +78,12 @@ impl<K: Ord + Copy, V> ISTHelpers<K, V> for RBTree<Interval<K>, AugData<K>, Vec<
         }
         result
     }
-    fn generic_search_mut(&mut self, int: Interval<K>, recurse: &Recurse<K>, accept: &Accept<K>) -> Vec<&mut V> {
+    fn generic_search_mut(
+        &mut self,
+        int: Interval<K>,
+        recurse: &Recurse<K>,
+        accept: &Accept<K>,
+    ) -> Vec<&mut V> {
         let key = self.key();
         let (left, right, data) = self.mut_me();
         let mut result = if left.is_node() && recurse(&left.aug_data(), &int) {
@@ -72,7 +99,12 @@ impl<K: Ord + Copy, V> ISTHelpers<K, V> for RBTree<Interval<K>, AugData<K>, Vec<
         }
         result
     }
-    fn generic_key_search(&self, int: Interval<K>, recurse: &Recurse<K>, accept: &Accept<K>) -> Vec<Interval<K>> {
+    fn generic_key_search(
+        &self,
+        int: Interval<K>,
+        recurse: &Recurse<K>,
+        accept: &Accept<K>,
+    ) -> Vec<Interval<K>> {
         let mut keys = if self.left_ref().is_node() && recurse(&self.left_ref().aug_data(), &int) {
             self.left_ref().generic_key_search(int, recurse, accept)
         } else {
@@ -86,7 +118,12 @@ impl<K: Ord + Copy, V> ISTHelpers<K, V> for RBTree<Interval<K>, AugData<K>, Vec<
         }
         keys
     }
-    fn generic_delete(&mut self, int: Interval<K>, recurse: &Recurse<K>, accept: &Accept<K>) -> Vec<V> {
+    fn generic_delete(
+        &mut self,
+        int: Interval<K>,
+        recurse: &Recurse<K>,
+        accept: &Accept<K>,
+    ) -> Vec<V> {
         let delete_keys = self.generic_key_search(int, recurse, accept);
         let mut result = Vec::with_capacity(delete_keys.len());
         for key in delete_keys {

@@ -39,7 +39,11 @@ impl RIODesc {
     pub(crate) fn raddr(&self) -> u64 {
         self.raddr
     }
-    pub(crate) fn open(plugin: &mut dyn RIOPlugin, uri: &str, flags: IoMode) -> Result<RIODesc, IoError> {
+    pub(crate) fn open(
+        plugin: &mut dyn RIOPlugin,
+        uri: &str,
+        flags: IoMode,
+    ) -> Result<RIODesc, IoError> {
         let plugin_desc = plugin.open(uri, flags)?;
         let desc = RIODesc {
             hndl: 0,
@@ -59,10 +63,12 @@ impl RIODesc {
         Ok(())
     }
     pub(crate) fn read(&mut self, paddr: usize, buffer: &mut [u8]) -> Result<(), IoError> {
-        self.plugin_operations.read(paddr - self.paddr as usize + self.raddr as usize, buffer)
+        self.plugin_operations
+            .read(paddr - self.paddr as usize + self.raddr as usize, buffer)
     }
     pub(crate) fn write(&mut self, paddr: usize, buffer: &[u8]) -> Result<(), IoError> {
-        self.plugin_operations.write(paddr - self.paddr as usize + self.raddr as usize, buffer)
+        self.plugin_operations
+            .write(paddr - self.paddr as usize + self.raddr as usize, buffer)
     }
     /// Returns URI of current file descriptor.
     pub fn name(&self) -> &str {
@@ -163,7 +169,12 @@ mod default_plugin_tests {
 
     fn test_desc_write_cb(path: &Path) {
         let mut plugin = defaultplugin::plugin();
-        let mut desc = RIODesc::open(&mut *plugin, &path.to_string_lossy(), IoMode::READ | IoMode::WRITE).unwrap();
+        let mut desc = RIODesc::open(
+            &mut *plugin,
+            &path.to_string_lossy(),
+            IoMode::READ | IoMode::WRITE,
+        )
+        .unwrap();
         let mut buffer: &mut [u8] = &mut [0; 8];
         desc.paddr = 0x40000;
         // write at the begining
@@ -187,7 +198,12 @@ mod default_plugin_tests {
 
     fn test_write_errors_cb(path: &Path) {
         let mut plugin = defaultplugin::plugin();
-        let mut desc = RIODesc::open(&mut *plugin, &path.to_string_lossy(), IoMode::READ | IoMode::WRITE).unwrap();
+        let mut desc = RIODesc::open(
+            &mut *plugin,
+            &path.to_string_lossy(),
+            IoMode::READ | IoMode::WRITE,
+        )
+        .unwrap();
         let mut buffer: &[u8] = &[0; 8];
         desc.paddr = 0x40000;
         // write past the end

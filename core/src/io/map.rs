@@ -65,7 +65,15 @@ impl Cmd for Map {
         }
     }
     fn help(&self, core: &mut Core) {
-        help(core, "map", "", vec![("[phy] [vir] [size]", "Map region from physical address space to virtual address space.")]);
+        help(
+            core,
+            "map",
+            "",
+            vec![(
+                "[phy] [vir] [size]",
+                "Map region from physical address space to virtual address space.",
+            )],
+        );
     }
 }
 
@@ -101,7 +109,12 @@ impl Cmd for UnMap {
         }
     }
     fn help(&self, core: &mut Core) {
-        help(core, "unmap", "um", vec![("[vir] [size]", "Unmap a previosly mapped memory region.")]);
+        help(
+            core,
+            "unmap",
+            "um",
+            vec![("[vir] [size]", "Unmap a previosly mapped memory region.")],
+        );
     }
 }
 
@@ -112,7 +125,13 @@ impl ListMap {
     pub fn new(core: &mut Core) -> Self {
         let env = core.env.clone();
         env.write()
-            .add_str_with_cb("maps.headerColor", "color.6", "Color used in the header of `maps` command", core, is_color)
+            .add_str_with_cb(
+                "maps.headerColor",
+                "color.6",
+                "Color used in the header of `maps` command",
+                core,
+                is_color,
+            )
             .unwrap();
         Default::default()
     }
@@ -136,7 +155,14 @@ impl Cmd for ListMap {
         )
         .unwrap();
         for map in core.io.map_iter() {
-            writeln!(core.stdout, "{: <20}{: <20}0x{:x}", format!("0x{:x}", map.vaddr), format!("0x{:x}", map.paddr), map.size).unwrap();
+            writeln!(
+                core.stdout,
+                "{: <20}{: <20}0x{:x}",
+                format!("0x{:x}", map.vaddr),
+                format!("0x{:x}", map.paddr),
+                map.size
+            )
+            .unwrap();
         }
     }
     fn help(&self, core: &mut Core) {
@@ -182,7 +208,10 @@ mod test_mapping {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         core.help("maps");
-        assert_eq!(core.stdout.utf8_string().unwrap(), "Command: [maps]\n\nUsage:\nmaps\tList all memory maps.\n");
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "Command: [maps]\n\nUsage:\nmaps\tList all memory maps.\n"
+        );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
     fn test_map_cb(path: &Path) {
@@ -192,10 +221,22 @@ mod test_mapping {
         let mut map = Map::new();
         let mut unmap = UnMap::new();
         core.io.open(&path.to_string_lossy(), IoMode::READ).unwrap();
-        map.run(&mut core, &["0x0".to_string(), "0x500".to_string(), "0x20".to_string()]);
-        map.run(&mut core, &["0x10".to_string(), "0x520".to_string(), "0x20".to_string()]);
-        map.run(&mut core, &["0x20".to_string(), "0x540".to_string(), "0x20".to_string()]);
-        map.run(&mut core, &["0x20".to_string(), "0x540".to_string(), "0".to_string()]);
+        map.run(
+            &mut core,
+            &["0x0".to_string(), "0x500".to_string(), "0x20".to_string()],
+        );
+        map.run(
+            &mut core,
+            &["0x10".to_string(), "0x520".to_string(), "0x20".to_string()],
+        );
+        map.run(
+            &mut core,
+            &["0x20".to_string(), "0x540".to_string(), "0x20".to_string()],
+        );
+        map.run(
+            &mut core,
+            &["0x20".to_string(), "0x540".to_string(), "0".to_string()],
+        );
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
@@ -241,20 +282,38 @@ mod test_mapping {
         let mut unmap = UnMap::new();
         map.run(&mut core, &[]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 3 argument(s), found 0.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Arguments Error: Expected 3 argument(s), found 0.\n"
+        );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        map.run(&mut core, &["08".to_string(), "0x500".to_string(), "0x20".to_string()]);
+        map.run(
+            &mut core,
+            &["08".to_string(), "0x500".to_string(), "0x20".to_string()],
+        );
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to map memory\nFailed to parse phy, invalid digit found in string.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to map memory\nFailed to parse phy, invalid digit found in string.\n"
+        );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        map.run(&mut core, &["0x0".to_string(), "0b500".to_string(), "0x20".to_string()]);
+        map.run(
+            &mut core,
+            &["0x0".to_string(), "0b500".to_string(), "0x20".to_string()],
+        );
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to map memory\nFailed to parse vir, invalid digit found in string.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to map memory\nFailed to parse vir, invalid digit found in string.\n"
+        );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        map.run(&mut core, &["0x0".to_string(), "0x500".to_string(), "ff".to_string()]);
+        map.run(
+            &mut core,
+            &["0x0".to_string(), "0x500".to_string(), "ff".to_string()],
+        );
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -262,19 +321,31 @@ mod test_mapping {
         );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        map.run(&mut core, &["0x0".to_string(), "0x500".to_string(), "0x20".to_string()]);
+        map.run(
+            &mut core,
+            &["0x0".to_string(), "0x500".to_string(), "0x20".to_string()],
+        );
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to map memory\nCannot resolve address.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to map memory\nCannot resolve address.\n"
+        );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         core.run("maps", &["0xff".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 0 argument(s), found 1.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Arguments Error: Expected 0 argument(s), found 1.\n"
+        );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         unmap.run(&mut core, &["0xff".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 2 argument(s), found 1.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Arguments Error: Expected 2 argument(s), found 1.\n"
+        );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         unmap.run(&mut core, &["0b500".to_string(), "0x20".to_string()]);
@@ -295,6 +366,9 @@ mod test_mapping {
         core.stdout = Writer::new_buf();
         unmap.run(&mut core, &["0x500".to_string(), "0x20".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to unmap memory\nCannot resolve address.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to unmap memory\nCannot resolve address.\n"
+        );
     }
 }

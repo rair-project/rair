@@ -28,7 +28,13 @@ impl ListFiles {
     pub fn new(core: &mut Core) -> Self {
         let env = core.env.clone();
         env.write()
-            .add_str_with_cb("files.headerColor", "color.6", "Color used in the header of `files` command", core, is_color)
+            .add_str_with_cb(
+                "files.headerColor",
+                "color.6",
+                "Color used in the header of `files` command",
+                core,
+                is_color,
+            )
             .unwrap();
         Default::default()
     }
@@ -44,10 +50,23 @@ impl Cmd for ListFiles {
         let color = env.get_str("maps.headerColor").unwrap();
         let (r, g, b) = env.get_color(color).unwrap();
 
-        writeln!(core.stdout, "{}", Paint::rgb(r, g, b, "Handle\tStart address\tsize\t\tPermissions\tURI")).unwrap();
+        writeln!(
+            core.stdout,
+            "{}",
+            Paint::rgb(r, g, b, "Handle\tStart address\tsize\t\tPermissions\tURI")
+        )
+        .unwrap();
         for file in core.io.uri_iter() {
             let perm = format!("{:?}", file.perm());
-            write!(core.stdout, "{}\t0x{:08x}\t0x{:08x}\t{}", file.hndl(), file.paddr_base(), file.size(), perm).unwrap();
+            write!(
+                core.stdout,
+                "{}\t0x{:08x}\t0x{:08x}\t{}",
+                file.hndl(),
+                file.paddr_base(),
+                file.size(),
+                perm
+            )
+            .unwrap();
             if perm.len() < 6 {
                 write!(core.stdout, "\t").unwrap();
             }
@@ -165,7 +184,12 @@ impl Cmd for CloseFile {
         }
     }
     fn help(&self, core: &mut Core) {
-        help(core, "close", "", vec![("[hndl]", "Close file with given hndl.")]);
+        help(
+            core,
+            "close",
+            "",
+            vec![("[hndl]", "Close file with given hndl.")],
+        );
     }
 }
 
@@ -205,10 +229,26 @@ mod test_files {
         core.stdout = Writer::new_buf();
         let mut open = OpenFile::new();
         let mut close = CloseFile::new();
-        open.run(&mut core, &["b64://../../testing_binaries/rio/base64/no_padding.b64".to_string()]);
+        open.run(
+            &mut core,
+            &["b64://../../testing_binaries/rio/base64/no_padding.b64".to_string()],
+        );
         open.run(&mut core, &["rw".to_string(), "malloc://0x50".to_string()]);
-        open.run(&mut core, &["c".to_string(), "../../testing_binaries/rio/base64/one_pad.b64".to_string(), "0x5000".to_string()]);
-        open.run(&mut core, &["b64://../../testing_binaries/rio/base64/no_padding.b64".to_string(), "0xa000".to_string()]);
+        open.run(
+            &mut core,
+            &[
+                "c".to_string(),
+                "../../testing_binaries/rio/base64/one_pad.b64".to_string(),
+                "0x5000".to_string(),
+            ],
+        );
+        open.run(
+            &mut core,
+            &[
+                "b64://../../testing_binaries/rio/base64/no_padding.b64".to_string(),
+                "0xa000".to_string(),
+            ],
+        );
 
         core.run("files", &[]);
         assert_eq!(
@@ -241,8 +281,22 @@ mod test_files {
         core.stdout = Writer::new_buf();
         let mut open = OpenFile::new();
         open.run(&mut core, &["z".to_string(), "malloc://0x50".to_string()]);
-        open.run(&mut core, &["z".to_string(), "malloc://0x50".to_string(), "0x500".to_string()]);
-        open.run(&mut core, &["rw".to_string(), "malloc://0x50".to_string(), "0b500".to_string()]);
+        open.run(
+            &mut core,
+            &[
+                "z".to_string(),
+                "malloc://0x50".to_string(),
+                "0x500".to_string(),
+            ],
+        );
+        open.run(
+            &mut core,
+            &[
+                "rw".to_string(),
+                "malloc://0x50".to_string(),
+                "0b500".to_string(),
+            ],
+        );
 
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(

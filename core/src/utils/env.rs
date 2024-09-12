@@ -183,7 +183,12 @@ impl Cmd for EnvironmentReset {
         }
     }
     fn help(&self, core: &mut Core) {
-        help(core, "environmentReset", "er", vec![("[var]", "Reset [var] environment variable.")]);
+        help(
+            core,
+            "environmentReset",
+            "er",
+            vec![("[var]", "Reset [var] environment variable.")],
+        );
     }
 }
 
@@ -194,7 +199,13 @@ impl EnvironmentHelp {
     pub fn new(core: &mut Core) -> Self {
         let env = core.env.clone();
         env.write()
-            .add_str_with_cb("environmentHelp.envColor", "color.6", "Color used in the environment variable", core, is_color)
+            .add_str_with_cb(
+                "environmentHelp.envColor",
+                "color.6",
+                "Color used in the environment variable",
+                core,
+                is_color,
+            )
             .unwrap();
         Default::default()
     }
@@ -218,7 +229,12 @@ impl Cmd for EnvironmentHelp {
         }
     }
     fn help(&self, core: &mut Core) {
-        help(core, "environmentHelp", "eh", vec![("[var]", "Print help for [var] environment variable.")]);
+        help(
+            core,
+            "environmentHelp",
+            "eh",
+            vec![("[var]", "Print help for [var] environment variable.")],
+        );
     }
 }
 
@@ -260,14 +276,20 @@ mod test_env {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         core.run("eh", &["environmentHelp.envColor".to_string()]);
-        assert_eq!(core.stdout.utf8_string().unwrap(), "environmentHelp.envColor:\tColor used in the environment variable\n");
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "environmentHelp.envColor:\tColor used in the environment variable\n"
+        );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         core.run("eh", &["doesnt.exist".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to display help.\nVariable Not found\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to display help.\nVariable Not found\n"
+        );
     }
     #[test]
     fn test_env_reset() {
@@ -277,7 +299,9 @@ mod test_env {
         let mut er = EnvironmentReset::new();
         let env = core.env.clone();
         let (r, g, b) = env.read().get_color("color.1").unwrap();
-        env.write().set_color("color.1", (r + 1, g + 1, b + 1), &mut core).unwrap();
+        env.write()
+            .set_color("color.1", (r + 1, g + 1, b + 1), &mut core)
+            .unwrap();
         er.run(&mut core, &["color.1".to_string()]);
         let (r2, g2, b2) = env.read().get_color("color.1").unwrap();
         assert_eq!(r, r2);
@@ -292,13 +316,19 @@ mod test_env {
         let mut er = EnvironmentReset::new();
         er.run(&mut core, &["doest.exist".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to reset variable.\nEnvironment variable not found.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to reset variable.\nEnvironment variable not found.\n"
+        );
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         er.run(&mut core, &[]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 1 argument(s), found 0.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Arguments Error: Expected 1 argument(s), found 0.\n"
+        );
     }
     fn get_good_core() -> Core {
         let mut core = Core::new_no_colors();
@@ -307,7 +337,10 @@ mod test_env {
         core.env.write().add_u64("u", 500, "").unwrap();
         core.env.write().add_i64("i", -500, "").unwrap();
         core.env.write().add_str("s", "hello world", "").unwrap();
-        core.env.write().add_color("c", (0xff, 0xee, 0xdd), "").unwrap();
+        core.env
+            .write()
+            .add_color("c", (0xff, 0xee, 0xdd), "")
+            .unwrap();
         core
     }
     #[test]
@@ -338,7 +371,10 @@ mod test_env {
         env.run(&mut core, &["i".to_string()]);
         env.run(&mut core, &["s".to_string()]);
         env.run(&mut core, &["c".to_string()]);
-        assert_eq!(core.stdout.utf8_string().unwrap(), "false\n0x1f4\n-500\nhello world\n#ffeedd\n");
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "false\n0x1f4\n-500\nhello world\n#ffeedd\n"
+        );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
 
         core.stderr = Writer::new_buf();
@@ -355,7 +391,10 @@ mod test_env {
         env.run(&mut core, &["c".to_string()]);
         env.run(&mut core, &["b  = false".to_string()]);
         env.run(&mut core, &["b".to_string()]);
-        assert_eq!(core.stdout.utf8_string().unwrap(), "true\n0x5\n-1\nhappy birthday\n#aaaaaa\nfalse\n");
+        assert_eq!(
+            core.stdout.utf8_string().unwrap(),
+            "true\n0x5\n-1\nhappy birthday\n#aaaaaa\nfalse\n"
+        );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
 
@@ -379,7 +418,10 @@ mod test_env {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut env = Environment::new();
-        env.run(&mut core, &["b".to_string(), "=".to_string(), "true".to_string()]);
+        env.run(
+            &mut core,
+            &["b".to_string(), "=".to_string(), "true".to_string()],
+        );
         env.run(&mut core, &["b".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "true\n");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
@@ -392,19 +434,39 @@ mod test_env {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut env = Environment::new();
-        env.run(&mut core, &["b".to_string(), "=".to_string(), "true".to_string(), "extra".to_string()]);
+        env.run(
+            &mut core,
+            &[
+                "b".to_string(),
+                "=".to_string(),
+                "true".to_string(),
+                "extra".to_string(),
+            ],
+        );
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected between 0 and 3 arguments, found 4.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Arguments Error: Expected between 0 and 3 arguments, found 4.\n"
+        );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        env.run(&mut core, &["b".to_string(), "true".to_string(), "extra".to_string()]);
+        env.run(
+            &mut core,
+            &["b".to_string(), "true".to_string(), "extra".to_string()],
+        );
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to set variable.\nExpected `=` found `true`.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to set variable.\nExpected `=` found `true`.\n"
+        );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         env.run(&mut core, &["b".to_string(), "true".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to set variable.\nExpected `=`.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to set variable.\nExpected `=`.\n"
+        );
     }
     #[test]
     fn test_display_error() {
@@ -414,7 +476,10 @@ mod test_env {
         let mut env = Environment::new();
         env.run(&mut core, &["b".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to display variable.\nVariable `b` doesn't exist.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to display variable.\nVariable `b` doesn't exist.\n"
+        );
     }
 
     fn always_false(_: &str, value: bool, _: &Env<Core>, _: &mut Core) -> bool {
@@ -425,7 +490,9 @@ mod test_env {
     fn test_set_error() {
         let mut core = Core::new_no_colors();
         let env = core.env.clone();
-        env.write().add_bool_with_cb("b", false, "", &mut core, always_false).unwrap();
+        env.write()
+            .add_bool_with_cb("b", false, "", &mut core, always_false)
+            .unwrap();
         env.write().add_u64("u", 500, "").unwrap();
         env.write().add_i64("i", -500, "").unwrap();
         env.write().add_str("s", "hi", "").unwrap();
@@ -435,48 +502,72 @@ mod test_env {
         let mut env = Environment::new();
         env.run(&mut core, &["b=no".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to set variable.\nExpected `true` or `false`, found `no`.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to set variable.\nExpected `true` or `false`, found `no`.\n"
+        );
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         env.run(&mut core, &["b=true".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to set variable.\nCall back failed.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to set variable.\nCall back failed.\n"
+        );
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         env.run(&mut core, &["i=x5".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to set variable.\ninvalid digit found in string\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to set variable.\ninvalid digit found in string\n"
+        );
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         env.run(&mut core, &["u=x5".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to set variable.\ninvalid digit found in string\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to set variable.\ninvalid digit found in string\n"
+        );
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         env.run(&mut core, &["c=5".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to set variable.\nExpected color code, found `5`.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to set variable.\nExpected color code, found `5`.\n"
+        );
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         env.run(&mut core, &["c=#1x2233".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to set variable.\ninvalid digit found in string\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to set variable.\ninvalid digit found in string\n"
+        );
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         env.run(&mut core, &["c=#11x233".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to set variable.\ninvalid digit found in string\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to set variable.\ninvalid digit found in string\n"
+        );
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         env.run(&mut core, &["c=#11223x".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Failed to set variable.\ninvalid digit found in string\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Failed to set variable.\ninvalid digit found in string\n"
+        );
     }
 }

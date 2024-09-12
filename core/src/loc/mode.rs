@@ -67,7 +67,10 @@ impl Cmd for Mode {
             core,
             "mode",
             "m",
-            vec![("vir", "Set view mode to virtual address space."), ("phy", "Set view mode to physical address space.")],
+            vec![
+                ("vir", "Set view mode to virtual address space."),
+                ("phy", "Set view mode to physical address space."),
+            ],
         );
     }
 }
@@ -134,12 +137,18 @@ mod test_mode {
         let mut mode: Mode = Default::default();
         mode.run(&mut core, &[]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Arguments Error: Expected 1 argument(s), found 0.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Arguments Error: Expected 1 argument(s), found 0.\n"
+        );
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         mode.run(&mut core, &["not_real_arg".to_string()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        assert_eq!(core.stderr.utf8_string().unwrap(), "Error: Invalid Mode\nExpected vir or phy, but found not_real_arg.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Invalid Mode\nExpected vir or phy, but found not_real_arg.\n"
+        );
     }
 }

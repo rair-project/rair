@@ -24,9 +24,9 @@ use std::collections::BinaryHeap;
 
 #[derive(Default, Serialize, Deserialize)]
 pub(crate) struct RIODescQuery {
-    hndl_to_descs: Vec<Option<RIODesc>>,  // key = hndl, value = RIODesc Should it exist
-    paddr_to_hndls: IST<u64, u64>,        // key = closed range, value = hndl
-    next_hndl: u64,                       // nxt handle to be used
+    hndl_to_descs: Vec<Option<RIODesc>>, // key = hndl, value = RIODesc Should it exist
+    paddr_to_hndls: IST<u64, u64>,       // key = closed range, value = hndl
+    next_hndl: u64,                      // nxt handle to be used
     free_hndls: BinaryHeap<Reverse<u64>>, // list of free handles
 }
 
@@ -45,7 +45,12 @@ impl RIODescQuery {
         }
         result
     }
-    fn register_handle(&mut self, plugin: &mut dyn RIOPlugin, uri: &str, flags: IoMode) -> Result<u64, IoError> {
+    fn register_handle(
+        &mut self,
+        plugin: &mut dyn RIOPlugin,
+        uri: &str,
+        flags: IoMode,
+    ) -> Result<u64, IoError> {
         let mut desc = RIODesc::open(plugin, uri, flags)?;
         let hndl = self.get_new_hndl();
         desc.hndl = hndl;
@@ -66,10 +71,16 @@ impl RIODescQuery {
     }
     pub(crate) fn close(&mut self, hndl: u64) -> Result<RIODesc, IoError> {
         let desc = self.deregister_hndl(hndl)?;
-        self.paddr_to_hndls.delete_envelop(desc.paddr, desc.paddr + desc.size - 1);
+        self.paddr_to_hndls
+            .delete_envelop(desc.paddr, desc.paddr + desc.size - 1);
         Ok(desc)
     }
-    pub(crate) fn register_open(&mut self, plugin: &mut dyn RIOPlugin, uri: &str, flags: IoMode) -> Result<u64, IoError> {
+    pub(crate) fn register_open(
+        &mut self,
+        plugin: &mut dyn RIOPlugin,
+        uri: &str,
+        flags: IoMode,
+    ) -> Result<u64, IoError> {
         let hndl = self.register_handle(plugin, uri, flags)?;
         let mut lo = 0;
         let size = self.hndl_to_descs[hndl as usize].as_ref().unwrap().size;
@@ -87,7 +98,12 @@ impl RIODescQuery {
         Ok(hndl)
     }
 
-    pub(crate) fn register_open_default(&mut self, plugin: &mut dyn RIOPlugin, uri: &str, flags: IoMode) -> Result<u64, IoError> {
+    pub(crate) fn register_open_default(
+        &mut self,
+        plugin: &mut dyn RIOPlugin,
+        uri: &str,
+        flags: IoMode,
+    ) -> Result<u64, IoError> {
         let hndl = self.register_handle(plugin, uri, flags)?;
         let desc = self.hndl_to_desc(hndl).unwrap();
         let lo = desc.raddr();
@@ -101,7 +117,13 @@ impl RIODescQuery {
         Ok(hndl)
     }
 
-    pub(crate) fn register_open_at(&mut self, plugin: &mut dyn RIOPlugin, uri: &str, flags: IoMode, at: u64) -> Result<u64, IoError> {
+    pub(crate) fn register_open_at(
+        &mut self,
+        plugin: &mut dyn RIOPlugin,
+        uri: &str,
+        flags: IoMode,
+        at: u64,
+    ) -> Result<u64, IoError> {
         let hndl = self.register_handle(plugin, uri, flags)?;
         let lo = at;
         let hi = at + self.hndl_to_descs[hndl as usize].as_ref().unwrap().size - 1;
@@ -126,8 +148,17 @@ impl RIODescQuery {
         self.hndl_to_descs[hndl as usize].as_mut()
     }
     // Returns Option<Vec<hndl, start, size>>
-    pub(crate) fn paddr_range_to_hndl(&self, paddr: u64, size: u64) -> Option<Vec<(u64, u64, u64)>> {
-        let hndls: Vec<u64> = self.paddr_to_hndls.overlap(paddr, paddr + size - 1).iter().map(|x| **x).collect();
+    pub(crate) fn paddr_range_to_hndl(
+        &self,
+        paddr: u64,
+        size: u64,
+    ) -> Option<Vec<(u64, u64, u64)>> {
+        let hndls: Vec<u64> = self
+            .paddr_to_hndls
+            .overlap(paddr, paddr + size - 1)
+            .iter()
+            .map(|x| **x)
+            .collect();
         if hndls.is_empty() {
             return None;
         }
@@ -151,7 +182,12 @@ impl RIODescQuery {
     }
 
     pub(crate) fn paddr_sparce_range_to_hndl(&self, paddr: u64, size: u64) -> Vec<(u64, u64, u64)> {
-        let hndls: Vec<u64> = self.paddr_to_hndls.overlap(paddr, paddr + size - 1).iter().map(|x| **x).collect();
+        let hndls: Vec<u64> = self
+            .paddr_to_hndls
+            .overlap(paddr, paddr + size - 1)
+            .iter()
+            .map(|x| **x)
+            .collect();
         if hndls.is_empty() {
             return Vec::new();
         }
@@ -185,7 +221,11 @@ impl<'a> IntoIterator for &'a mut RIODescQuery {
     type Item = &'a mut RIODesc;
     type IntoIter = Box<dyn Iterator<Item = &'a mut RIODesc> + 'a>;
     fn into_iter(self) -> Box<dyn Iterator<Item = &'a mut RIODesc> + 'a> {
-        Box::new(self.hndl_to_descs.iter_mut().filter_map(|desc| desc.as_mut()))
+        Box::new(
+            self.hndl_to_descs
+                .iter_mut()
+                .filter_map(|desc| desc.as_mut()),
+        )
     }
 }
 
@@ -199,7 +239,9 @@ mod desc_query_tests {
         let mut p = plugin();
         let mut descs = RIODescQuery::new();
         // Test single file opening and closing
-        let mut hndl = descs.register_open(&mut *p, &path[0].to_string_lossy(), IoMode::READ).unwrap();
+        let mut hndl = descs
+            .register_open(&mut *p, &path[0].to_string_lossy(), IoMode::READ)
+            .unwrap();
         assert_eq!(descs.hndl_to_descs.len(), 1);
         assert_eq!(descs.paddr_to_hndls.size(), 1);
         assert_eq!(hndl, 0);
@@ -211,9 +253,15 @@ mod desc_query_tests {
 
         // Now lets open 3 files
         // close the second one and re opening it and see what happens
-        descs.register_open(&mut *p, &path[0].to_string_lossy(), IoMode::READ).unwrap();
-        hndl = descs.register_open(&mut *p, &path[1].to_string_lossy(), IoMode::READ).unwrap();
-        descs.register_open(&mut *p, &path[2].to_string_lossy(), IoMode::READ).unwrap();
+        descs
+            .register_open(&mut *p, &path[0].to_string_lossy(), IoMode::READ)
+            .unwrap();
+        hndl = descs
+            .register_open(&mut *p, &path[1].to_string_lossy(), IoMode::READ)
+            .unwrap();
+        descs
+            .register_open(&mut *p, &path[2].to_string_lossy(), IoMode::READ)
+            .unwrap();
         assert_eq!(descs.hndl_to_descs.len(), 3);
         assert_eq!(descs.paddr_to_hndls.size(), 3);
         let mut new_paddr = 0;
@@ -226,7 +274,9 @@ mod desc_query_tests {
         descs.close(hndl).unwrap();
         assert!(descs.hndl_to_desc(hndl).is_none());
         assert_eq!(descs.paddr_to_hndls.size(), 2);
-        descs.register_open(&mut *p, &path[1].to_string_lossy(), IoMode::READ).unwrap();
+        descs
+            .register_open(&mut *p, &path[1].to_string_lossy(), IoMode::READ)
+            .unwrap();
         assert_eq!(descs.hndl_to_descs.len(), 3);
         assert_eq!(descs.paddr_to_hndls.size(), 3);
         let mut new_paddr = 0;
@@ -247,28 +297,57 @@ mod desc_query_tests {
     fn test_open_at_cb(path: &[&Path]) {
         let mut p = plugin();
         let mut descs = RIODescQuery::new();
-        descs.register_open_at(&mut *p, &path[0].to_string_lossy(), IoMode::READ, 0x5000).unwrap();
-        assert_eq!(descs.paddr_range_to_hndl(0x5000, 1).unwrap(), vec![(0, 0x5000, 1)]);
+        descs
+            .register_open_at(&mut *p, &path[0].to_string_lossy(), IoMode::READ, 0x5000)
+            .unwrap();
+        assert_eq!(
+            descs.paddr_range_to_hndl(0x5000, 1).unwrap(),
+            vec![(0, 0x5000, 1)]
+        );
         descs.close(0).unwrap();
         assert!(descs.hndl_to_desc(0).is_none());
 
         // now lets open 3 files where each one has paddr < the one that comes firt
-        descs.register_open_at(&mut *p, &path[0].to_string_lossy(), IoMode::READ, 0x5000).unwrap();
-        descs.register_open_at(&mut *p, &path[1].to_string_lossy(), IoMode::READ, 0x5000 - DATA.len() as u64).unwrap();
-        descs.register_open(&mut *p, &path[2].to_string_lossy(), IoMode::READ).unwrap();
+        descs
+            .register_open_at(&mut *p, &path[0].to_string_lossy(), IoMode::READ, 0x5000)
+            .unwrap();
+        descs
+            .register_open_at(
+                &mut *p,
+                &path[1].to_string_lossy(),
+                IoMode::READ,
+                0x5000 - DATA.len() as u64,
+            )
+            .unwrap();
+        descs
+            .register_open(&mut *p, &path[2].to_string_lossy(), IoMode::READ)
+            .unwrap();
         assert_eq!(descs.hndl_to_descs.len(), 3);
         assert_eq!(descs.paddr_to_hndls.size(), 3);
         assert_eq!(descs.hndl_to_desc(0).as_ref().unwrap().paddr, 0x5000);
-        assert_eq!(descs.hndl_to_desc(1).as_ref().unwrap().paddr, 0x5000 - DATA.len() as u64);
+        assert_eq!(
+            descs.hndl_to_desc(1).as_ref().unwrap().paddr,
+            0x5000 - DATA.len() as u64
+        );
         assert_eq!(descs.hndl_to_desc(2).as_ref().unwrap().paddr, 0);
         //now lets the middle one and re-open it
         descs.close(1).unwrap();
-        descs.register_open_at(&mut *p, &path[1].to_string_lossy(), IoMode::READ, 0x5000 - DATA.len() as u64).unwrap();
+        descs
+            .register_open_at(
+                &mut *p,
+                &path[1].to_string_lossy(),
+                IoMode::READ,
+                0x5000 - DATA.len() as u64,
+            )
+            .unwrap();
 
         assert_eq!(descs.hndl_to_descs.len(), 3);
         assert_eq!(descs.paddr_to_hndls.size(), 3);
         assert_eq!(descs.hndl_to_desc(0).as_ref().unwrap().paddr, 0x5000);
-        assert_eq!(descs.hndl_to_desc(1).as_ref().unwrap().paddr, 0x5000 - DATA.len() as u64);
+        assert_eq!(
+            descs.hndl_to_desc(1).as_ref().unwrap().paddr,
+            0x5000 - DATA.len() as u64
+        );
         assert_eq!(descs.hndl_to_desc(2).as_ref().unwrap().paddr, 0);
     }
     #[test]
@@ -279,11 +358,26 @@ mod desc_query_tests {
     fn test_failing_open_cb(path: &[&Path]) {
         let mut p = plugin();
         let mut descs = RIODescQuery::new();
-        descs.register_open(&mut *p, &path[0].to_string_lossy(), IoMode::READ).unwrap();
-        let mut e = descs.register_open_at(&mut *p, &path[1].to_string_lossy(), IoMode::READ, 0).err().unwrap();
+        descs
+            .register_open(&mut *p, &path[0].to_string_lossy(), IoMode::READ)
+            .unwrap();
+        let mut e = descs
+            .register_open_at(&mut *p, &path[1].to_string_lossy(), IoMode::READ, 0)
+            .err()
+            .unwrap();
         assert_eq!(e, IoError::AddressesOverlapError);
-        descs.register_open(&mut *p, &path[1].to_string_lossy(), IoMode::READ).unwrap();
-        e = descs.register_open_at(&mut *p, &path[1].to_string_lossy(), IoMode::READ, DATA.len() as u64).err().unwrap();
+        descs
+            .register_open(&mut *p, &path[1].to_string_lossy(), IoMode::READ)
+            .unwrap();
+        e = descs
+            .register_open_at(
+                &mut *p,
+                &path[1].to_string_lossy(),
+                IoMode::READ,
+                DATA.len() as u64,
+            )
+            .err()
+            .unwrap();
         assert_eq!(e, IoError::AddressesOverlapError);
         e = descs.close(5).err().unwrap();
         assert_eq!(e, IoError::HndlNotFoundError);
@@ -296,12 +390,27 @@ mod desc_query_tests {
     fn test_lookups_cb(paths: &[&Path]) {
         let mut p = plugin();
         let mut descs = RIODescQuery::new();
-        descs.register_open(&mut *p, &paths[0].to_string_lossy(), IoMode::READ).unwrap();
-        descs.register_open_at(&mut *p, &paths[1].to_string_lossy(), IoMode::READ, 0x2000).unwrap();
-        descs.register_open_at(&mut *p, &paths[2].to_string_lossy(), IoMode::READ, 0x1000).unwrap();
-        assert_eq!(descs.paddr_range_to_hndl(0x10, 1).unwrap(), vec![(0, 0x10, 1)]);
-        assert_eq!(descs.paddr_range_to_hndl(0x2000, 1).unwrap(), vec![(1, 0x2000, 1)]);
-        assert_eq!(descs.paddr_range_to_hndl(0x1000, 1).unwrap(), vec![(2, 0x1000, 1)]);
+        descs
+            .register_open(&mut *p, &paths[0].to_string_lossy(), IoMode::READ)
+            .unwrap();
+        descs
+            .register_open_at(&mut *p, &paths[1].to_string_lossy(), IoMode::READ, 0x2000)
+            .unwrap();
+        descs
+            .register_open_at(&mut *p, &paths[2].to_string_lossy(), IoMode::READ, 0x1000)
+            .unwrap();
+        assert_eq!(
+            descs.paddr_range_to_hndl(0x10, 1).unwrap(),
+            vec![(0, 0x10, 1)]
+        );
+        assert_eq!(
+            descs.paddr_range_to_hndl(0x2000, 1).unwrap(),
+            vec![(1, 0x2000, 1)]
+        );
+        assert_eq!(
+            descs.paddr_range_to_hndl(0x1000, 1).unwrap(),
+            vec![(2, 0x1000, 1)]
+        );
         assert_eq!(descs.paddr_range_to_hndl(0x500, 1), None);
         assert_eq!(descs.hndl_to_desc(0).unwrap().hndl, 0);
         assert_eq!(descs.hndl_to_desc(1).unwrap().hndl, 1);
@@ -322,11 +431,23 @@ mod desc_query_tests {
         let mut p = plugin();
         let mut descs = RIODescQuery::new();
         for i in 0..3 {
-            descs.register_open(&mut *p, &paths[i].to_string_lossy(), IoMode::READ).unwrap();
+            descs
+                .register_open(&mut *p, &paths[i].to_string_lossy(), IoMode::READ)
+                .unwrap();
         }
-        descs.register_open_at(&mut *p, &paths[3].to_string_lossy(), IoMode::READ, DATA.len() as u64 * 4).unwrap();
+        descs
+            .register_open_at(
+                &mut *p,
+                &paths[3].to_string_lossy(),
+                IoMode::READ,
+                DATA.len() as u64 * 4,
+            )
+            .unwrap();
 
-        assert_eq!(descs.paddr_range_to_hndl(0, 315).unwrap(), vec![(0, 0, 105), (1, 105, 105), (2, 210, 105)]);
+        assert_eq!(
+            descs.paddr_range_to_hndl(0, 315).unwrap(),
+            vec![(0, 0, 105), (1, 105, 105), (2, 210, 105)]
+        );
         // overflow to the left
         assert_eq!(descs.paddr_range_to_hndl(330, 200), None);
         // overflow to the right
@@ -334,11 +455,20 @@ mod desc_query_tests {
         // overflow in the middle
         assert_eq!(descs.paddr_range_to_hndl(20, 500), None);
         // read from the middle of a descriptor
-        assert_eq!(descs.paddr_range_to_hndl(20, 295).unwrap(), vec![(0, 20, 85), (1, 105, 105), (2, 210, 105)]);
+        assert_eq!(
+            descs.paddr_range_to_hndl(20, 295).unwrap(),
+            vec![(0, 20, 85), (1, 105, 105), (2, 210, 105)]
+        );
         // read till the middle of descriptor
-        assert_eq!(descs.paddr_range_to_hndl(0, 295).unwrap(), vec![(0, 0, 105), (1, 105, 105), (2, 210, 85)]);
+        assert_eq!(
+            descs.paddr_range_to_hndl(0, 295).unwrap(),
+            vec![(0, 0, 105), (1, 105, 105), (2, 210, 85)]
+        );
         // read 1 part of a descriptor
-        assert_eq!(descs.paddr_range_to_hndl(425, 75).unwrap(), vec![(3, 425, 75)]);
+        assert_eq!(
+            descs.paddr_range_to_hndl(425, 75).unwrap(),
+            vec![(3, 425, 75)]
+        );
     }
 
     #[test]
@@ -350,7 +480,9 @@ mod desc_query_tests {
         let mut p = plugin();
         let mut descs = RIODescQuery::new();
         for path in paths {
-            descs.register_open(&mut *p, &path.to_string_lossy(), IoMode::READ).unwrap();
+            descs
+                .register_open(&mut *p, &path.to_string_lossy(), IoMode::READ)
+                .unwrap();
         }
         let mut paddr = 0;
         for desc in descs.into_iter() {
@@ -369,15 +501,24 @@ mod desc_query_tests {
         let mut descs = RIODescQuery::new();
         let mut start = 0;
         for i in 0..3 {
-            descs.register_open_at(&mut *p, &paths[i].to_string_lossy(), IoMode::READ, start).unwrap();
+            descs
+                .register_open_at(&mut *p, &paths[i].to_string_lossy(), IoMode::READ, start)
+                .unwrap();
             start += DATA.len() as u64 + 0x10;
         }
         let len = DATA.len() as u64;
         assert_eq!(descs.paddr_sparce_range_to_hndl(len, 0x10), Vec::new());
-        assert_eq!(descs.paddr_sparce_range_to_hndl(0, len + 0x10), vec![(0u64, 0u64, len)]);
+        assert_eq!(
+            descs.paddr_sparce_range_to_hndl(0, len + 0x10),
+            vec![(0u64, 0u64, len)]
+        );
         assert_eq!(
             descs.paddr_sparce_range_to_hndl(0, len * 3),
-            vec![(0u64, 0u64, len), (1, len + 0x10, len), (2, (len + 0x10) * 2, len - 0x20)]
+            vec![
+                (0u64, 0u64, len),
+                (1, len + 0x10, len),
+                (2, (len + 0x10) * 2, len - 0x20)
+            ]
         );
     }
 

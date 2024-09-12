@@ -66,7 +66,9 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// let mut ist: IST<u64, &'static str> = IST::new();
     /// ```
     pub fn new() -> IST<K, V> {
-        IST { root: RBTree::new() }
+        IST {
+            root: RBTree::new(),
+        }
     }
 
     /// Returns the number of elements in the IST
@@ -588,11 +590,17 @@ mod ist_tests {
         let empty_vec: Vec<&&'static str> = Vec::new();
 
         assert_eq!(ist.envelop(66, 200), [&"[66, 200]"]);
-        assert_eq!(ist.envelop(66, 70), [&"[10, 100]", &"[65, 70]", &"[66, 200]"]);
+        assert_eq!(
+            ist.envelop(66, 70),
+            [&"[10, 100]", &"[65, 70]", &"[66, 200]"]
+        );
         assert_eq!(ist.envelop(4, 9), empty_vec);
 
         assert_eq!(ist.envelop_mut(66, 200), [&"[66, 200]"]);
-        assert_eq!(ist.envelop_mut(66, 70), [&"[10, 100]", &"[65, 70]", &"[66, 200]"]);
+        assert_eq!(
+            ist.envelop_mut(66, 70),
+            [&"[10, 100]", &"[65, 70]", &"[66, 200]"]
+        );
         assert_eq!(ist.envelop_mut(4, 9), empty_vec);
     }
     #[test]
@@ -611,10 +619,28 @@ mod ist_tests {
         let mut ist = get_a_good_tree();
         let empty_vec: Vec<&&'static str> = Vec::new();
 
-        assert_eq!(ist.overlap(62, 300), [&"[10, 100]", &"[65, 70]", &"[66, 200]", &"[80, 90]", &"[85, 95]"]);
+        assert_eq!(
+            ist.overlap(62, 300),
+            [
+                &"[10, 100]",
+                &"[65, 70]",
+                &"[66, 200]",
+                &"[80, 90]",
+                &"[85, 95]"
+            ]
+        );
         assert_eq!(ist.overlap(4, 9), empty_vec);
 
-        assert_eq!(ist.overlap_mut(62, 300), [&"[10, 100]", &"[65, 70]", &"[66, 200]", &"[80, 90]", &"[85, 95]"]);
+        assert_eq!(
+            ist.overlap_mut(62, 300),
+            [
+                &"[10, 100]",
+                &"[65, 70]",
+                &"[66, 200]",
+                &"[80, 90]",
+                &"[85, 95]"
+            ]
+        );
         assert_eq!(ist.overlap_mut(4, 9), empty_vec);
     }
 

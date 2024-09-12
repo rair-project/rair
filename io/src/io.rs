@@ -223,7 +223,10 @@ impl RIO {
             let mut start = 0;
             for (hndl, paddr, size) in operations {
                 let desc = self.descs.hndl_to_mut_desc(hndl).unwrap();
-                desc.read(paddr as usize, &mut buf[start as usize..(start + size) as usize])?;
+                desc.read(
+                    paddr as usize,
+                    &mut buf[start as usize..(start + size) as usize],
+                )?;
                 start += size;
             }
             Ok(())
@@ -275,7 +278,10 @@ impl RIO {
             let mut start = 0;
             for (hndl, paddr, size) in operations {
                 let desc = self.descs.hndl_to_mut_desc(hndl).unwrap();
-                desc.write(paddr as usize, &buf[start as usize..(start + size) as usize])?;
+                desc.write(
+                    paddr as usize,
+                    &buf[start as usize..(start + size) as usize],
+                )?;
                 start += size;
             }
             Ok(())
@@ -303,7 +309,10 @@ impl RIO {
         if let Some(maps) = result {
             let mut start = 0;
             for map in maps {
-                self.pread(map.paddr, &mut buf[start as usize..(start + map.size) as usize])?;
+                self.pread(
+                    map.paddr,
+                    &mut buf[start as usize..(start + map.size) as usize],
+                )?;
                 start += map.size;
             }
             Ok(())
@@ -436,7 +445,12 @@ mod rio_tests {
         e = io.pread(0, &mut fillme);
         assert_eq!(e.err().unwrap(), IoError::AddressNotFound);
         io.open(&paths[1].to_string_lossy(), IoMode::READ).unwrap();
-        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, DATA.len() as u64 * 2 + 1).unwrap();
+        io.open_at(
+            &paths[2].to_string_lossy(),
+            IoMode::READ,
+            DATA.len() as u64 * 2 + 1,
+        )
+        .unwrap();
         fillme = vec![0; DATA.len() * 3];
         e = io.pread(0, &mut fillme);
         assert_eq!(e.err().unwrap(), IoError::AddressNotFound);
@@ -451,7 +465,8 @@ mod rio_tests {
         let mut fillme: Vec<u8> = vec![0; 8];
 
         for path in paths {
-            io.open(&path.to_string_lossy(), IoMode::READ | IoMode::WRITE).unwrap();
+            io.open(&path.to_string_lossy(), IoMode::READ | IoMode::WRITE)
+                .unwrap();
         }
         // First normal write
         io.pwrite(0, &fillme).unwrap();
@@ -474,20 +489,30 @@ mod rio_tests {
     }
     fn test_fail_pwrite_cb(paths: &[&Path]) {
         let mut io = RIO::new();
-        let permission_denied = IoError::Parse(io::Error::new(io::ErrorKind::PermissionDenied, "File Not Writable"));
+        let permission_denied = IoError::Parse(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            "File Not Writable",
+        ));
         let mut write_me: Vec<u8> = vec![0; 8];
         io.open(&paths[0].to_string_lossy(), IoMode::READ).unwrap();
         let mut e = io.pwrite(0, &mut write_me);
         assert_eq!(e.err().unwrap(), permission_denied);
         io.close(0).unwrap();
-        io.open(&paths[0].to_string_lossy(), IoMode::READ | IoMode::WRITE).unwrap();
+        io.open(&paths[0].to_string_lossy(), IoMode::READ | IoMode::WRITE)
+            .unwrap();
         e = io.pwrite(0x500, &mut write_me);
         assert_eq!(e.err().unwrap(), IoError::AddressNotFound);
         write_me = vec![0; DATA.len() + 1];
         e = io.pwrite(0, &write_me);
         assert_eq!(e.err().unwrap(), IoError::AddressNotFound);
-        io.open(&paths[1].to_string_lossy(), IoMode::READ | IoMode::WRITE).unwrap();
-        io.open_at(&paths[2].to_string_lossy(), IoMode::READ | IoMode::WRITE, DATA.len() as u64 * 2 + 1).unwrap();
+        io.open(&paths[1].to_string_lossy(), IoMode::READ | IoMode::WRITE)
+            .unwrap();
+        io.open_at(
+            &paths[2].to_string_lossy(),
+            IoMode::READ | IoMode::WRITE,
+            DATA.len() as u64 * 2 + 1,
+        )
+        .unwrap();
         write_me = vec![0; DATA.len() * 3];
         e = io.pwrite(0, &write_me);
         assert_eq!(e.err().unwrap(), IoError::AddressNotFound);
@@ -499,12 +524,17 @@ mod rio_tests {
 
     fn test_map_unmap_cb(paths: &[&Path]) {
         let mut io = RIO::new();
-        io.open_at(&paths[0].to_string_lossy(), IoMode::READ, 0x1000).unwrap();
-        io.open_at(&paths[1].to_string_lossy(), IoMode::READ, 0x2000).unwrap();
-        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, 0x3000).unwrap();
+        io.open_at(&paths[0].to_string_lossy(), IoMode::READ, 0x1000)
+            .unwrap();
+        io.open_at(&paths[1].to_string_lossy(), IoMode::READ, 0x2000)
+            .unwrap();
+        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, 0x3000)
+            .unwrap();
         io.map(0x1000, 0x400, DATA.len() as u64).unwrap();
-        io.map(0x2000, 0x400 + DATA.len() as u64, DATA.len() as u64).unwrap();
-        io.map(0x3000, 0x400 + DATA.len() as u64 * 2, DATA.len() as u64).unwrap();
+        io.map(0x2000, 0x400 + DATA.len() as u64, DATA.len() as u64)
+            .unwrap();
+        io.map(0x3000, 0x400 + DATA.len() as u64 * 2, DATA.len() as u64)
+            .unwrap();
         let mut maps = vec![
             RIOMap {
                 paddr: 0x1000,
@@ -523,7 +553,8 @@ mod rio_tests {
             },
         ];
         assert_eq!(io.vir_to_phy(0x400, DATA.len() as u64 * 3).unwrap(), maps);
-        io.unmap(0x400 + DATA.len() as u64, DATA.len() as u64 / 2).unwrap();
+        io.unmap(0x400 + DATA.len() as u64, DATA.len() as u64 / 2)
+            .unwrap();
         assert_eq!(io.vir_to_phy(0x400, DATA.len() as u64 * 3), None);
         maps = vec![RIOMap {
             paddr: 0x1000,
@@ -543,8 +574,18 @@ mod rio_tests {
                 size: DATA.len() as u64,
             },
         ];
-        assert_eq!(io.vir_to_phy(0x400 + DATA.len() as u64 * 3 / 2, DATA.len() as u64 * 2 - DATA.len() as u64 / 2).unwrap(), maps);
-        assert_eq!(io.map(0x200, 0x7000, 0x50).err().unwrap(), IoError::AddressNotFound);
+        assert_eq!(
+            io.vir_to_phy(
+                0x400 + DATA.len() as u64 * 3 / 2,
+                DATA.len() as u64 * 2 - DATA.len() as u64 / 2
+            )
+            .unwrap(),
+            maps
+        );
+        assert_eq!(
+            io.map(0x200, 0x7000, 0x50).err().unwrap(),
+            IoError::AddressNotFound
+        );
     }
     #[test]
     fn test_map_unmap() {
@@ -554,17 +595,23 @@ mod rio_tests {
     fn test_vread_cb(paths: &[&Path]) {
         let mut io = RIO::new();
         let mut fillme: Vec<u8> = vec![0; 8];
-        io.open_at(&paths[0].to_string_lossy(), IoMode::READ, 0x1000).unwrap();
-        io.open_at(&paths[1].to_string_lossy(), IoMode::READ, 0x2000).unwrap();
-        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, 0x3000).unwrap();
+        io.open_at(&paths[0].to_string_lossy(), IoMode::READ, 0x1000)
+            .unwrap();
+        io.open_at(&paths[1].to_string_lossy(), IoMode::READ, 0x2000)
+            .unwrap();
+        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, 0x3000)
+            .unwrap();
         io.map(0x1000, 0x400, DATA.len() as u64).unwrap();
-        io.map(0x2000, 0x400 + DATA.len() as u64, DATA.len() as u64).unwrap();
-        io.map(0x3000, 0x400 + DATA.len() as u64 * 2, DATA.len() as u64).unwrap();
+        io.map(0x2000, 0x400 + DATA.len() as u64, DATA.len() as u64)
+            .unwrap();
+        io.map(0x3000, 0x400 + DATA.len() as u64 * 2, DATA.len() as u64)
+            .unwrap();
         io.vread(0x400, &mut fillme).unwrap();
         assert_eq!(fillme, &DATA[0..8]);
 
         // second we read from one map into another
-        io.vread(0x400 + DATA.len() as u64 - 4, &mut fillme).unwrap();
+        io.vread(0x400 + DATA.len() as u64 - 4, &mut fillme)
+            .unwrap();
         let mut sanity_data: Vec<u8> = Vec::with_capacity(8);
         sanity_data.extend(&DATA[DATA.len() - 4..DATA.len()]);
         sanity_data.extend(&DATA[0..4]);
@@ -578,7 +625,10 @@ mod rio_tests {
         }
         io.vread(0x400, &mut fillme).unwrap();
         assert_eq!(fillme, sanity_data);
-        assert_eq!(io.vread(0x300, &mut fillme).err().unwrap(), IoError::AddressNotFound);
+        assert_eq!(
+            io.vread(0x300, &mut fillme).err().unwrap(),
+            IoError::AddressNotFound
+        );
     }
     #[test]
     fn test_vread() {
@@ -588,19 +638,37 @@ mod rio_tests {
     fn test_vwrite_cb(paths: &[&Path]) {
         let mut io = RIO::new();
         let mut fillme: Vec<u8> = vec![0; 8];
-        io.open_at(&paths[0].to_string_lossy(), IoMode::READ | IoMode::WRITE, 0x1000).unwrap();
-        io.open_at(&paths[1].to_string_lossy(), IoMode::READ | IoMode::WRITE, 0x2000).unwrap();
-        io.open_at(&paths[2].to_string_lossy(), IoMode::READ | IoMode::WRITE, 0x3000).unwrap();
+        io.open_at(
+            &paths[0].to_string_lossy(),
+            IoMode::READ | IoMode::WRITE,
+            0x1000,
+        )
+        .unwrap();
+        io.open_at(
+            &paths[1].to_string_lossy(),
+            IoMode::READ | IoMode::WRITE,
+            0x2000,
+        )
+        .unwrap();
+        io.open_at(
+            &paths[2].to_string_lossy(),
+            IoMode::READ | IoMode::WRITE,
+            0x3000,
+        )
+        .unwrap();
         io.map(0x1000, 0x400, DATA.len() as u64).unwrap();
-        io.map(0x2000, 0x400 + DATA.len() as u64, DATA.len() as u64).unwrap();
-        io.map(0x3000, 0x400 + DATA.len() as u64 * 2, DATA.len() as u64).unwrap();
+        io.map(0x2000, 0x400 + DATA.len() as u64, DATA.len() as u64)
+            .unwrap();
+        io.map(0x3000, 0x400 + DATA.len() as u64 * 2, DATA.len() as u64)
+            .unwrap();
         io.vwrite(0x400, &fillme).unwrap();
         io.vread(0x400, &mut fillme).unwrap();
         assert_eq!(fillme, &[0; 8]);
 
         // second we read from one map into another
         io.vwrite(0x400 + DATA.len() as u64 - 4, &fillme).unwrap();
-        io.vread(0x400 + DATA.len() as u64 - 4, &mut fillme).unwrap();
+        io.vread(0x400 + DATA.len() as u64 - 4, &mut fillme)
+            .unwrap();
         assert_eq!(fillme, &[0; 8]);
 
         // Now we make sure that we can read through all maps
@@ -609,7 +677,10 @@ mod rio_tests {
         io.vwrite(0x400, &mut fillme).unwrap();
         io.vread(0x400, &mut fillme).unwrap();
         assert_eq!(fillme, vec![1; DATA.len() * 3]);
-        assert_eq!(io.vwrite(0x300, &mut fillme).err().unwrap(), IoError::AddressNotFound);
+        assert_eq!(
+            io.vwrite(0x300, &mut fillme).err().unwrap(),
+            IoError::AddressNotFound
+        );
     }
     #[test]
     fn test_vwrite() {
@@ -637,19 +708,51 @@ mod rio_tests {
     fn map_iter_cb(paths: &[&Path]) {
         let mut io = RIO::new();
         let size = DATA.len() as u64;
-        io.open_at(&paths[0].to_string_lossy(), IoMode::READ, 0).unwrap();
-        io.open_at(&paths[1].to_string_lossy(), IoMode::READ, 0x100).unwrap();
-        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, 0x200).unwrap();
-        io.open_at(&paths[3].to_string_lossy(), IoMode::READ, 0x300).unwrap();
+        io.open_at(&paths[0].to_string_lossy(), IoMode::READ, 0)
+            .unwrap();
+        io.open_at(&paths[1].to_string_lossy(), IoMode::READ, 0x100)
+            .unwrap();
+        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, 0x200)
+            .unwrap();
+        io.open_at(&paths[3].to_string_lossy(), IoMode::READ, 0x300)
+            .unwrap();
         io.map(0, 0x4000, DATA.len() as u64).unwrap();
         io.map(0x100, 0x5000, size).unwrap();
         io.map(0x200, 0x2000, size).unwrap();
         io.map(0x300, 0x3000, size).unwrap();
         let mut iter = io.map_iter();
-        assert_eq!(iter.next().unwrap(), RIOMap { paddr: 0x200, vaddr: 0x2000, size });
-        assert_eq!(iter.next().unwrap(), RIOMap { paddr: 0x300, vaddr: 0x3000, size });
-        assert_eq!(iter.next().unwrap(), RIOMap { paddr: 0, vaddr: 0x4000, size });
-        assert_eq!(iter.next().unwrap(), RIOMap { paddr: 0x100, vaddr: 0x5000, size });
+        assert_eq!(
+            iter.next().unwrap(),
+            RIOMap {
+                paddr: 0x200,
+                vaddr: 0x2000,
+                size
+            }
+        );
+        assert_eq!(
+            iter.next().unwrap(),
+            RIOMap {
+                paddr: 0x300,
+                vaddr: 0x3000,
+                size
+            }
+        );
+        assert_eq!(
+            iter.next().unwrap(),
+            RIOMap {
+                paddr: 0,
+                vaddr: 0x4000,
+                size
+            }
+        );
+        assert_eq!(
+            iter.next().unwrap(),
+            RIOMap {
+                paddr: 0x100,
+                vaddr: 0x5000,
+                size
+            }
+        );
         assert_eq!(iter.next(), None);
     }
     #[test]
@@ -661,7 +764,8 @@ mod rio_tests {
         let mut io = RIO::new();
         let mut start = 0;
         for i in 0..3 {
-            io.open_at(&paths[i].to_string_lossy(), IoMode::READ, start).unwrap();
+            io.open_at(&paths[i].to_string_lossy(), IoMode::READ, start)
+                .unwrap();
             start += DATA.len() as u64 + 0x10;
         }
         let len = DATA.len() as u64;
@@ -687,9 +791,12 @@ mod rio_tests {
     fn vread_sparce_cb(paths: &[&Path]) {
         let mut io = RIO::new();
         let len = DATA.len() as u64;
-        io.open_at(&paths[0].to_string_lossy(), IoMode::READ, 0x1000).unwrap();
-        io.open_at(&paths[1].to_string_lossy(), IoMode::READ, 0x2000).unwrap();
-        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, 0x3000).unwrap();
+        io.open_at(&paths[0].to_string_lossy(), IoMode::READ, 0x1000)
+            .unwrap();
+        io.open_at(&paths[1].to_string_lossy(), IoMode::READ, 0x2000)
+            .unwrap();
+        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, 0x3000)
+            .unwrap();
         io.map(0x1000, 0x400, len).unwrap();
         io.map(0x2000, 0x400 + len + 0x10, len).unwrap();
         io.map(0x3000, 0x400 + (len + 0x10) * 2, len).unwrap();
@@ -715,9 +822,12 @@ mod rio_tests {
     fn phy_to_vir_cb(paths: &[&Path]) {
         let mut io = RIO::new();
         let len = DATA.len() as u64;
-        io.open_at(&paths[0].to_string_lossy(), IoMode::READ, 0x0).unwrap();
-        io.open_at(&paths[1].to_string_lossy(), IoMode::READ, 0x200).unwrap();
-        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, 0x400).unwrap();
+        io.open_at(&paths[0].to_string_lossy(), IoMode::READ, 0x0)
+            .unwrap();
+        io.open_at(&paths[1].to_string_lossy(), IoMode::READ, 0x200)
+            .unwrap();
+        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, 0x400)
+            .unwrap();
         io.map(0, 0x4000, len).unwrap();
         io.map(0x200, 0x5000, len).unwrap();
         io.map(0x400, 0x2000, len).unwrap();
@@ -726,7 +836,10 @@ mod rio_tests {
         io.map(0, 0x8000, len).unwrap();
         io.map(0, 0x9000, len).unwrap();
         io.map(0, 0x10000, len).unwrap();
-        assert_eq!(io.phy_to_vir(0x45), vec![0x4045, 0x6045, 0x7045, 0x8045, 0x9045, 0x10045]);
+        assert_eq!(
+            io.phy_to_vir(0x45),
+            vec![0x4045, 0x6045, 0x7045, 0x8045, 0x9045, 0x10045]
+        );
         assert_eq!(io.phy_to_vir(0x245), vec![0x5045]);
         assert_eq!(io.phy_to_vir(700), Vec::<u64>::new());
     }
@@ -737,7 +850,9 @@ mod rio_tests {
     }
     fn hndl_to_desc_cb(path: &Path) {
         let mut io = RIO::new();
-        let hndl = io.open_at(&path.to_string_lossy(), IoMode::READ, 0x0).unwrap();
+        let hndl = io
+            .open_at(&path.to_string_lossy(), IoMode::READ, 0x0)
+            .unwrap();
         assert!(io.hndl_to_desc(hndl + 1).is_none());
         let desc = io.hndl_to_desc(hndl).unwrap();
         assert_eq!(desc.size() as usize, DATA.len());
@@ -750,12 +865,17 @@ mod rio_tests {
     }
     fn serde_cb(paths: &[&Path]) {
         let mut io = RIO::new();
-        io.open_at(&paths[0].to_string_lossy(), IoMode::READ, 0x1000).unwrap();
-        io.open_at(&paths[1].to_string_lossy(), IoMode::READ, 0x2000).unwrap();
-        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, 0x3000).unwrap();
+        io.open_at(&paths[0].to_string_lossy(), IoMode::READ, 0x1000)
+            .unwrap();
+        io.open_at(&paths[1].to_string_lossy(), IoMode::READ, 0x2000)
+            .unwrap();
+        io.open_at(&paths[2].to_string_lossy(), IoMode::READ, 0x3000)
+            .unwrap();
         io.map(0x1000, 0x400, DATA.len() as u64).unwrap();
-        io.map(0x2000, 0x400 + DATA.len() as u64, DATA.len() as u64).unwrap();
-        io.map(0x3000, 0x400 + DATA.len() as u64 * 2, DATA.len() as u64).unwrap();
+        io.map(0x2000, 0x400 + DATA.len() as u64, DATA.len() as u64)
+            .unwrap();
+        io.map(0x3000, 0x400 + DATA.len() as u64 * 2, DATA.len() as u64)
+            .unwrap();
         let serialized = serde_json::to_string(&io).unwrap();
         drop(io);
         io = serde_json::from_str(&serialized).unwrap();
