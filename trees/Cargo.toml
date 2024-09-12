@@ -8,6 +8,7 @@ keywords = ["Trees", "Intervals", "BST", "BK"]
 description = "A Bunch of completely safe augmented tree implementation in rust"
 categories = ["Data structures", "Memory management"]
 readme = "readme.md"
+edition = "2021"
 
 [features]
 

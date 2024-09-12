@@ -1,6 +1,5 @@
 //! Copy of iter.rs except for it deals with references :(.
 
-
 use super::rbtree_wrapper::{Augment, RBTree};
 
 // In case of iter we would tear down the tree structure and consumed nodes will no

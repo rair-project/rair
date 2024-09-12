@@ -1,6 +1,5 @@
 //! Non Empty node Implementation.
 
-
 use super::color::Color;
 use super::rbtree_wrapper::*;
 use std::cmp::max;
