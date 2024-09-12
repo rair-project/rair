@@ -3,8 +3,7 @@
 use super::defaultplugin;
 use crate::plugin::*;
 use crate::utils::*;
-use base64;
-use base64::{decode_config_slice, encode_config_slice};
+use base64::prelude::*;
 use std::cmp;
 use std::io;
 use std::path::Path;
@@ -38,7 +37,10 @@ impl Base64Internal {
         let mut b64data = [0; 4];
         let mut decoded_data = [0; 3];
         self.file.read(b64base, &mut b64data)?;
-        if decode_config_slice(&b64data, base64::STANDARD, &mut decoded_data).is_err() {
+        if BASE64_STANDARD
+            .decode_slice(b64data, &mut decoded_data)
+            .is_err()
+        {
             return Err(IoError::Custom("Corrupted base64 data".to_string()));
         }
         buffer[0..size].copy_from_slice(&decoded_data[offset..offset + size]);
@@ -61,7 +63,10 @@ impl Base64Internal {
         let mut b64data = [0; 4];
         let mut decoded_data = [0; 3];
         self.file.read(b64base, &mut b64data)?;
-        if decode_config_slice(&b64data, base64::STANDARD, &mut decoded_data).is_err() {
+        if BASE64_STANDARD
+            .decode_slice(b64data, &mut decoded_data)
+            .is_err()
+        {
             return Err(IoError::Custom("Corrupted base64 data".to_string()));
         }
         buffer[offset..].copy_from_slice(&decoded_data[0..size]);
@@ -85,7 +90,7 @@ impl Base64Internal {
         let b64addr = raddr / 3 * 4;
         let mut b64data = vec![0; b64size];
         self.file.read(b64addr, &mut b64data)?;
-        if decode_config_slice(&b64data, base64::STANDARD, buffer).is_err() {
+        if BASE64_STANDARD.decode_slice(b64data, buffer).is_err() {
             return Err(IoError::Custom("Corrupted base64 data".to_string()));
         }
         Ok(())
@@ -106,11 +111,16 @@ impl Base64Internal {
         let mut b64data = [0; 4];
         let mut decoded_data = [0; 3];
         self.file.read(b64base, &mut b64data)?;
-        if decode_config_slice(&b64data, base64::STANDARD, &mut decoded_data).is_err() {
+        if BASE64_STANDARD
+            .decode_slice(b64data, &mut decoded_data)
+            .is_err()
+        {
             return Err(IoError::Custom("Corrupted base64 data".to_string()));
         }
         decoded_data[offset..offset + size].copy_from_slice(&buffer[0..size]);
-        encode_config_slice(&decoded_data, base64::STANDARD, &mut b64data);
+        BASE64_STANDARD
+            .encode_slice(decoded_data, &mut b64data)
+            .unwrap();
         self.file.write(b64base, &b64data)?;
         Ok((raddr + size, &buffer[size..]))
     }
@@ -131,11 +141,16 @@ impl Base64Internal {
         let mut b64data = [0; 4];
         let mut decoded_data = [0; 3];
         self.file.read(b64base, &mut b64data)?;
-        if decode_config_slice(&b64data, base64::STANDARD, &mut decoded_data).is_err() {
+        if BASE64_STANDARD
+            .decode_slice(b64data, &mut decoded_data)
+            .is_err()
+        {
             return Err(IoError::Custom("Corrupted base64 data".to_string()));
         }
         decoded_data[0..size].copy_from_slice(&buffer[offset..]);
-        encode_config_slice(&decoded_data, base64::STANDARD, &mut b64data);
+        BASE64_STANDARD
+            .encode_slice(decoded_data, &mut b64data)
+            .unwrap();
         self.file.write(b64base, &b64data)?;
         Ok((raddr, &buffer[..offset]))
     }
@@ -156,7 +171,7 @@ impl Base64Internal {
         let b64size = buffer.len() / 3 * 4;
         let b64addr = raddr / 3 * 4;
         let mut b64data = vec![0; b64size];
-        encode_config_slice(buffer, base64::STANDARD, &mut b64data);
+        BASE64_STANDARD.encode_slice(buffer, &mut b64data).unwrap();
         self.file.write(b64addr, &b64data)?;
         Ok(())
     }
