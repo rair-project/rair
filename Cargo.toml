@@ -2,7 +2,7 @@
 members = [
   "core",
   "env",
-  "rair-io",
+  "io",
   "rtrees",
   "test_file",
 ]

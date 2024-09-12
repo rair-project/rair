@@ -12,7 +12,7 @@ readme = "../readme.md"
 [dependencies]
 flate2 = "1.0"
 rair-env = {path = "../env"}
-rair-io = {path = "../rair-io"}
+rair-io = {path = "../io"}
 rtrees = {path = "../rtrees"}
 serde = { version = "1.0", features = ["derive"]}
 serde_cbor = "0.10"
