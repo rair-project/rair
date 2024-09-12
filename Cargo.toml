@@ -1,8 +1,8 @@
 [workspace]
 members = [
-  "rair-env",
+  "core",
+  "env",
   "rair-io",
   "rtrees",
   "test_file",
-  "core"
 ]
