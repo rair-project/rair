@@ -11,7 +11,7 @@ const APPINFO: AppInfo = AppInfo {
 pub fn hist_file() -> PathBuf {
     let mut history = app_dir(AppDataType::UserData, &APPINFO, "/").unwrap();
     history.push("history");
-    return history;
+    history
 }
 
 #[cfg(test)]

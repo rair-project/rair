@@ -11,5 +11,5 @@ pub fn init_editor_from_core(core: &mut Core) -> Editor<LineFormatter> {
         .build();
     let mut editor = Editor::with_config(config);
     editor.set_helper(Some(LineFormatter::new(core.commands())));
-    return editor;
+    editor
 }

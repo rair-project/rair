@@ -100,16 +100,16 @@ fn run_cmd(core: &mut Core, cmd: Cmd) {
 fn create_redirect(core: &mut Core, arg: Argument) -> Result<Writer, String> {
     let file_name = eval_arg(core, arg)?;
     match File::create(file_name) {
-        Ok(f) => return Ok(Writer::new_write(Box::new(f))),
-        Err(e) => return Err(e.to_string()),
+        Ok(f) => Ok(Writer::new_write(Box::new(f))),
+        Err(e) => Err(e.to_string()),
     }
 }
 
 fn create_redirect_cat(core: &mut Core, arg: Argument) -> Result<Writer, String> {
     let file_name = eval_arg(core, arg)?;
     match OpenOptions::new().append(true).open(file_name) {
-        Ok(f) => return Ok(Writer::new_write(Box::new(f))),
-        Err(e) => return Err(e.to_string()),
+        Ok(f) => Ok(Writer::new_write(Box::new(f))),
+        Err(e) => Err(e.to_string()),
     }
 }
 
@@ -127,16 +127,16 @@ fn create_pipe(
         .stdout(Stdio::piped())
         .spawn()
     {
-        Err(why) => return Err(why.to_string()),
-        Ok(process) => return Ok((process, Writer::new_buf())),
-    };
+        Err(why) => Err(why.to_string()),
+        Ok(process) => Ok((process, Writer::new_buf())),
+    }
 }
 
 fn eval_arg(core: &mut Core, arg: Argument) -> Result<String, String> {
     match arg {
-        Argument::Literal(s) => return Ok(s),
-        Argument::Err(e) => return Err(e.to_string()),
-        Argument::NonLiteral(c) => return eval_non_literal_arg(core, c),
+        Argument::Literal(s) => Ok(s),
+        Argument::Err(e) => Err(e.to_string()),
+        Argument::NonLiteral(c) => eval_non_literal_arg(core, c),
     }
 }
 
@@ -154,9 +154,9 @@ fn eval_non_literal_arg(core: &mut Core, cmd: Cmd) -> Result<String, String> {
 
     let err = stderr.utf8_string().unwrap();
     if err.is_empty() {
-        return Err(err);
+        Err(err)
     } else {
         let out = stdout.utf8_string().unwrap();
-        return Ok(out);
+        Ok(out)
     }
 }

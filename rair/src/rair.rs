@@ -31,9 +31,9 @@ fn check_matches(matches: &ArgMatches) -> Result<Matches, &'static str> {
         return Err("You cannot set permissions when opening a project");
     }
     if proj.is_some() {
-        return Ok(Matches::Project);
+        Ok(Matches::Project)
     } else {
-        return Ok(Matches::File);
+        Ok(Matches::File)
     }
 }
 fn match_file(core: &mut Core, matches: &ArgMatches) {

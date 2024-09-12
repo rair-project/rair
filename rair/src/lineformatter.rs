@@ -40,7 +40,7 @@ impl LineFormatter {
                         replacement,
                     });
                 }
-                return Ok((0, ret));
+                Ok((0, ret))
             }
             // if it is command
             // first if we are taking arguments no autocomplate else autocomplete normally ;)
@@ -57,9 +57,9 @@ impl LineFormatter {
                         replacement,
                     });
                 }
-                return Ok((0, ret));
+                Ok((0, ret))
             }
-            _ => return Ok((0, Vec::new())),
+            _ => Ok((0, Vec::new())),
         }
     }
 }
@@ -90,8 +90,8 @@ impl Completer for LineFormatter {
         // next we parse the line
         let t = ParseTree::construct(&line[0..p]);
         match t {
-            Err(_) => return Ok((0, Vec::new())),
-            Ok(tree) => return self.tree_complete(tree),
+            Err(_) => Ok((0, Vec::new())),
+            Ok(tree) => self.tree_complete(tree),
         }
     }
 }
