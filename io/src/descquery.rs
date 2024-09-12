@@ -416,9 +416,9 @@ mod desc_query_tests {
     fn paddr_range_to_hndl_cb(paths: &[&Path]) {
         let mut p = plugin();
         let mut descs = RIODescQuery::new();
-        for i in 0..3 {
+        for path in paths.iter().take(3) {
             descs
-                .register_open(&mut *p, &paths[i].to_string_lossy(), IoMode::READ)
+                .register_open(&mut *p, &path.to_string_lossy(), IoMode::READ)
                 .unwrap();
         }
         descs
@@ -486,9 +486,9 @@ mod desc_query_tests {
         let mut p = plugin();
         let mut descs = RIODescQuery::new();
         let mut start = 0;
-        for i in 0..3 {
+        for path in paths {
             descs
-                .register_open_at(&mut *p, &paths[i].to_string_lossy(), IoMode::READ, start)
+                .register_open_at(&mut *p, &path.to_string_lossy(), IoMode::READ, start)
                 .unwrap();
             start += DATA.len() as u64 + 0x10;
         }

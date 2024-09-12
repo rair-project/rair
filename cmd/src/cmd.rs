@@ -120,8 +120,10 @@ mod test_normal_cmd {
             .next()
             .unwrap();
         let cmd = Cmd::parse_cmd(root).unwrap();
-        let mut target: Cmd = Default::default();
-        target.command = "aa".to_string();
+        let target = Cmd {
+            command: "aa".to_string(),
+            ..Default::default()
+        };
         assert_eq!(cmd, target);
     }
     #[test]
@@ -131,16 +133,20 @@ mod test_normal_cmd {
             .next()
             .unwrap();
         let cmd = Cmd::parse_cmd(root).unwrap();
-        let mut target: Cmd = Default::default();
-        target.command = "aa".to_string();
-        target.args.push(Argument::Literal("bb".to_string()));
-        target.args.push(Argument::Literal("cc dd".to_string()));
-        target.args.push(Argument::NonLiteral(Cmd {
-            command: "ee".to_string(),
-            args: vec![Argument::Literal("ff".to_string())],
-            loc: None,
-            red_pipe: Box::new(RedPipe::None),
-        }));
+        let target = Cmd {
+            command: "aa".to_string(),
+            args: vec![
+                Argument::Literal("bb".to_string()),
+                Argument::Literal("cc dd".to_string()),
+                Argument::NonLiteral(Cmd {
+                    command: "ee".to_string(),
+                    args: vec![Argument::Literal("ff".to_string())],
+                    loc: None,
+                    red_pipe: Box::new(RedPipe::None),
+                }),
+            ],
+            ..Default::default()
+        };
         assert_eq!(cmd, target);
     }
     #[test]
@@ -150,10 +156,14 @@ mod test_normal_cmd {
             .next()
             .unwrap();
         let cmd = Cmd::parse_cmd(root).unwrap();
-        let mut target: Cmd = Default::default();
-        target.command = "aa".to_string();
-        target.args.push(Argument::Literal("bb".to_string()));
-        target.args.push(Argument::Literal("cc".to_string()));
+        let target = Cmd {
+            command: "aa".to_string(),
+            args: vec![
+                Argument::Literal("bb".to_string()),
+                Argument::Literal("cc".to_string()),
+            ],
+            ..Default::default()
+        };
         assert_eq!(cmd, target);
     }
 
@@ -164,9 +174,11 @@ mod test_normal_cmd {
             .next()
             .unwrap();
         let mut cmd = Cmd::parse_cmd(root).unwrap();
-        let mut target: Cmd = Default::default();
-        target.command = "aa".to_string();
-        target.loc = Some(0x500);
+        let mut target = Cmd {
+            command: "aa".to_string(),
+            loc: Some(0x500),
+            ..Default::default()
+        };
         assert_eq!(cmd, target);
 
         root = CliParser::parse(Rule::CommandLine, "aa @ 500")
@@ -209,11 +221,13 @@ mod test_normal_cmd {
             .next()
             .unwrap();
         let mut cmd = Cmd::parse_cmd(root).unwrap();
-        let mut target: Cmd = Default::default();
-        target.command = "aa".to_string();
-        target.red_pipe = Box::new(RedPipe::Pipe(vec![Argument::Literal(
-            "/bin/ls".to_string(),
-        )]));
+        let mut target = Cmd {
+            command: "aa".to_string(),
+            red_pipe: Box::new(RedPipe::Pipe(vec![Argument::Literal(
+                "/bin/ls".to_string(),
+            )])),
+            ..Default::default()
+        };
         assert_eq!(cmd, target);
 
         root = CliParser::parse(Rule::CommandLine, "aa > outfile")

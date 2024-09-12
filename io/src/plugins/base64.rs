@@ -366,7 +366,7 @@ mod test_base64 {
         file.plugin_operations.write(0, b"Th").unwrap();
         file.plugin_operations.read(0, &mut d2).unwrap();
         assert_eq!(&d2[..], &b"Th"[..]);
-        let e = file.plugin_operations.write(1, &mut d2).err().unwrap();
+        let e = file.plugin_operations.write(1, &d2).err().unwrap();
         assert_eq!(
             e,
             IoError::Parse(io::Error::new(

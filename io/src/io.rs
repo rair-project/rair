@@ -481,12 +481,12 @@ mod rio_tests {
         ));
         let mut write_me: Vec<u8> = vec![0; 8];
         io.open(&paths[0].to_string_lossy(), IoMode::READ).unwrap();
-        let mut e = io.pwrite(0, &mut write_me);
+        let mut e = io.pwrite(0, &write_me);
         assert_eq!(e.err().unwrap(), permission_denied);
         io.close(0).unwrap();
         io.open(&paths[0].to_string_lossy(), IoMode::READ | IoMode::WRITE)
             .unwrap();
-        e = io.pwrite(0x500, &mut write_me);
+        e = io.pwrite(0x500, &write_me);
         assert_eq!(e.err().unwrap(), IoError::AddressNotFound);
         write_me = vec![0; DATA.len() + 1];
         e = io.pwrite(0, &write_me);
@@ -660,11 +660,11 @@ mod rio_tests {
         // Now we make sure that we can read through all maps
 
         fillme = vec![1; DATA.len() * 3];
-        io.vwrite(0x400, &mut fillme).unwrap();
+        io.vwrite(0x400, &fillme).unwrap();
         io.vread(0x400, &mut fillme).unwrap();
         assert_eq!(fillme, vec![1; DATA.len() * 3]);
         assert_eq!(
-            io.vwrite(0x300, &mut fillme).err().unwrap(),
+            io.vwrite(0x300, &fillme).err().unwrap(),
             IoError::AddressNotFound
         );
     }
@@ -749,8 +749,8 @@ mod rio_tests {
     fn pread_sparce_cb(paths: &[&Path]) {
         let mut io = RIO::new();
         let mut start = 0;
-        for i in 0..3 {
-            io.open_at(&paths[i].to_string_lossy(), IoMode::READ, start)
+        for path in paths {
+            io.open_at(&(path).to_string_lossy(), IoMode::READ, start)
                 .unwrap();
             start += DATA.len() as u64 + 0x10;
         }

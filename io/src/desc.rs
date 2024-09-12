@@ -130,13 +130,13 @@ mod default_plugin_tests {
         let mut e = desc.read((desc.paddr + desc.size) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
-            _ => assert!(true, "UnexpectedEof Error should have been generated"),
+            _ => panic!("UnexpectedEof Error should have been generated"),
         };
         // read at the middle past the the end
         e = desc.read((desc.paddr + desc.size - 5) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
-            _ => assert!(true, "UnexpectedEof Error should have been generated"),
+            _ => panic!("UnexpectedEof Error should have been generated"),
         };
 
         // read at the start past the end
@@ -145,7 +145,7 @@ mod default_plugin_tests {
         e = desc.read(desc.paddr as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
-            _ => assert!(true, "UnexpectedEof Error should have been generated"),
+            _ => panic!("UnexpectedEof Error should have been generated"),
         };
     }
     #[test]
@@ -196,13 +196,13 @@ mod default_plugin_tests {
         let mut e = desc.write((desc.paddr + desc.size) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
-            _ => assert!(true, "UnexpectedEof Error should have been generated"),
+            _ => panic!("UnexpectedEof Error should have been generated"),
         };
         // middle at the middle past the the end
         e = desc.write((desc.paddr + desc.size - 5) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
-            _ => assert!(true, "UnexpectedEof Error should have been generated"),
+            _ => panic!("UnexpectedEof Error should have been generated"),
         };
         // read at the start past the end
         let v: Vec<u8> = vec![0; (desc.size + 8) as usize];
@@ -210,7 +210,7 @@ mod default_plugin_tests {
         e = desc.write(desc.paddr as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
-            _ => assert!(true, "UnexpectedEof Error should have been generated"),
+            _ => panic!("UnexpectedEof Error should have been generated"),
         };
     }
     #[test]

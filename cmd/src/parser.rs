@@ -42,8 +42,10 @@ mod test_parser {
         );
         assert!(ParseTree::construct("aa withargument? #and a little comment").is_err());
         tree = ParseTree::construct("aa #and a little comment").unwrap();
-        let mut cmd: Cmd = Default::default();
-        cmd.command = "aa".to_string();
+        let cmd: Cmd = Cmd {
+            command: "aa".to_string(),
+            ..Default::default()
+        };
         assert_eq!(tree, ParseTree::Cmd(cmd));
         tree = ParseTree::construct("#and a little comment").unwrap();
         assert_eq!(tree, ParseTree::Comment);

@@ -540,14 +540,13 @@ mod rbtree_tests {
             blackvec.push(blackcounter + 1);
             return 0;
         }
-        let newbc;
-        if tree.is_red() {
+        let newbc = if tree.is_red() {
             assert!(!tree.left_ref().is_red());
             assert!(!tree.right_ref().is_red());
-            newbc = blackcounter;
+            blackcounter
         } else {
-            newbc = blackcounter + 1
-        }
+            blackcounter + 1
+        };
         let l1 = dfs(tree.left_ref(), counter, newbc, blackvec);
         assert_eq!(tree.data_ref(), &tree.key());
         *counter += 1;

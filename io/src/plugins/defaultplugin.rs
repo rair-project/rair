@@ -177,7 +177,7 @@ mod default_plugin_tests {
             Err(IoError::Parse(io_err)) => {
                 assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied)
             }
-            _ => assert!(false, "Permission Denied Error should have been generated"),
+            _ => panic!("Permission Denied Error should have been generated"),
         };
 
         e = plugin.open(&paths[3].to_string_lossy(), IoMode::READ | IoMode::COW);
@@ -185,7 +185,7 @@ mod default_plugin_tests {
             Err(IoError::Parse(io_err)) => {
                 assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied)
             }
-            _ => assert!(false, "Permission Denied Error should have been generated"),
+            _ => panic!("Permission Denied Error should have been generated"),
         };
 
         e = plugin.open(
@@ -196,7 +196,7 @@ mod default_plugin_tests {
             Err(IoError::Parse(io_err)) => {
                 assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied)
             }
-            _ => assert!(false, "Permission Denied Error should have been generated"),
+            _ => panic!("Permission Denied Error should have been generated"),
         };
     }
     #[test]
@@ -238,7 +238,7 @@ mod default_plugin_tests {
             .read((desc.raddr + desc.size) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
-            _ => assert!(true, "UnexpectedEof Error should have been generated"),
+            _ => panic!("UnexpectedEof Error should have been generated"),
         };
         // read at the middle past the the end
         e = desc
@@ -246,7 +246,7 @@ mod default_plugin_tests {
             .read((desc.raddr + desc.size - 5) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
-            _ => assert!(true, "UnexpectedEof Error should have been generated"),
+            _ => panic!("UnexpectedEof Error should have been generated"),
         };
 
         // read at the start past the end
@@ -255,7 +255,7 @@ mod default_plugin_tests {
         e = desc.plugin_operations.read(desc.raddr as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
-            _ => assert!(true, "UnexpectedEof Error should have been generated"),
+            _ => panic!("UnexpectedEof Error should have been generated"),
         };
     }
     #[test]
@@ -312,7 +312,7 @@ mod default_plugin_tests {
             .write((desc.raddr + desc.size) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
-            _ => assert!(true, "UnexpectedEof Error should have been generated"),
+            _ => panic!("UnexpectedEof Error should have been generated"),
         };
         // middle at the middle past the the end
         e = desc
@@ -320,7 +320,7 @@ mod default_plugin_tests {
             .write((desc.raddr + desc.size - 5) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
-            _ => assert!(true, "UnexpectedEof Error should have been generated"),
+            _ => panic!("UnexpectedEof Error should have been generated"),
         };
         // read at the start past the end
         let v: Vec<u8> = vec![0; (desc.size + 8) as usize];
@@ -328,7 +328,7 @@ mod default_plugin_tests {
         e = desc.plugin_operations.write(desc.raddr as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
-            _ => assert!(true, "UnexpectedEof Error should have been generated"),
+            _ => panic!("UnexpectedEof Error should have been generated"),
         };
     }
     #[test]
