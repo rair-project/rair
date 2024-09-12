@@ -3,13 +3,12 @@ name = "test_file"
 version = "0.1.0"
 authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
 license = "LGPL"
-repository = "https://github.com/oddcoder/rair"
+repository = "https://github.com/Rair-Project/rair"
 keywords = ["Temp File", "Unit testing", "Address Space"]
 description = "IO subsystem for RAIR"
 categories = ["Testing"]
 readme = "readme.md"
-
-
+edition = "2021"
 
 [dependencies]
-tempfile = "3.1.0"
+tempfile = {workspace = true}
