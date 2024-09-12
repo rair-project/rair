@@ -42,7 +42,7 @@ impl Cmd for ListFiles {
         )
         .unwrap();
         for file in core.io.uri_iter() {
-            let perm = format!("{:?}", file.perm());
+            let perm = format!("{}", file.perm());
             write!(
                 core.stdout,
                 "{}\t0x{:08x}\t0x{:08x}\t{}",

@@ -1,13 +1,14 @@
 //! Utility data structures for managing RIO.
 
 use bitflags::bitflags;
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::io;
 
 bitflags! {
     /// Set the mode for opening files.
-    #[derive(Default, Serialize, Deserialize)]
+    #[derive(Default, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Debug)]
     pub struct IoMode: u64 {
     /// Open File in read mode.
     const WRITE = 2;
@@ -15,6 +16,13 @@ bitflags! {
     const READ = 4;
     /// Open file in Copy-On-Write mode.
     const COW = 8;
+    }
+}
+
+impl fmt::Display for IoMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = self.iter_names().map(|(name, _)| name).join(" | ");
+        f.write_str(&s)
     }
 }
 

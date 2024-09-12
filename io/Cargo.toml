@@ -13,7 +13,8 @@ edition = "2021"
 [dependencies]
 rair-trees = {workspace = true, features = ["serialize"]}
 serde = {workspace = true, features = ["derive", "rc"]}
-bitflags = {workspace = true}
+bitflags = {workspace = true, features = ["serde"]}
+itertools = {workspace = true}
 memmap = {workspace = true}
 nom = {workspace = true}
 base64 = {workspace = true}
