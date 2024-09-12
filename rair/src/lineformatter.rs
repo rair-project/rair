@@ -16,8 +16,8 @@
  */
 
 use parking_lot::Mutex;
-use rcmd::*;
-use rcore::Commands;
+use rair_cmd::*;
+use rair_core::Commands;
 use rustyline::completion::{Completer, Pair};
 use rustyline::error::ReadlineError;
 use rustyline::highlight::Highlighter;

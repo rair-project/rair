@@ -205,7 +205,7 @@ where
     /// Returns new Red Black Tree
     /// # Example
     /// ```
-    /// use rtrees::rbtree::*;
+    /// use rair_trees::rbtree::*;
     /// #[derive(Copy, Clone)]
     /// struct PlaceHolder();
     /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
@@ -219,7 +219,7 @@ where
     /// Returns the number of elements in the tree
     /// # Example
     /// ```
-    /// use rtrees::rbtree::*;
+    /// use rair_trees::rbtree::*;
     /// #[derive(Copy, Clone)]
     /// struct PlaceHolder();
     /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
@@ -245,7 +245,7 @@ where
     /// returns 1 + the number of connections between root and the farthest node from it.
     /// # Example
     /// ```
-    /// use rtrees::rbtree::*;
+    /// use rair_trees::rbtree::*;
     /// #[derive(Copy, Clone)]
     /// struct PlaceHolder();
     /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
@@ -306,7 +306,7 @@ where
     ///
     /// # Example
     /// ```
-    /// use rtrees::rbtree::*;
+    /// use rair_trees::rbtree::*;
     /// #[derive(Copy, Clone)]
     /// struct PlaceHolder();
     /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
@@ -340,7 +340,7 @@ where
     /// *data* will silently be repalced by the new *data*.
     /// # Example
     /// ```
-    /// use rtrees::rbtree::*;
+    /// use rair_trees::rbtree::*;
     /// #[derive(Copy, Clone)]
     /// struct PlaceHolder();
     /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, u64> {}
@@ -372,7 +372,7 @@ where
     /// Returns a non mutable references of the data stored at *key*
     /// #example
     /// ```
-    /// use rtrees::rbtree::*;
+    /// use rair_trees::rbtree::*;
     /// #[derive(Copy, Clone)]
     /// struct PlaceHolder();
     /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
@@ -400,7 +400,7 @@ where
     /// We assume that in mutable search caller might modify augmented data,
     /// #example
     /// ```
-    /// use rtrees::rbtree::*;
+    /// use rair_trees::rbtree::*;
     /// #[derive(Copy, Clone)]
     /// struct PlaceHolder();
     /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, String> {}
@@ -467,7 +467,7 @@ where
     ///
     /// # Example
     /// ```
-    /// use rtrees::rbtree::*;
+    /// use rair_trees::rbtree::*;
     /// #[derive(Copy, Clone)]
     /// struct PlaceHolder();
     /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}

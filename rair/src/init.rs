@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use lineformatter::LineFormatter;
-use rcore::Core;
+use rair_core::Core;
 use rustyline::{CompletionType, Config, EditMode, Editor, OutputStreamType};
 pub fn init_editor_from_core(core: &mut Core) -> Editor<LineFormatter> {
     let config = Config::builder()

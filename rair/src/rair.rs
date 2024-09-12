@@ -21,10 +21,10 @@
 extern crate clap;
 extern crate app_dirs;
 extern crate parking_lot;
+extern crate rair_cmd;
+extern crate rair_core;
 extern crate rair_io;
-extern crate rcmd;
-extern crate rcore;
-extern crate rtrees;
+extern crate rair_trees;
 extern crate rustyline;
 extern crate rustyline_derive;
 extern crate yansi;
@@ -36,8 +36,8 @@ mod rpel;
 
 use clap::{App, ArgMatches};
 use init::*;
+use rair_core::{panic_msg, str_to_num, Core, Writer};
 use rair_io::IoMode;
-use rcore::{panic_msg, str_to_num, Core, Writer};
 use rpel::*;
 use std::mem;
 

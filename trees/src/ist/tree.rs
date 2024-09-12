@@ -62,7 +62,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// Returns new Interval Search Tree
     /// # Example
     /// ```
-    /// use rtrees::ist::IST;
+    /// use rair_trees::ist::IST;
     /// let mut ist: IST<u64, &'static str> = IST::new();
     /// ```
     pub fn new() -> IST<K, V> {
@@ -72,7 +72,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// Returns the number of elements in the IST
     /// # Example
     /// ```
-    /// use rtrees::ist::IST;
+    /// use rair_trees::ist::IST;
     /// let mut ist: IST<u64, &'static str> = IST::new();
     /// assert_eq!(ist.size(), 0);
     /// ist.insert(0, 5, &"[0, 5]");
@@ -93,7 +93,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// returns 1 + the number of connections between root and the farthest node from it.
     /// # Example
     /// ```
-    /// use rtrees::ist::IST;
+    /// use rair_trees::ist::IST;
     /// let mut ist: IST<u64, &'static str> = IST::new();
     /// assert_eq!(ist.get_level(), 0);
     /// ist.insert(4, 11, &"[4, 11]");
@@ -119,7 +119,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// Panics if *lo* > *hi*
     /// # Example
     /// ```
-    /// use rtrees::ist::IST;
+    /// use rair_trees::ist::IST;
     /// let mut ist = IST::new();
     /// ist.insert(0,10, "First Insertion");
     ///assert_eq!(ist.at(0), [&"First Insertion"]);
@@ -143,7 +143,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     ///
     /// #example
     /// ```
-    /// use rtrees::ist::IST;
+    /// use rair_trees::ist::IST;
     /// let mut ist = IST::new();
     /// ist.insert(0,10, "First Insertion");
     /// ist.insert(5, 20, "Second Insertion");
@@ -168,7 +168,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     ///
     /// #example
     /// ```
-    /// use rtrees::ist::IST;
+    /// use rair_trees::ist::IST;
     /// let mut ist = IST::new();
     /// ist.insert(0,10, String::from("First Insertion"));
     /// ist.at_mut(5)[0].push_str(" Modified");
@@ -194,7 +194,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// Panics if *lo* > *hi*
     /// # Example
     /// ```
-    /// use rtrees::ist::IST;
+    /// use rair_trees::ist::IST;
     /// let mut ist = IST::new();
     /// ist.insert(0,10, "First Insertion");
     /// ist.insert(5, 20, "Second Insertion");
@@ -225,7 +225,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// Panics if *lo* > *hi*
     /// # Example
     /// ```
-    /// use rtrees::ist::IST;
+    /// use rair_trees::ist::IST;
     /// let mut ist = IST::new();
     /// ist.insert(0,10, String::from("First Insertion"));
     /// ist.envelop_mut(7, 10)[0].push_str(" Modified");
@@ -252,7 +252,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// Panics if *lo* > *hi*
     /// # Example
     /// ```
-    /// use rtrees::ist::IST;
+    /// use rair_trees::ist::IST;
     /// let mut ist = IST::new();
     /// ist.insert(5,10, "First Insertion");
     /// ist.insert(15, 20, "Second Insertion");
@@ -284,7 +284,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// Panics if *lo* > *hi*
     /// # Example
     /// ```
-    /// use rtrees::ist::IST;
+    /// use rair_trees::ist::IST;
     /// let mut ist = IST::new();
     /// ist.insert(2,10, String::from("First Insertion"));
     /// ist.inverse_envelop_mut(0, 20)[0].push_str(" Modified");
@@ -312,7 +312,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// Panics if *lo* > *hi*
     /// # Example
     /// ```
-    /// use rtrees::ist::IST;
+    /// use rair_trees::ist::IST;
     /// let mut ist = IST::new();
     /// ist.insert(0,20, "First Insertion");
     /// ist.insert(60, 80, "Second Insertion");
@@ -342,7 +342,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// Panics if *lo* > *hi*
     /// # Example
     /// ```
-    /// use rtrees::ist::IST;
+    /// use rair_trees::ist::IST;
     /// let mut ist = IST::new();
     /// ist.insert(10, 20, String::from("First Insertion"));
     /// ist.overlap_mut(7, 13)[0].push_str(" Modified");
@@ -364,7 +364,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     ///
     /// # Example
     /// ```
-    /// use rtrees::ist::IST;
+    /// use rair_trees::ist::IST;
     /// let mut ist = IST::new();
     /// ist.insert(10, 30, String::from("First Insertion"));
     /// ist.insert(15, 35, String::from("Second Insertion"));
@@ -395,7 +395,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// # Example
     ///
     /// ```
-    /// use rtrees::ist::IST;
+    /// use rair_trees::ist::IST;
     /// let mut ist = IST::new();
     /// ist.insert(10, 30, String::from("First Insertion"));
     /// ist.insert(15, 35, String::from("Second Insertion"));
@@ -425,7 +425,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     ///
     /// # Example
     /// ```
-    /// use rtrees::ist::IST;
+    /// use rair_trees::ist::IST;
     /// let mut ist = IST::new();
     /// ist.insert(5, 15, String::from("First Insertion"));
     /// ist.insert(10, 20, String::from("Second Insertion"));

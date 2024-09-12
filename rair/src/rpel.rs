@@ -16,8 +16,8 @@
  */
 use files::*;
 use lineformatter::LineFormatter;
-use rcmd::*;
-use rcore::{Core, Writer};
+use rair_cmd::*;
+use rair_core::{Core, Writer};
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 use std::fs::{File, OpenOptions};

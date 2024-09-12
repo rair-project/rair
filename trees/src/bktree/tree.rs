@@ -153,7 +153,7 @@ impl Distance for String {
 ///
 /// # Example
 /// ```
-/// use rtrees::bktree::SpellTree;
+/// use rair_trees::bktree::SpellTree;
 /// let mut tree :SpellTree<&str> = SpellTree::new();
 /// tree.insert("hello".to_string(), &"hello");
 /// tree.insert("hell".to_string(), "&hell");
