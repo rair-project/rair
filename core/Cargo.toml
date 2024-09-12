@@ -1,23 +1,24 @@
 [package]
 name = "rair-core"
+edition = "2021"
 version = "0.1.0"
 authors = ["oddcoder <ahmedsoliman@oddcoder.com>"]
 license = "LGPL-3.0-or-later"
-repository = "https://github.com/oddcoder/rair"
+repository = "https://github.com/Rair-Project/rair"
 keywords = ["Rair", "Core"]
 description = "Core module for Rair"
 categories = ["cli"]
 readme = "../readme.md"
 
 [dependencies]
-flate2 = "1.0"
-rair-env = {path = "../env"}
-rair-io = {path = "../io"}
-rair-trees = {path = "../trees"}
-serde = { version = "1.0", features = ["derive"]}
-serde_cbor = "0.10"
-yansi = "0.5"
-parking_lot="0.10"
+flate2 = {workspace = true}
+parking_lot={workspace = true}
+rair-env = {workspace = true}
+rair-io = {workspace = true}
+rair-trees = {workspace = true}
+serde = {workspace = true, features = ["derive"]}
+serde_cbor = {workspace = true}
+yansi = {workspace = true}
 
 [dev-dependencies]
-test_file = {path = "../test_file"}
+test_file = {workspace = true}

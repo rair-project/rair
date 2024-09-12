@@ -1,4 +1,5 @@
 [workspace]
+resolver = "2"
 members = [
   "cmd",
   "core",
@@ -10,6 +11,16 @@ members = [
 ]
 
 [workspace.dependencies]
+flate2 = "1.0"
+err-derive = "0.2"
+parking_lot="0.10"
 pest = "2.1"
 pest_derive = "2.1"
-err-derive = "0.2"
+serde = "1.0"
+serde_cbor = "0.10"
+yansi = "0.5"
+
+rair-env = {path = "./env"}
+test_file = {path = "./test_file"}
+rair-io = {path = "./io"}
+rair-trees = {path = "./trees"}
