@@ -18,7 +18,7 @@ pub fn prompt_read_parse_evaluate_loop(
     loop {
         let prelude = &format!("[0x{:08x}]({})> ", core.get_loc(), core.mode);
         let (r, g, b) = core.env.read().get_color("color.2").unwrap();
-        let input = editor.readline(&format!("{}", Paint::rgb(r, g, b, prelude)));
+        let input = editor.readline(&format!("{}", prelude.rgb(r, g, b)));
         match &input {
             Ok(line) => {
                 editor.add_history_entry(line).unwrap();

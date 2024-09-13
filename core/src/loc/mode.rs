@@ -41,9 +41,9 @@ impl Cmd for Mode {
         } else {
             let msg = format!(
                 "Expected {} or {}, but found {}.",
-                Paint::default("vir").italic().bold(),
-                Paint::default("phy").italic().bold(),
-                Paint::default(&args[0]).italic().bold(),
+                "vir".primary().italic().bold(),
+                "phy".primary().italic().bold(),
+                &args[0].primary().italic().bold(),
             );
             error_msg(core, "Invalid Mode", &msg);
         }

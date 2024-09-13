@@ -30,13 +30,15 @@ pub fn str_to_num(n: &str) -> Result<u64, num::ParseIntError> {
 
 pub fn expect(core: &mut Core, args_len: u64, expect: u64) {
     let (r, g, b) = core.env.read().get_color("color.4").unwrap();
-    let error = Paint::rgb(r, g, b, "Arguments Error").bold();
-    let expected = Paint::rgb(r, g, b, format!("{}", expect));
-    let found = Paint::rgb(r, g, b, format!("{}", args_len));
+    let error = "Arguments Error";
+    let expected = format!("{}", expect);
+    let found = format!("{}", args_len);
     writeln!(
         core.stderr,
         "{}: Expected {} argument(s), found {}.",
-        error, expected, found
+        error.rgb(r, g, b).bold(),
+        expected.rgb(r, g, b),
+        found.rgb(r, g, b)
     )
     .unwrap();
 }
@@ -44,14 +46,17 @@ pub fn expect(core: &mut Core, args_len: u64, expect: u64) {
 pub fn expect_range(core: &mut Core, args_len: u64, min: u64, max: u64) {
     assert!(min < max);
     let (r, g, b) = core.env.read().get_color("color.4").unwrap();
-    let error = Paint::rgb(r, g, b, "Arguments Error").bold();
-    let min_str = Paint::rgb(r, g, b, format!("{}", min));
-    let max_str = Paint::rgb(r, g, b, format!("{}", max));
-    let found = Paint::rgb(r, g, b, format!("{}", args_len));
+    let error = "Arguments Error";
+    let min_str = format!("{}", min);
+    let max_str = format!("{}", max);
+    let found = format!("{}", args_len);
     writeln!(
         core.stderr,
         "{}: Expected between {} and {} arguments, found {}.",
-        error, min_str, max_str, found
+        error.rgb(r, g, b).bold(),
+        min_str.rgb(r, g, b),
+        max_str.rgb(r, g, b),
+        found.rgb(r, g, b)
     )
     .unwrap();
 }
@@ -61,8 +66,8 @@ pub fn error_msg(core: &mut Core, title: &str, msg: &str) {
     writeln!(
         core.stderr,
         "{}: {}",
-        Paint::rgb(r, g, b, "Error").bold(),
-        Paint::rgb(r, g, b, title)
+        "Error".rgb(r, g, b).bold(),
+        title.rgb(r, g, b)
     )
     .unwrap();
     writeln!(core.stderr, "{}", msg).unwrap();
@@ -73,14 +78,14 @@ pub fn panic_msg(core: &mut Core, title: &str, msg: &str) -> ! {
     writeln!(
         core.stderr,
         "{}: {}",
-        Paint::rgb(r, g, b, "Unrecoverable Error").bold(),
-        Paint::rgb(r, g, b, title)
+        "Unrecoverable Error".rgb(r, g, b).bold(),
+        title.rgb(r, g, b)
     )
     .unwrap();
     if !msg.is_empty() {
         writeln!(core.stderr, "{}", msg).unwrap();
     }
-    writeln!(core.stderr, "{}", Paint::rgb(r, g, b, "Exiting!").bold()).unwrap();
+    writeln!(core.stderr, "{}", "Exiting!".rgb(r, g, b).bold()).unwrap();
     exit(-1);
 }
 
@@ -88,23 +93,23 @@ pub fn help(core: &mut Core, long: &str, short: &str, usage: Vec<(&str, &str)>) 
     let (r1, g1, b1) = core.env.read().get_color("color.6").unwrap();
     let (r2, g2, b2) = core.env.read().get_color("color.7").unwrap();
     let used = if short.is_empty() {
-        writeln!(core.stdout, "Command: [{}]\n", Paint::rgb(r1, g1, b1, long)).unwrap();
+        writeln!(core.stdout, "Command: [{}]\n", long.rgb(r1, g1, b1)).unwrap();
         long
     } else {
         writeln!(
             core.stdout,
             "Commands: [{} | {}]\n",
-            Paint::rgb(r1, g1, b1, long),
-            Paint::rgb(r1, g1, b1, short)
+            long.rgb(r1, g1, b1),
+            short.rgb(r1, g1, b1)
         )
         .unwrap();
         short
     };
     writeln!(core.stdout, "Usage:").unwrap();
     for (args, description) in usage {
-        write!(core.stdout, "{}", Paint::rgb(r1, g1, b1, used)).unwrap();
+        write!(core.stdout, "{}", used.rgb(r1, g1, b1)).unwrap();
         if !args.is_empty() {
-            write!(core.stdout, " {}", Paint::rgb(r2, g2, b2, args)).unwrap();
+            write!(core.stdout, " {}", args.rgb(r2, g2, b2)).unwrap();
         }
         writeln!(core.stdout, "\t{}", description,).unwrap()
     }
@@ -158,7 +163,7 @@ mod test_helper {
     fn test_except() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
-        Paint::disable();
+        yansi::disable();
         expect(&mut core, 5, 7);
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -169,7 +174,7 @@ mod test_helper {
     fn test_expect_range() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
-        Paint::disable();
+        yansi::disable();
         expect_range(&mut core, 5, 7, 10);
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -181,7 +186,7 @@ mod test_helper {
     fn test_error_msg() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
-        Paint::disable();
+        yansi::disable();
         error_msg(&mut core, "Error Title", "Something might have failed.");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -192,7 +197,7 @@ mod test_helper {
     fn test_help_short() {
         let mut core = Core::new_no_colors();
         core.stdout = Writer::new_buf();
-        Paint::disable();
+        yansi::disable();
         help(
             &mut core,
             "Test",
@@ -208,7 +213,7 @@ mod test_helper {
     fn test_help_long() {
         let mut core = Core::new_no_colors();
         core.stdout = Writer::new_buf();
-        Paint::disable();
+        yansi::disable();
         help(
             &mut core,
             "Test",
