@@ -8,12 +8,12 @@ use rustyline::error::ReadlineError;
 use rustyline::highlight::Highlighter;
 use rustyline::hint::{Hinter, HistoryHinter};
 use rustyline::Context;
-use rustyline_derive::Helper;
+use rustyline_derive::{Helper, Validator};
 use std::borrow::Cow::{self, Owned};
 use std::sync::Arc;
 use yansi::Paint;
 
-#[derive(Helper)]
+#[derive(Helper, Validator)]
 pub struct LineFormatter {
     hinter: HistoryHinter,
     commands: Arc<Mutex<Commands>>,
@@ -97,6 +97,7 @@ impl Completer for LineFormatter {
 }
 
 impl Hinter for LineFormatter {
+    type Hint = String;
     fn hint(&self, line: &str, pos: usize, ctx: &Context<'_>) -> Option<String> {
         self.hinter.hint(line, pos, ctx)
     }
