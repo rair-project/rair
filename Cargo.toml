@@ -13,7 +13,7 @@ members = [
 [workspace.dependencies]
 base64 = "0.22.1"
 bitflags = "2.6.0"
-clap = "2.33" #break
+clap = "4.5.17"
 directories = "5.0.1"
 err-derive = "0.3.1"
 flate2 = "1.0.33"

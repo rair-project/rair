@@ -15,14 +15,13 @@ name = "rair"
 path = "src/rair.rs"
 
 [dependencies]
-clap = {workspace = true, features = ["yaml"]}
+clap = {workspace = true, features = ["derive"]}
+directories = {workspace = true}
+parking_lot = {workspace = true}
+rair-cmd = {workspace = true}
+rair-core = {workspace = true}
+rair-io = {workspace = true}
+rair-trees = {workspace = true}
 rustyline = {workspace = true}
 rustyline-derive = {workspace = true}
-directories = {workspace = true}
 yansi = {workspace = true}
-parking_lot = {workspace = true}
-
-rair-cmd = {workspace = true}
-rair-trees = {workspace = true}
-rair-io = {workspace = true}
-rair-core = {workspace = true}
