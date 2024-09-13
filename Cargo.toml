@@ -37,3 +37,8 @@ rair-env = {path = "./env"}
 test_file = {path = "./test_file"}
 rair-io = {path = "./io"}
 rair-trees = {path = "./trees"}
+
+[profile.release]
+codegen-units = 1
+lto = "fat"
+strip = "symbols"
