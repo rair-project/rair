@@ -3,12 +3,11 @@
 use super::{defaultplugin, dummy::Dummy};
 use crate::{plugin::*, utils::*};
 use nom::{
-    alt,
+    branch::alt,
     bytes::complete::{tag, take_while_m_n},
     combinator::map_res,
-    named,
     sequence::tuple,
-    tag, IResult,
+    IResult,
 };
 use std::{
     collections::BTreeMap,
@@ -50,7 +49,9 @@ enum Record {
     Eof(u64),           // S7, s8, s9 (start address)
 }
 
-named!(parse_newline, alt!(tag!("\r\n") | tag!("\n") | tag!("\r")));
+fn parse_newline(buf: &[u8]) -> IResult<&[u8], &[u8]> {
+    alt((tag("\r\n"), tag("\n"), tag("\r")))(buf)
+}
 
 fn from_hex(input: &[u8]) -> Result<u8, std::num::ParseIntError> {
     u8::from_str_radix(str::from_utf8(input).unwrap(), 16)
@@ -172,14 +173,27 @@ fn parse_record9(input: &[u8]) -> IResult<&[u8], Record> {
     let (input, _) = hex_byte(input)?; //checksum
     Ok((input, Record::Eof(start as u64)))
 }
-named!(parse_record(&[u8]) -> Record, alt!(parse_record0 | parse_record1 | parse_record2 | parse_record3 | parse_record5 | parse_record6 | parse_record7 | parse_record8 | parse_record9));
 
 impl SrecInternal {
+    fn parse_record(input: &[u8]) -> IResult<&[u8], Record> {
+        alt((
+            parse_record0,
+            parse_record1,
+            parse_record2,
+            parse_record3,
+            parse_record5,
+            parse_record6,
+            parse_record7,
+            parse_record8,
+            parse_record9,
+        ))(input)
+    }
+
     fn parse_srec(&mut self, input: &[u8]) -> Result<(), IoError> {
         let mut input = input;
         let mut line = 1;
         loop {
-            let x = match parse_record(input) {
+            let x = match Self::parse_record(input) {
                 Ok(x) => x,
                 Err(_) => {
                     return Err(IoError::Custom(format!(

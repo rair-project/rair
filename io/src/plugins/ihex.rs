@@ -5,8 +5,9 @@ use super::dummy::Dummy;
 use crate::plugin::*;
 use crate::utils::*;
 use nom::{
+    branch::alt,
     bytes::complete::{tag, take_while_m_n},
-    {alt, combinator::map_res, named, sequence::tuple, tag, IResult},
+    {combinator::map_res, sequence::tuple, IResult},
 };
 use std::{
     collections::BTreeMap,
@@ -37,7 +38,10 @@ struct FileInternals {
     ssa: Option<u32>, // used for Record 03
     sla: Option<u32>, // used for Record 05
 }
-named!(parse_newline, alt!(tag!("\r\n") | tag!("\n") | tag!("\r")));
+
+fn parse_newline(buf: &[u8]) -> IResult<&[u8], &[u8]> {
+    alt((tag("\r\n"), tag("\n"), tag("\r")))(buf)
+}
 
 enum Record {
     Data(u64, Vec<u8>), // Record 00 (base address, bytes)
@@ -138,13 +142,22 @@ fn parse_record05(input: &[u8]) -> IResult<&[u8], Record> {
 }
 
 impl FileInternals {
+    fn parse_record(input: &[u8]) -> IResult<&[u8], Record> {
+        alt((
+            parse_record00,
+            parse_record01,
+            parse_record02,
+            parse_record03,
+            parse_record04,
+            parse_record05,
+        ))(input)
+    }
     fn parse_ihex(&mut self, input: &[u8]) -> Result<(), IoError> {
-        named!(parse_record(&[u8]) -> Record, alt!(parse_record00 | parse_record01 | parse_record02 | parse_record03 | parse_record04 | parse_record05));
         let mut input = input;
         let mut base = 0u64;
         let mut line = 1;
         loop {
-            let x = match parse_record(input) {
+            let x = match Self::parse_record(input) {
                 Ok(x) => x,
                 Err(_) => {
                     return Err(IoError::Custom(format!(
