@@ -4,20 +4,24 @@ use crate::{files::*, lineformatter::LineFormatter};
 use rair_cmd::*;
 use rair_core::{Core, Writer};
 use rustyline::error::ReadlineError;
+use rustyline::history::FileHistory;
 use rustyline::Editor;
 use std::fs::{File, OpenOptions};
 use std::process::{Child, Command, Stdio};
 use std::{io::prelude::*, io::Write, mem};
 use yansi::Paint;
 
-pub fn prompt_read_parse_evaluate_loop(mut core: Core, mut editor: Editor<LineFormatter>) -> ! {
+pub fn prompt_read_parse_evaluate_loop(
+    mut core: Core,
+    mut editor: Editor<LineFormatter, FileHistory>,
+) -> ! {
     loop {
         let prelude = &format!("[0x{:08x}]({})> ", core.get_loc(), core.mode);
         let (r, g, b) = core.env.read().get_color("color.2").unwrap();
         let input = editor.readline(&format!("{}", Paint::rgb(r, g, b, prelude)));
         match &input {
             Ok(line) => {
-                editor.add_history_entry(line);
+                editor.add_history_entry(line).unwrap();
                 editor.save_history(&hist_file()).unwrap();
                 parse_evaluate(&mut core, line)
             }
