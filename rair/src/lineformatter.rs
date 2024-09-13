@@ -105,6 +105,6 @@ impl Hinter for LineFormatter {
 
 impl Highlighter for LineFormatter {
     fn highlight_hint<'h>(&self, hint: &'h str) -> Cow<'h, str> {
-        Owned(format!("{}", Paint::default(hint).bold().italic().dimmed()))
+        Owned(format!("{}", hint.primary().bold().italic().dim()))
     }
 }

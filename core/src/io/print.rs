@@ -75,7 +75,7 @@ impl Cmd for PrintHex {
                     &e.to_string(),
                     &format!(
                         "Expect Hex, binary, Octal or Decimal value but found {} instead.",
-                        Paint::default(&args[0]).italic()
+                        &args[0].primary().italic()
                     ),
                 )
             }
@@ -103,19 +103,15 @@ impl Cmd for PrintHex {
         writeln!(
             core.stdout,
             "{}",
-            Paint::rgb(
-                banner.0,
-                banner.1,
-                banner.2,
-                "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF"
-            )
+            "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF"
+                .rgb(banner.0, banner.1, banner.2,)
         )
         .unwrap();
         for i in (0..size).step_by(16) {
             write!(
                 core.stdout,
                 "{} ",
-                Paint::rgb(banner.0, banner.1, banner.2, format!("0x{:08x}", loc + i))
+                format!("0x{:08x}", loc + i).rgb(banner.0, banner.1, banner.2)
             )
             .unwrap();
             let mut ascii = Writer::new_buf();
@@ -130,7 +126,7 @@ impl Cmd for PrintHex {
                     if *c >= 0x21 && *c <= 0x7E {
                         write!(ascii, "{}", *c as char).unwrap()
                     } else {
-                        write!(ascii, "{}", Paint::rgb(na.0, na.1, na.2, no_print)).unwrap();
+                        write!(ascii, "{}", no_print.rgb(na.0, na.1, na.2)).unwrap();
                     }
                 } else {
                     if j % 2 == 0 {
@@ -138,7 +134,7 @@ impl Cmd for PrintHex {
                     } else {
                         write!(hex, "{}{} ", gap, gap).unwrap();
                     }
-                    write!(ascii, "{}", Paint::rgb(na.0, na.1, na.2, gap)).unwrap();
+                    write!(ascii, "{}", gap.rgb(na.0, na.1, na.2)).unwrap();
                 }
             }
             writeln!(

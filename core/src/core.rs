@@ -48,9 +48,9 @@ impl Default for Core {
 }
 fn set_global_color(_: &str, value: bool, _: &Environment<Core>, _: &mut Core) -> bool {
     if value {
-        Paint::enable();
+        yansi::enable();
     } else {
-        Paint::disable();
+        yansi::disable();
     }
     true
 }
@@ -115,31 +115,26 @@ impl Core {
         funcs: MRc<dyn Cmd + Sync + Send>,
     ) {
         if !long.is_empty() && !self.commands.lock().add_command(long, funcs.clone()) {
-            let msg = format!("Command {} already existed.", Paint::default(long).bold());
+            let msg = format!("Command {} already existed.", long.bold().primary());
             error_msg(self, "Cannot add this command.", &msg);
         }
 
         if !short.is_empty() && !self.commands.lock().add_command(short, funcs) {
-            let msg = format!("Command {} already existed.", Paint::default(short).bold());
+            let msg = format!("Command {} already existed.", short.bold().primary());
             error_msg(self, "Cannot add this command.", &msg);
         }
     }
     fn command_not_found(&mut self, command: &str) {
-        let msg = format!("Command {} is not found.", Paint::default(command).bold());
+        let msg = format!("Command {} is not found.", command.primary().bold());
         error_msg(self, "Execution failed", &msg);
         let commands = self.commands.lock();
         let similar = commands.suggest(command, 2);
         let mut s = similar.iter();
         if let Some(suggestion) = s.next() {
             let (r, g, b) = self.env.read().get_color("color.6").unwrap();
-            write!(
-                self.stderr,
-                "Similar command: {}",
-                Paint::rgb(r, g, b, suggestion)
-            )
-            .unwrap();
+            write!(self.stderr, "Similar command: {}", suggestion.rgb(r, g, b)).unwrap();
             for suggestion in s {
-                write!(self.stderr, ", {}", Paint::rgb(r, g, b, suggestion)).unwrap();
+                write!(self.stderr, ", {}", suggestion.rgb(r, g, b)).unwrap();
             }
             writeln!(self.stderr, ".").unwrap();
         }

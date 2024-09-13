@@ -38,7 +38,7 @@ impl Cmd for ListFiles {
         writeln!(
             core.stdout,
             "{}",
-            Paint::rgb(r, g, b, "Handle\tStart address\tsize\t\tPermissions\tURI")
+            "Handle\tStart address\tsize\t\tPermissions\tURI".rgb(r, g, b)
         )
         .unwrap();
         for file in core.io.uri_iter() {

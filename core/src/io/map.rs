@@ -9,12 +9,12 @@ use yansi::Paint;
 pub struct Map {}
 
 fn map_error(core: &mut Core, name: &str, err: &str) {
-    let name = Paint::default(name).bold();
+    let name = name.primary().bold();
     let msg = format!("Failed to parse {}, {}.", name, err);
     error_msg(core, "Failed to map memory", &msg);
 }
 fn unmap_error(core: &mut Core, name: &str, err: &str) {
-    let name = Paint::default(name).bold();
+    let name = name.primary().bold();
     let msg = format!("Failed to parse {}, {}.", name, err);
     error_msg(core, "Failed to unmap memory", &msg);
 }
@@ -134,9 +134,9 @@ impl Cmd for ListMap {
         writeln!(
             core.stdout,
             "{: <20}{: <20}{}",
-            Paint::rgb(r, g, b, "Virtual Address"),
-            Paint::rgb(r, g, b, "Physical Address"),
-            Paint::rgb(r, g, b, "Size")
+            "Virtual Address".rgb(r, g, b),
+            "Physical Address".rgb(r, g, b),
+            "Size".rgb(r, g, b)
         )
         .unwrap();
         for map in core.io.map_iter() {

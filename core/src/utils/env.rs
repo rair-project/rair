@@ -22,7 +22,7 @@ impl Environment {
                 EnvData::Str(s) => writeln!(core.stdout, "{} = {}", k, s).unwrap(),
                 EnvData::Color(r, g, b) => {
                     let color = format!("#{:02x}{:02x}{:02x}", r, g, b);
-                    writeln!(core.stdout, "{} = {}", k, Paint::rgb(r, g, b, color)).unwrap();
+                    writeln!(core.stdout, "{} = {}", k, color.rgb(r, g, b)).unwrap();
                 }
             }
         }
@@ -95,7 +95,7 @@ impl Environment {
             EnvData::Str(s) => writeln!(core.stdout, "{}", s).unwrap(),
             EnvData::Color(r, g, b) => {
                 let color = format!("#{:02x}{:02x}{:02x}", r, g, b);
-                writeln!(core.stdout, "{}", Paint::rgb(r, g, b, color)).unwrap();
+                writeln!(core.stdout, "{}", color.rgb(r, g, b)).unwrap();
             }
         }
     }
@@ -207,7 +207,7 @@ impl Cmd for EnvironmentHelp {
         if let Some(help) = res {
             let color = env.get_str("environmentHelp.envColor").unwrap();
             let (r, g, b) = env.get_color(color).unwrap();
-            writeln!(core.stdout, "{}:\t{}", Paint::rgb(r, g, b, &args[0]), help).unwrap();
+            writeln!(core.stdout, "{}:\t{}", &args[0].rgb(r, g, b), help).unwrap();
         } else {
             drop(env);
             error_msg(core, "Failed to display help.", "Variable Not found");
