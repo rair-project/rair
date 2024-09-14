@@ -3,7 +3,7 @@ use crate::{is_color, Core, Writer};
 use std::io::Write;
 use yansi::Paint;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct HexEnv {
     // color for banner and offsets
     pub banner: (u8, u8, u8),
@@ -89,7 +89,7 @@ impl HexEnv {
             separator: String::new(),
         }
     }
-    pub(super) fn get_env(&mut self, core: &mut Core) -> &Self {
+    pub fn get_env(&mut self, core: &mut Core) -> &Self {
         let env = core.env.read();
         let color = env.get_str("hex.headerColor").unwrap();
         self.banner = env.get_color(color).unwrap();

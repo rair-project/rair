@@ -1,4 +1,4 @@
-use core::mem;
+use core::mem::{replace, swap, take};
 use rair_cmd::{Argument, Cmd, ParseTree, RedPipe};
 use rair_core::{Core, Writer};
 use std::{
@@ -7,6 +7,13 @@ use std::{
     process::{Child, Command, Stdio},
 };
 
+pub fn rair_eval_no_out(core: &mut Core, line: &str) {
+    let stdout = take(&mut core.stdout);
+    let stderr = take(&mut core.stderr);
+    rair_eval(core, line);
+    core.stdout = stdout;
+    core.stderr = stderr;
+}
 pub fn rair_eval(core: &mut Core, line: &str) {
     match ParseTree::construct(line) {
         Ok(tree) => evaluate(core, tree),
@@ -37,17 +44,17 @@ fn run_cmd(core: &mut Core, cmd: Cmd) {
     let mut child: Option<Child> = None;
     match *cmd.red_pipe {
         RedPipe::Redirect(arg) => match create_redirect(core, *arg) {
-            Ok(out) => stdout = Some(mem::replace(&mut core.stdout, out)),
+            Ok(out) => stdout = Some(replace(&mut core.stdout, out)),
             Err(e) => return writeln!(core.stderr, "{e}").unwrap(),
         },
         RedPipe::RedirectCat(arg) => match create_redirect_cat(core, *arg) {
-            Ok(out) => stdout = Some(mem::replace(&mut core.stdout, out)),
+            Ok(out) => stdout = Some(replace(&mut core.stdout, out)),
             Err(e) => return writeln!(core.stderr, "{e}").unwrap(),
         },
         RedPipe::Pipe(arg) => match create_pipe(core, arg) {
             Ok((process, writer)) => {
                 child = Some(process);
-                stdout = Some(mem::replace(&mut core.stdout, writer));
+                stdout = Some(replace(&mut core.stdout, writer));
             }
             Err(e) => return writeln!(core.stderr, "{e}").unwrap(),
         },
@@ -123,13 +130,13 @@ fn eval_non_literal_arg(core: &mut Core, cmd: Cmd) -> Result<String, String> {
     // change stderr and stdout
     let mut stderr = Writer::new_buf();
     let mut stdout = Writer::new_buf();
-    mem::swap(&mut core.stderr, &mut stderr);
-    mem::swap(&mut core.stdout, &mut stdout);
+    swap(&mut core.stderr, &mut stderr);
+    swap(&mut core.stdout, &mut stdout);
     // run command
     run_cmd(core, cmd);
     // restore stderr and stdout
-    mem::swap(&mut core.stderr, &mut stderr);
-    mem::swap(&mut core.stdout, &mut stdout);
+    swap(&mut core.stderr, &mut stderr);
+    swap(&mut core.stdout, &mut stdout);
 
     let err = stderr.utf8_string().unwrap();
     if err.is_empty() {

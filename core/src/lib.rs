@@ -16,5 +16,6 @@ pub use self::commands::*;
 pub use self::core::*;
 pub use self::diff::*;
 pub use self::helper::*;
+pub use self::hex::*;
 pub use self::io::*;
 pub use self::writer::*;
