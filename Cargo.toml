@@ -4,6 +4,7 @@ members = [
   "cmd",
   "core",
   "env",
+  "eval",
   "io",
   "rair",
   "test_file",
@@ -34,6 +35,7 @@ yansi = "1.0.1"
 rair-cmd = {path = "./cmd"}
 rair-core = {path = "./core"}
 rair-env = {path = "./env"}
+rair-eval = {path = "./eval"}
 test_file = {path = "./test_file"}
 rair-io = {path = "./io"}
 rair-trees = {path = "./trees"}
