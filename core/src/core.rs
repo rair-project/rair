@@ -164,10 +164,10 @@ impl Core {
         let cmds = self.commands.clone();
         let cmds_ref = cmds.lock();
         let cmd = cmds_ref.find(command);
+        drop(cmds_ref);
         if let Some(cmd) = cmd {
             cmd.lock().run(self, args);
         } else {
-            drop(cmds_ref);
             self.command_not_found(command);
         }
     }
