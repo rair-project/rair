@@ -129,12 +129,13 @@ impl Core {
         error_msg(self, "Execution failed", &msg);
         let commands = self.commands.lock();
         let similar = commands.suggest(command, 2);
-        let mut s = similar.iter();
-        if let Some(suggestion) = s.next() {
-            let (r, g, b) = self.env.read().get_color("color.6").unwrap();
-            write!(self.stderr, "Similar command: {}", suggestion.rgb(r, g, b)).unwrap();
-            for suggestion in s {
-                write!(self.stderr, ", {}", suggestion.rgb(r, g, b)).unwrap();
+        let (r, g, b) = self.env.read().get_color("color.6").unwrap();
+        if !similar.is_empty() {
+            write!(self.stderr, "Similar command: {}", similar[0].rgb(r, g, b)).unwrap();
+            if similar.len() > 1 {
+                for suggestion in &similar[1..] {
+                    write!(self.stderr, ", {}", suggestion.rgb(r, g, b)).unwrap();
+                }
             }
             writeln!(self.stderr, ".").unwrap();
         }
