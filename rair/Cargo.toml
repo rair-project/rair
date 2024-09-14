@@ -20,6 +20,7 @@ directories = {workspace = true}
 parking_lot = {workspace = true}
 rair-cmd = {workspace = true}
 rair-core = {workspace = true}
+rair-eval = {workspace = true}
 rair-io = {workspace = true}
 rair-trees = {workspace = true}
 rustyline = {workspace = true}
