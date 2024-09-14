@@ -108,7 +108,6 @@ mod test_seek {
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "Commands: [seek | s]\n\
-             \n\
              Usage:\n\
              s +\t\tRedo Seek.\n\
              s -\t\tUndo Seek.\n\

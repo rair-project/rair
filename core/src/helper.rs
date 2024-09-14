@@ -93,12 +93,12 @@ pub fn help(core: &mut Core, long: &str, short: &str, usage: Vec<(&str, &str)>) 
     let (r1, g1, b1) = core.env.read().get_color("color.6").unwrap();
     let (r2, g2, b2) = core.env.read().get_color("color.7").unwrap();
     let used = if short.is_empty() {
-        writeln!(core.stdout, "Command: [{}]\n", long.rgb(r1, g1, b1)).unwrap();
+        writeln!(core.stdout, "Command: [{}]", long.rgb(r1, g1, b1)).unwrap();
         long
     } else {
         writeln!(
             core.stdout,
-            "Commands: [{} | {}]\n",
+            "Commands: [{} | {}]",
             long.rgb(r1, g1, b1),
             short.rgb(r1, g1, b1)
         )
@@ -206,7 +206,7 @@ mod test_helper {
         );
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
-            "Commands: [Test | t]\n\nUsage:\nt t1\ttest 1\nt t2\ttest 2\n"
+            "Commands: [Test | t]\nUsage:\nt t1\ttest 1\nt t2\ttest 2\n"
         );
     }
     #[test]
@@ -222,7 +222,7 @@ mod test_helper {
         );
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
-            "Command: [Test]\n\nUsage:\nTest t1\ttest 1\nTest t2\ttest 2\n"
+            "Command: [Test]\nUsage:\nTest t1\ttest 1\nTest t2\ttest 2\n"
         );
     }
     #[test]

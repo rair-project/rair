@@ -170,7 +170,7 @@ mod test_mapping {
         map.help(&mut core);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
-            "Command: [map]\n\nUsage:\nmap [phy] [vir] [size]\tMap region from physical address space to virtual address space.\n"
+            "Command: [map]\nUsage:\nmap [phy] [vir] [size]\tMap region from physical address space to virtual address space.\n"
         );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
@@ -183,7 +183,7 @@ mod test_mapping {
         unmap.help(&mut core);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
-            "Commands: [unmap | um]\n\nUsage:\num [vir] [size]\tUnmap a previosly mapped memory region.\n"
+            "Commands: [unmap | um]\nUsage:\num [vir] [size]\tUnmap a previosly mapped memory region.\n"
         );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
@@ -195,7 +195,7 @@ mod test_mapping {
         core.help("maps");
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
-            "Command: [maps]\n\nUsage:\nmaps\tList all memory maps.\n"
+            "Command: [maps]\nUsage:\nmaps\tList all memory maps.\n"
         );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }

@@ -240,15 +240,15 @@ mod test_env {
         core.help("eh");
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
-            "Commands: [environmentReset | er]\n\n\
+            "Commands: [environmentReset | er]\n\
              Usage:\n\
              er [var]\tReset [var] environment variable.\n\
-             Commands: [environment | e]\n\n\
+             Commands: [environment | e]\n\
              Usage:\n\
              e\tList all environment variables.\n\
              e [var]\tDisplay the value of [var] environment variables.\n\
              e [var]=[value]\tSet [var] to be [value]\n\
-             Commands: [environmentHelp | eh]\n\n\
+             Commands: [environmentHelp | eh]\n\
              Usage:\n\
              eh [var]\tPrint help for [var] environment variable.\n"
         );

@@ -120,10 +120,10 @@ mod test_project {
         save.help(&mut core);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
-            "Command: [load]\n\n\
+            "Command: [load]\n\
              Usage:\n\
              load [file_path]\tload project from given path.\n\
-             Command: [save]\n\n\
+             Command: [save]\n\
              Usage:\n\
              save [file_path]\tSave project into given path.\n"
         );

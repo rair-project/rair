@@ -194,13 +194,13 @@ mod test_files {
         close.help(&mut core);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
-            "Command: [files]\n\n\
+            "Command: [files]\n\
              Usage:\n\
              files\tList all open files.\n\
-             Commands: [open | o]\n\n\
+             Commands: [open | o]\n\
              Usage:\n\
              o <Perm> [URI] <Addr>\tOpen given URI using given optional permission (default to readonly) at given optional address.\n\
-             Command: [close]\n\n\
+             Command: [close]\n\
              Usage:\n\
              close [hndl]\tClose file with given hndl.\n"
         );
