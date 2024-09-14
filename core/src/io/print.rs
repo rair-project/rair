@@ -623,18 +623,18 @@ mod test_print_hex {
         pscsv.help(&mut core);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
-            "Commands: [printHex | px]\n\n\
+            "Commands: [printHex | px]\n\
              Usage:\n\
              px [size]\tView data at current location in hex format.\n\
-             Commands: [printBase | pb]\n\n\
+             Commands: [printBase | pb]\n\
              Usage:\n\
              pb [base] [size]\tPrint data stream at current location in [base] format.\n\
              Supported bases: 2, 16.\n\
-             Commands: [printCSV | pcsv]\n\n\
+             Commands: [printCSV | pcsv]\n\
              Usage:\n\
              pcsv [size] [count]\tPrint data at current location as unsigned comma seperated values, each value of size [size] bits.\n\
              Supported size: 8, 16, 32, 64, 128, 256, 512.\n\
-             Commands: [printSCSV | pscsv]\n\n\
+             Commands: [printSCSV | pscsv]\n\
              Usage:\n\
              pscsv [size] [count]\tPrint data at current location as signed comma seperated values, each value of size [size] bits.\n\
              Supported size: 8, 16, 32, 64, 128.\n"

@@ -79,7 +79,6 @@ mod test_mode {
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "Commands: [mode | m]\n\
-             \n\
              Usage:\n\
              m vir\tSet view mode to virtual address space.\n\
              m phy\tSet view mode to physical address space.\n\

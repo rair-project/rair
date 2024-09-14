@@ -140,10 +140,10 @@ mod test_write {
         wtf.help(&mut core);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
-            "Commands: [writetHex | wx]\n\n\
+            "Commands: [writetHex | wx]\n\
              Usage:\n\
              wx [hexpairs]\twrite given hexpairs data into the current address.\n\
-             Commands: [writeToFile | wtf]\n\n\
+             Commands: [writeToFile | wtf]\n\
              Usage:\n\
              wtf [size] [filepath]\twrite data of size [size] at current location to file identified by [filepath].\n"
         );

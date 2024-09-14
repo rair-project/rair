@@ -35,7 +35,7 @@ mod test_quit {
         quit.help(&mut core);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
-            "Commands: [quit | q]\n\nUsage:\nq\tQuit Current session.\n"
+            "Commands: [quit | q]\nUsage:\nq\tQuit Current session.\n"
         );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
