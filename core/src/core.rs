@@ -67,6 +67,17 @@ impl Core {
     pub fn set_commands(&mut self, commands: Arc<Mutex<Commands>>) {
         self.commands = commands
     }
+    fn init_core_env(&mut self) {
+        let locked_env = self.env.clone();
+        let mut env = locked_env.write();
+
+        env.add_bool(
+            "core.helpInvalidCommand",
+            true,
+            "Show help for suggestions in case of invalid Command",
+        )
+        .unwrap();
+    }
     fn init_colors(&mut self, enable: bool) {
         let locked_env = self.env.clone();
         let mut env = locked_env.write();
@@ -91,6 +102,7 @@ impl Core {
     fn new_settings(color: bool) -> Self {
         let mut core: Core = Default::default();
         core.init_colors(color);
+        core.init_core_env();
         core.load_commands();
         core
     }
@@ -139,6 +151,14 @@ impl Core {
             }
             writeln!(self.stderr, ".").unwrap();
         }
+        let show_help = self.env.read().get_bool("core.helpInvalidCommand").unwrap();
+        if show_help {
+            let similar: Vec<String> = similar.iter().map(|s| (*s).to_owned()).collect();
+            drop(commands);
+            for suggestion in similar {
+                self.help(&suggestion.to_owned());
+            }
+        }
     }
 
     pub fn run(&mut self, command: &str, args: &[String]) {
@@ -178,6 +198,12 @@ mod test_core {
     use crate::utils::Quit;
     use parking_lot::Mutex;
     use std::sync::Arc;
+    fn testings_env(core: &mut Core) {
+        let locked_env = core.env.clone();
+        let mut env = locked_env.write();
+        env.set_bool("core.helpInvalidCommand", false, core)
+            .unwrap();
+    }
     #[test]
     fn test_loc() {
         let mut core = Core::new_no_colors();
@@ -212,8 +238,9 @@ mod test_core {
         );
     }
     #[test]
-    fn test_help() {
+    fn test_help_failure() {
         let mut core = Core::new_no_colors();
+        testings_env(&mut core);
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         core.help("seeker");
@@ -226,6 +253,7 @@ mod test_core {
     #[test]
     fn test_run_at() {
         let mut core = Core::new_no_colors();
+        testings_env(&mut core);
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         core.run_at("mep", &[], 0x500);
@@ -233,6 +261,18 @@ mod test_core {
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
             "Error: Execution failed\nCommand mep is not found.\nSimilar command: map, maps, m, e, er, eh.\n"
+        );
+    }
+    #[test]
+    fn test_help_failure_with_extras() {
+        let mut core = Core::new_no_colors();
+        core.stderr = Writer::new_buf();
+        core.stdout = Writer::new_buf();
+        core.help("seeker");
+        assert_eq!(core.stdout.utf8_string().unwrap(), "Commands: [seek | s]\nUsage:\ns +\t\tRedo Seek.\ns -\t\tUndo Seek.\ns +[offset]\tIncrease current loc by offset.\ns -[offset]\tDecrease current loc by offset.\ns [offset]\tSet current location to offset.\n");
+        assert_eq!(
+            core.stderr.utf8_string().unwrap(),
+            "Error: Execution failed\nCommand seeker is not found.\nSimilar command: seek.\n"
         );
     }
 }
