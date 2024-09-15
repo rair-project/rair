@@ -48,8 +48,14 @@ impl Args {
     }
     /// parse command line arguments
     pub fn parse() -> Result<Self, String> {
-        let ai = ArgsInner::parse();
+        ArgsInner::parse().try_into()
+    }
+}
 
+impl TryFrom<ArgsInner> for Args {
+    type Error = String;
+
+    fn try_from(ai: ArgsInner) -> Result<Self, Self::Error> {
         match (ai.proj, ai.file, ai.base, ai.perm) {
             (Some(_), Some(_), _, _) | (None, None, _, _) => {
                 Err("You must open either a binary file or Project file, but not both".to_owned())
