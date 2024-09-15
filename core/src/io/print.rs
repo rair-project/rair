@@ -1,15 +1,15 @@
 //! commands handling raw data printing.
 
-use crate::core::*;
-use crate::helper::*;
-use crate::writer::*;
+use crate::core::Core;
+use crate::helper::{error_msg, expect, help, is_color, str_to_num, AddrMode, Cmd};
+use crate::writer::Writer;
+use core::{cmp, fmt::Write as _};
 use rair_env::Environment;
-use std::cmp;
 use std::io::Write;
 use yansi::Paint;
 
 #[derive(Default)]
-pub struct PrintHex {}
+pub struct PrintHex;
 
 fn one_byte(_: &str, value: &str, _: &Environment<Core>, _: &mut Core) -> bool {
     value.len() == 1
@@ -55,7 +55,7 @@ impl PrintHex {
             )
             .unwrap();
 
-        Default::default()
+        Self
     }
 }
 
@@ -119,20 +119,20 @@ impl Cmd for PrintHex {
             for j in i..cmp::min(i + 16, size) {
                 if let Some(c) = data.get(&(j + loc)) {
                     if j % 2 == 0 {
-                        write!(hex, "{:02x}", c).unwrap();
+                        write!(hex, "{c:02x}").unwrap();
                     } else {
-                        write!(hex, "{:02x} ", c).unwrap();
+                        write!(hex, "{c:02x} ").unwrap();
                     }
                     if *c >= 0x21 && *c <= 0x7E {
-                        write!(ascii, "{}", *c as char).unwrap()
+                        write!(ascii, "{}", *c as char).unwrap();
                     } else {
                         write!(ascii, "{}", no_print.rgb(na.0, na.1, na.2)).unwrap();
                     }
                 } else {
                     if j % 2 == 0 {
-                        write!(hex, "{}{}", gap, gap).unwrap();
+                        write!(hex, "{gap}{gap}").unwrap();
                     } else {
-                        write!(hex, "{}{} ", gap, gap).unwrap();
+                        write!(hex, "{gap}{gap} ").unwrap();
                     }
                     write!(ascii, "{}", gap.rgb(na.0, na.1, na.2)).unwrap();
                 }
@@ -157,24 +157,24 @@ impl Cmd for PrintHex {
 }
 
 #[derive(Default)]
-pub struct PrintBase {}
+pub struct PrintBase;
 
 impl PrintBase {
     pub fn new() -> Self {
-        Default::default()
+        Self
     }
 }
 fn encode_bin(data: &[u8]) -> String {
     let mut out = String::with_capacity(data.len() * 8);
     for byte in data {
-        out += &format!("{:08b}", byte);
+        write!(out, "{byte:08b}").unwrap();
     }
     out
 }
 fn encode_hex(data: &[u8]) -> String {
     let mut out = String::with_capacity(data.len() * 2);
     for byte in data {
-        out += &format!("{:02x}", byte);
+        write!(out, "{byte:02x}").unwrap();
     }
     out
 }
@@ -187,7 +187,7 @@ impl Cmd for PrintBase {
         let size = match str_to_num(&args[1]) {
             Ok(size) => size as usize,
             Err(e) => {
-                let err_str = format!("{}", e);
+                let err_str = format!("{e}");
                 error_msg(core, "Failed to parse size", &err_str);
                 return;
             }
@@ -210,7 +210,7 @@ impl Cmd for PrintBase {
             "16" => encode_hex(&data),
             _ => return error_msg(core, "Failed to print data", "Invalid base"),
         };
-        writeln!(core.stdout, "{}", data_str).unwrap();
+        writeln!(core.stdout, "{data_str}").unwrap();
     }
     fn help(&self, core: &mut Core) {
         help(
@@ -227,11 +227,11 @@ impl Cmd for PrintBase {
 }
 
 #[derive(Default)]
-pub struct PrintCSV {}
+pub struct PrintCSV;
 
 impl PrintCSV {
     pub fn new() -> Self {
-        Default::default()
+        Self
     }
 }
 
@@ -246,7 +246,7 @@ fn csv8(data: &[u8]) -> String {
         } else {
             terminal = ",\n";
         }
-        out += &format!("0x{:02x}{}", byte, terminal);
+        write!(out, "0x{byte:02x}{terminal}").unwrap();
     }
     out
 }
@@ -263,7 +263,7 @@ fn csv16(data: &[u8]) -> String {
         } else {
             terminal = ",\n";
         }
-        out += &format!("0x{:02x}{:02x}{}", data[i + 1], data[i], terminal);
+        write!(out, "0x{:02x}{:02x}{}", data[i + 1], data[i], terminal).unwrap();
     }
     out
 }
@@ -282,9 +282,9 @@ fn csv32(data: &[u8]) -> String {
         }
         out += "0x";
         for j in (0..4).rev() {
-            out += &format!("{:02x}", data[i + j]);
+            write!(out, "{:02x}", data[i + j]).unwrap();
         }
-        out += terminal
+        out += terminal;
     }
     out
 }
@@ -303,9 +303,9 @@ fn csv64(data: &[u8]) -> String {
         }
         out += "0x";
         for j in (0..8).rev() {
-            out += &format!("{:02x}", data[i + j]);
+            write!(out, "{:02x}", data[i + j]).unwrap();
         }
-        out += terminal
+        out += terminal;
     }
     out
 }
@@ -324,9 +324,9 @@ fn csv128(data: &[u8]) -> String {
         }
         out += "0x";
         for j in (0..16).rev() {
-            out += &format!("{:02x}", data[i + j]);
+            write!(out, "{:02x}", data[i + j]).unwrap();
         }
-        out += terminal
+        out += terminal;
     }
     out
 }
@@ -345,9 +345,9 @@ fn csv256(data: &[u8]) -> String {
         }
         out += "0x";
         for j in (0..32).rev() {
-            out += &format!("{:02x}", data[i + j]);
+            write!(out, "{:02x}", data[i + j]).unwrap();
         }
-        out += terminal
+        out += terminal;
     }
     out
 }
@@ -364,9 +364,9 @@ fn csv512(data: &[u8]) -> String {
         }
         out += "0x";
         for j in (0..64).rev() {
-            out += &format!("{:02x}", data[i + j]);
+            write!(out, "{:02x}", data[i + j]).unwrap();
         }
-        out += terminal
+        out += terminal;
     }
     out
 }
@@ -380,7 +380,7 @@ impl Cmd for PrintCSV {
         let count = match str_to_num(&args[1]) {
             Ok(count) => count as usize,
             Err(e) => {
-                let err_str = format!("{}", e);
+                let err_str = format!("{e}");
                 error_msg(core, "Failed to parse count", &err_str);
                 return;
             }
@@ -388,7 +388,7 @@ impl Cmd for PrintCSV {
         let bsize = match str_to_num(&args[0]) {
             Ok(size) => size as usize,
             Err(e) => {
-                let err_str = format!("{}", e);
+                let err_str = format!("{e}");
                 error_msg(core, "Failed to parse size", &err_str);
                 return;
             }
@@ -421,7 +421,7 @@ impl Cmd for PrintCSV {
             512 => csv512(&data),
             _ => return error_msg(core, "Failed to print data", "Invalid size"),
         };
-        writeln!(core.stdout, "{}", data_str).unwrap();
+        writeln!(core.stdout, "{data_str}").unwrap();
     }
     fn help(&self, core: &mut Core) {
         help(
@@ -435,11 +435,11 @@ impl Cmd for PrintCSV {
 }
 
 #[derive(Default)]
-pub struct PrintSignedCSV {}
+pub struct PrintSignedCSV;
 
 impl PrintSignedCSV {
     pub fn new() -> Self {
-        Default::default()
+        Self
     }
 }
 
@@ -454,7 +454,7 @@ fn scsv8(data: &[u8]) -> String {
         } else {
             terminal = ",\n";
         }
-        out += &format!("{}{}", *byte as i8, terminal);
+        write!(out, "{}{}", *byte as i8, terminal).unwrap();
     }
     out
 }
@@ -471,8 +471,8 @@ fn scsv16(data: &[u8]) -> String {
         } else {
             terminal = ",\n";
         }
-        let x = ((data[i + 1] as u16) << 8) + data[i] as u16;
-        out += &format!("{}{}", x as i16, terminal);
+        let x = ((data[i + 1] as u16) << 8i32) + data[i] as u16;
+        write!(out, "{}{}", x as i16, terminal).unwrap();
     }
     out
 }
@@ -491,9 +491,9 @@ fn scsv32(data: &[u8]) -> String {
         }
         let mut x = 0u32;
         for j in (0..4).rev() {
-            x = (x << 8) + data[i + j] as u32;
+            x = (x << 8i32) + data[i + j] as u32;
         }
-        out += &format!("{}{}", x as i32, terminal);
+        write!(out, "{}{}", x as i32, terminal).unwrap();
     }
     out
 }
@@ -512,9 +512,9 @@ fn scsv64(data: &[u8]) -> String {
         }
         let mut x = 0u64;
         for j in (0..8).rev() {
-            x = (x << 8) + data[i + j] as u64;
+            x = (x << 8i32) + data[i + j] as u64;
         }
-        out += &format!("{}{}", x as i64, terminal);
+        write!(out, "{}{}", x as i64, terminal).unwrap();
     }
     out
 }
@@ -533,9 +533,9 @@ fn scsv128(data: &[u8]) -> String {
         }
         let mut x = 0u128;
         for j in (0..16).rev() {
-            x = (x << 8) + data[i + j] as u128;
+            x = (x << 8i32) + data[i + j] as u128;
         }
-        out += &format!("{}{}", x as i128, terminal);
+        write!(out, "{}{}", x as i128, terminal).unwrap();
     }
     out
 }
@@ -549,7 +549,7 @@ impl Cmd for PrintSignedCSV {
         let count = match str_to_num(&args[1]) {
             Ok(count) => count as usize,
             Err(e) => {
-                let err_str = format!("{}", e);
+                let err_str = format!("{e}");
                 error_msg(core, "Failed to parse count", &err_str);
                 return;
             }
@@ -557,7 +557,7 @@ impl Cmd for PrintSignedCSV {
         let bsize = match str_to_num(&args[0]) {
             Ok(size) => size as usize,
             Err(e) => {
-                let err_str = format!("{}", e);
+                let err_str = format!("{e}");
                 error_msg(core, "Failed to parse size", &err_str);
                 return;
             }
@@ -588,7 +588,7 @@ impl Cmd for PrintSignedCSV {
             128 => scsv128(&data),
             _ => return error_msg(core, "Failed to print data", "Invalid size"),
         };
-        writeln!(core.stdout, "{}", data_str).unwrap();
+        writeln!(core.stdout, "{data_str}").unwrap();
     }
     fn help(&self, core: &mut Core) {
         help(
@@ -646,13 +646,13 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         core.io.open(&path.to_string_lossy(), IoMode::READ).unwrap();
-        core.run("px", &["0x0".to_string()]);
+        core.run("px", &["0x0".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x1".to_string()]);
+        core.run("px", &["0x1".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -662,7 +662,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x2".to_string()]);
+        core.run("px", &["0x2".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -672,7 +672,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x3".to_string()]);
+        core.run("px", &["0x3".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -682,7 +682,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x4".to_string()]);
+        core.run("px", &["0x4".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -692,7 +692,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x5".to_string()]);
+        core.run("px", &["0x5".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -702,7 +702,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x6".to_string()]);
+        core.run("px", &["0x6".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -712,7 +712,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x7".to_string()]);
+        core.run("px", &["0x7".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -722,7 +722,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x8".to_string()]);
+        core.run("px", &["0x8".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -732,7 +732,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x9".to_string()]);
+        core.run("px", &["0x9".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -742,7 +742,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0xa".to_string()]);
+        core.run("px", &["0xa".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -752,7 +752,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0xb".to_string()]);
+        core.run("px", &["0xb".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -762,7 +762,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0xc".to_string()]);
+        core.run("px", &["0xc".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -772,7 +772,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0xd".to_string()]);
+        core.run("px", &["0xd".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -782,7 +782,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0xe".to_string()]);
+        core.run("px", &["0xe".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -792,7 +792,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0xf".to_string()]);
+        core.run("px", &["0xf".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -802,7 +802,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x10".to_string()]);
+        core.run("px", &["0x10".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -812,7 +812,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x11".to_string()]);
+        core.run("px", &["0x11".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -823,7 +823,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x12".to_string()]);
+        core.run("px", &["0x12".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -834,7 +834,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x13".to_string()]);
+        core.run("px", &["0x13".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -845,7 +845,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x14".to_string()]);
+        core.run("px", &["0x14".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -856,7 +856,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x15".to_string()]);
+        core.run("px", &["0x15".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -867,7 +867,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x16".to_string()]);
+        core.run("px", &["0x16".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -878,7 +878,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x17".to_string()]);
+        core.run("px", &["0x17".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -889,7 +889,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x18".to_string()]);
+        core.run("px", &["0x18".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -900,7 +900,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x19".to_string()]);
+        core.run("px", &["0x19".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -911,7 +911,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x1a".to_string()]);
+        core.run("px", &["0x1a".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -922,7 +922,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x1b".to_string()]);
+        core.run("px", &["0x1b".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -933,7 +933,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x1c".to_string()]);
+        core.run("px", &["0x1c".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -944,7 +944,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x1d".to_string()]);
+        core.run("px", &["0x1d".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -955,7 +955,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x1e".to_string()]);
+        core.run("px", &["0x1e".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -966,7 +966,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x1f".to_string()]);
+        core.run("px", &["0x1f".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -977,7 +977,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x20".to_string()]);
+        core.run("px", &["0x20".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -988,7 +988,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x21".to_string()]);
+        core.run("px", &["0x21".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -1000,7 +1000,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x22".to_string()]);
+        core.run("px", &["0x22".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -1012,7 +1012,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x23".to_string()]);
+        core.run("px", &["0x23".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -1033,7 +1033,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         core.io.open(&path.to_string_lossy(), IoMode::READ).unwrap();
-        core.run("px", &["0x0".to_string()]);
+        core.run("px", &["0x0".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
@@ -1044,7 +1044,7 @@ mod test_print_hex {
         core.io.map(0x10, 0x520, 0x20).unwrap();
         core.io.map(0x20, 0x540, 0x20).unwrap();
         core.set_loc(0x500);
-        core.run("px", &["0x65".to_string()]);
+        core.run("px", &["0x65".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n\
@@ -1078,7 +1078,7 @@ mod test_print_hex {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        core.run("px", &["0x".to_string()]);
+        core.run("px", &["0x".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -1098,7 +1098,7 @@ mod test_print_hex {
                 IoMode::READ,
             )
             .unwrap();
-        pb.run(&mut core, &["2".to_string(), "16".to_string()]);
+        pb.run(&mut core, &["2".to_owned(), "16".to_owned()]);
         core.io.map(0, 0x500, 16).unwrap();
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
@@ -1112,7 +1112,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.mode = AddrMode::Vir;
         core.set_loc(0x500);
-        pb.run(&mut core, &["2".to_string(), "16".to_string()]);
+        pb.run(&mut core, &["2".to_owned(), "16".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "01010110010001110110100001101100\
@@ -1135,7 +1135,7 @@ mod test_print_hex {
             )
             .unwrap();
         core.io.map(0, 0x500, 16).unwrap();
-        pb.run(&mut core, &["16".to_string(), "16".to_string()]);
+        pb.run(&mut core, &["16".to_owned(), "16".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "5647686c4948463161574e7249474a79\n"
@@ -1145,7 +1145,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.mode = AddrMode::Vir;
         core.set_loc(0x500);
-        pb.run(&mut core, &["16".to_string(), "16".to_string()]);
+        pb.run(&mut core, &["16".to_owned(), "16".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "5647686c4948463161574e7249474a79\n"
@@ -1165,7 +1165,7 @@ mod test_print_hex {
                 IoMode::READ,
             )
             .unwrap();
-        pb.run(&mut core, &["16".to_string()]);
+        pb.run(&mut core, &["16".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -1174,7 +1174,7 @@ mod test_print_hex {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        pb.run(&mut core, &["16".to_string(), "x".to_string()]);
+        pb.run(&mut core, &["16".to_owned(), "x".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -1183,7 +1183,7 @@ mod test_print_hex {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        pb.run(&mut core, &["16".to_string(), "0x5000".to_string()]);
+        pb.run(&mut core, &["16".to_owned(), "0x5000".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -1192,7 +1192,7 @@ mod test_print_hex {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        pb.run(&mut core, &["5".to_string(), "5".to_string()]);
+        pb.run(&mut core, &["5".to_owned(), "5".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -1212,7 +1212,7 @@ mod test_print_hex {
             )
             .unwrap();
         core.io.map(0, 0x500, 35).unwrap();
-        pcsv.run(&mut core, &["8".to_string(), "35".to_string()]);
+        pcsv.run(&mut core, &["8".to_owned(), "35".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "0x56, 0x47, 0x68, 0x6c, 0x49, 0x48, 0x46, 0x31, 0x61, 0x57, 0x4e, 0x72, 0x49, 0x47, 0x4a, 0x79,\n\
@@ -1224,7 +1224,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.mode = AddrMode::Vir;
         core.set_loc(0x500);
-        pcsv.run(&mut core, &["8".to_string(), "35".to_string()]);
+        pcsv.run(&mut core, &["8".to_owned(), "35".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "0x56, 0x47, 0x68, 0x6c, 0x49, 0x48, 0x46, 0x31, 0x61, 0x57, 0x4e, 0x72, 0x49, 0x47, 0x4a, 0x79,\n\
@@ -1246,7 +1246,7 @@ mod test_print_hex {
             )
             .unwrap();
         core.io.map(0, 0x500, 52).unwrap();
-        pcsv.run(&mut core, &["16".to_string(), "26".to_string()]);
+        pcsv.run(&mut core, &["16".to_owned(), "26".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "0x4756, 0x6c68, 0x4849, 0x3146, 0x5761, 0x724e, 0x4749, 0x794a, 0x3362, 0x7564, 0x4749, 0x765a,\n\
@@ -1258,7 +1258,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.mode = AddrMode::Vir;
         core.set_loc(0x500);
-        pcsv.run(&mut core, &["16".to_string(), "26".to_string()]);
+        pcsv.run(&mut core, &["16".to_owned(), "26".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "0x4756, 0x6c68, 0x4849, 0x3146, 0x5761, 0x724e, 0x4749, 0x794a, 0x3362, 0x7564, 0x4749, 0x765a,\n\
@@ -1281,7 +1281,7 @@ mod test_print_hex {
             )
             .unwrap();
         core.io.map(0, 0x500, 60).unwrap();
-        pcsv.run(&mut core, &["32".to_string(), "15".to_string()]);
+        pcsv.run(&mut core, &["32".to_owned(), "15".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "0x6c684756, 0x31464849, 0x724e5761, 0x794a4749, 0x75643362, 0x765a4749, 0x71424365, 0x77315764,\n\
@@ -1292,7 +1292,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.mode = AddrMode::Vir;
         core.set_loc(0x500);
-        pcsv.run(&mut core, &["32".to_string(), "15".to_string()]);
+        pcsv.run(&mut core, &["32".to_owned(), "15".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "0x6c684756, 0x31464849, 0x724e5761, 0x794a4749, 0x75643362, 0x765a4749, 0x71424365, 0x77315764,\n\
@@ -1314,7 +1314,7 @@ mod test_print_hex {
             )
             .unwrap();
         core.io.map(0, 0x500, 700).unwrap();
-        pcsv.run(&mut core, &["64".to_string(), "15".to_string()]);
+        pcsv.run(&mut core, &["64".to_owned(), "15".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "0x3030303031323053, 0x3035423438333633, 0x3032373446343235, 0x3033323330323032,\n\
@@ -1327,7 +1327,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.mode = AddrMode::Vir;
         core.set_loc(0x500);
-        pcsv.run(&mut core, &["64".to_string(), "15".to_string()]);
+        pcsv.run(&mut core, &["64".to_owned(), "15".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "0x3030303031323053, 0x3035423438333633, 0x3032373446343235, 0x3033323330323032,\n\
@@ -1350,7 +1350,7 @@ mod test_print_hex {
             )
             .unwrap();
         core.io.map(0, 0x500, 700).unwrap();
-        pcsv.run(&mut core, &["128".to_string(), "7".to_string()]);
+        pcsv.run(&mut core, &["128".to_owned(), "7".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "0x30354234383336333030303031323053, 0x30333233303230323032373446343235,\n\
@@ -1363,7 +1363,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.mode = AddrMode::Vir;
         core.set_loc(0x500);
-        pcsv.run(&mut core, &["128".to_string(), "7".to_string()]);
+        pcsv.run(&mut core, &["128".to_owned(), "7".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "0x30354234383336333030303031323053, 0x30333233303230323032373446343235,\n\
@@ -1386,7 +1386,7 @@ mod test_print_hex {
             )
             .unwrap();
         core.io.map(0, 0x500, 700).unwrap();
-        pcsv.run(&mut core, &["256".to_string(), "5".to_string()]);
+        pcsv.run(&mut core, &["256".to_owned(), "5".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "0x3033323330323032303237344634323530354234383336333030303031323053, 0x3633393533353134353430323935323430323434353434353134353432353334,\n\
@@ -1398,7 +1398,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.mode = AddrMode::Vir;
         core.set_loc(0x500);
-        pcsv.run(&mut core, &["256".to_string(), "5".to_string()]);
+        pcsv.run(&mut core, &["256".to_owned(), "5".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "0x3033323330323032303237344634323530354234383336333030303031323053, 0x3633393533353134353430323935323430323434353434353134353432353334,\n\
@@ -1421,7 +1421,7 @@ mod test_print_hex {
             )
             .unwrap();
         core.io.map(0, 0x500, 700).unwrap();
-        pcsv.run(&mut core, &["512".to_string(), "3".to_string()]);
+        pcsv.run(&mut core, &["512".to_owned(), "3".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "0x36333935333531343534303239353234303234343534343531343534323533343033323330323032303237344634323530354234383336333030303031323053,\n\
@@ -1433,7 +1433,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.mode = AddrMode::Vir;
         core.set_loc(0x500);
-        pcsv.run(&mut core, &["512".to_string(), "3".to_string()]);
+        pcsv.run(&mut core, &["512".to_owned(), "3".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "0x36333935333531343534303239353234303234343534343531343534323533343033323330323032303237344634323530354234383336333030303031323053,\n\
@@ -1455,7 +1455,7 @@ mod test_print_hex {
                 IoMode::READ,
             )
             .unwrap();
-        pcsv.run(&mut core, &["512".to_string()]);
+        pcsv.run(&mut core, &["512".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -1464,7 +1464,7 @@ mod test_print_hex {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        pcsv.run(&mut core, &["512".to_string(), "50x".to_string()]);
+        pcsv.run(&mut core, &["512".to_owned(), "50x".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -1473,7 +1473,7 @@ mod test_print_hex {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        pcsv.run(&mut core, &["51x".to_string(), "50".to_string()]);
+        pcsv.run(&mut core, &["51x".to_owned(), "50".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -1482,7 +1482,7 @@ mod test_print_hex {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        pcsv.run(&mut core, &["51".to_string(), "50".to_string()]);
+        pcsv.run(&mut core, &["51".to_owned(), "50".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -1491,7 +1491,7 @@ mod test_print_hex {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        pcsv.run(&mut core, &["512".to_string(), "500000".to_string()]);
+        pcsv.run(&mut core, &["512".to_owned(), "500000".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -1511,7 +1511,7 @@ mod test_print_hex {
                 IoMode::READ,
             )
             .unwrap();
-        pscsv.run(&mut core, &["128".to_string()]);
+        pscsv.run(&mut core, &["128".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -1520,7 +1520,7 @@ mod test_print_hex {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        pscsv.run(&mut core, &["128".to_string(), "50x".to_string()]);
+        pscsv.run(&mut core, &["128".to_owned(), "50x".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -1529,7 +1529,7 @@ mod test_print_hex {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        pscsv.run(&mut core, &["12x".to_string(), "50".to_string()]);
+        pscsv.run(&mut core, &["12x".to_owned(), "50".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -1538,7 +1538,7 @@ mod test_print_hex {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        pscsv.run(&mut core, &["12".to_string(), "50".to_string()]);
+        pscsv.run(&mut core, &["12".to_owned(), "50".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -1547,7 +1547,7 @@ mod test_print_hex {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        pscsv.run(&mut core, &["128".to_string(), "500000".to_string()]);
+        pscsv.run(&mut core, &["128".to_owned(), "500000".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -1568,7 +1568,7 @@ mod test_print_hex {
             )
             .unwrap();
         core.io.map(0, 0x500, 35).unwrap();
-        pscsv.run(&mut core, &["8".to_string(), "35".to_string()]);
+        pscsv.run(&mut core, &["8".to_owned(), "35".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "86, 71, 104, 108, 73, 72, 70, 49, 97, 87, 78, 114, 73, 71, 74, 121,\n\
@@ -1580,7 +1580,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.mode = AddrMode::Vir;
         core.set_loc(0x500);
-        pscsv.run(&mut core, &["8".to_string(), "35".to_string()]);
+        pscsv.run(&mut core, &["8".to_owned(), "35".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "86, 71, 104, 108, 73, 72, 70, 49, 97, 87, 78, 114, 73, 71, 74, 121,\n\
@@ -1602,7 +1602,7 @@ mod test_print_hex {
             )
             .unwrap();
         core.io.map(0, 0x500, 52).unwrap();
-        pscsv.run(&mut core, &["16".to_string(), "26".to_string()]);
+        pscsv.run(&mut core, &["16".to_owned(), "26".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "18262, 27752, 18505, 12614, 22369, 29262, 18249, 31050, 13154, 30052, 18249, 30298,\n\
@@ -1614,7 +1614,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.mode = AddrMode::Vir;
         core.set_loc(0x500);
-        pscsv.run(&mut core, &["16".to_string(), "26".to_string()]);
+        pscsv.run(&mut core, &["16".to_owned(), "26".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "18262, 27752, 18505, 12614, 22369, 29262, 18249, 31050, 13154, 30052, 18249, 30298,\n\
@@ -1637,7 +1637,7 @@ mod test_print_hex {
             )
             .unwrap();
         core.io.map(0, 0x500, 60).unwrap();
-        pscsv.run(&mut core, &["32".to_string(), "15".to_string()]);
+        pscsv.run(&mut core, &["32".to_owned(), "15".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "1818773334, 826689609, 1917736801, 2034911049, 1969501026, 1985627977, 1900168037, 1999722340,\n\
@@ -1648,7 +1648,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.mode = AddrMode::Vir;
         core.set_loc(0x500);
-        pscsv.run(&mut core, &["32".to_string(), "15".to_string()]);
+        pscsv.run(&mut core, &["32".to_owned(), "15".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "1818773334, 826689609, 1917736801, 2034911049, 1969501026, 1985627977, 1900168037, 1999722340,\n\
@@ -1670,7 +1670,7 @@ mod test_print_hex {
             )
             .unwrap();
         core.io.map(0, 0x500, 700).unwrap();
-        pscsv.run(&mut core, &["64".to_string(), "15".to_string()]);
+        pscsv.run(&mut core, &["64".to_owned(), "15".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "3472328296244588627, 3473755479634818611, 3472898960311726645, 3473174933066100786,\n\
@@ -1683,7 +1683,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.mode = AddrMode::Vir;
         core.set_loc(0x500);
-        pscsv.run(&mut core, &["64".to_string(), "15".to_string()]);
+        pscsv.run(&mut core, &["64".to_owned(), "15".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "3472328296244588627, 3473755479634818611, 3472898960311726645, 3473174933066100786,\n\
@@ -1706,7 +1706,7 @@ mod test_print_hex {
             )
             .unwrap();
         core.io.map(0, 0x500, 700).unwrap();
-        pscsv.run(&mut core, &["128".to_string(), "7".to_string()]);
+        pscsv.run(&mut core, &["128".to_owned(), "7".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "64079478307469671234530411534546514003, 64068769113493663281246783985836896821,\n\
@@ -1719,7 +1719,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.mode = AddrMode::Vir;
         core.set_loc(0x500);
-        pscsv.run(&mut core, &["128".to_string(), "7".to_string()]);
+        pscsv.run(&mut core, &["128".to_owned(), "7".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "64079478307469671234530411534546514003, 64068769113493663281246783985836896821,\n\

@@ -6,3 +6,6 @@ edition = "2021"
 [dependencies]
 rair-cmd = {workspace = true}
 rair-core = {workspace = true}
+
+[lints]
+workspace = true

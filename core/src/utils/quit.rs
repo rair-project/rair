@@ -1,15 +1,15 @@
 //! Quit the current project.
 
-use crate::core::*;
-use crate::helper::*;
+use crate::core::Core;
+use crate::helper::{help, Cmd};
 use std::process;
 
 #[derive(Default)]
-pub struct Quit {}
+pub struct Quit;
 
 impl Quit {
     pub fn new() -> Self {
-        Default::default()
+        Self
     }
 }
 

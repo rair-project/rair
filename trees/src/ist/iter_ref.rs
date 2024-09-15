@@ -1,10 +1,10 @@
 //! similar to iter but it iterates over reference instead of consuming the tree.
 
-use super::interval::*;
-use super::rb_helpers::*;
-use super::tree::*;
+use super::interval::Interval;
+use super::rb_helpers::AugData;
+use super::tree::IST;
 use crate::rbtree::TreeRefIterator;
-use std::slice::Iter;
+use core::slice::Iter;
 /// Iterator for [IST] reference
 pub struct ISTRefIterator<'a, K: Ord + Copy, V> {
     tree_iter: TreeRefIterator<'a, Interval<K>, AugData<K>, Vec<V>>,

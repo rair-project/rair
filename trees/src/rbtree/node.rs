@@ -1,8 +1,8 @@
 //! Non Empty node Implementation.
 
 use super::color::Color;
-use super::rbtree_wrapper::*;
-use std::cmp::max;
+use super::rbtree_wrapper::{Augment, RBTree};
+use core::cmp::max;
 pub(super) struct Node<K: Ord + Copy, A: Copy, V> {
     pub(super) key: K,
     pub(super) aug_data: A,
@@ -52,7 +52,7 @@ where
         x.as_mut().unwrap().left = self.into();
         x.as_mut().unwrap().left.sync_aug();
         x.sync_aug();
-        *x.unwrap()
+        x.unwrap()
     }
     pub(super) fn rotate_right(mut self) -> Self {
         let mut x = self.left.take();
@@ -62,7 +62,7 @@ where
         x.as_mut().unwrap().right = self.into();
         x.as_mut().unwrap().right.sync_aug();
         x.sync_aug();
-        *x.unwrap()
+        x.unwrap()
     }
     #[inline]
     pub(super) fn flip_colors(&mut self) {

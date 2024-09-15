@@ -1,5 +1,5 @@
 //! rair environment variables library.
-
+extern crate alloc;
 mod environment;
 mod err;
 mod metadata;

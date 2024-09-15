@@ -1,11 +1,11 @@
 //! RIO plugin that opens raw binary files.
 
-use crate::plugin::*;
-use crate::utils::*;
-use memmap::*;
+use crate::plugin::{RIOPlugin, RIOPluginDesc, RIOPluginMetadata, RIOPluginOperations};
+use crate::utils::{IoError, IoMode};
+use core::ops::Deref;
+use memmap::{Mmap, MmapMut, MmapOptions};
 use std::fs::OpenOptions;
 use std::io;
-use std::ops::Deref;
 use std::path::Path;
 enum FileInternals {
     Map(Mmap),
@@ -55,15 +55,15 @@ impl RIOPluginOperations for FileInternals {
         Ok(())
     }
 
-    fn write(&mut self, raddr: usize, buf: &[u8]) -> Result<(), IoError> {
+    fn write(&mut self, raddr: usize, buffer: &[u8]) -> Result<(), IoError> {
         if let Some(mutmap) = self.as_mut() {
-            if raddr + buf.len() > mutmap.len() {
+            if raddr + buffer.len() > mutmap.len() {
                 return Err(IoError::Parse(io::Error::new(
                     io::ErrorKind::UnexpectedEof,
                     "BufferOverflow",
                 )));
             }
-            mutmap[raddr..raddr + buf.len()].copy_from_slice(buf);
+            mutmap[raddr..raddr + buffer.len()].copy_from_slice(buffer);
             Ok(())
         } else {
             Err(IoError::Parse(io::Error::new(
@@ -74,7 +74,7 @@ impl RIOPluginOperations for FileInternals {
     }
 }
 
-struct FilePlugin {}
+struct FilePlugin;
 
 impl FilePlugin {
     fn uri_to_path(uri: &str) -> &Path {
@@ -164,7 +164,8 @@ mod default_plugin_tests {
 
     fn test_open_errors_cb(paths: &[&Path]) {
         let mut plugin = plugin();
-        let custom_path = String::from("file://") + &paths[0].to_string_lossy();
+        let mut custom_path = "file://".to_owned();
+        custom_path.push_str(&paths[0].to_string_lossy());
         plugin.open(&custom_path, IoMode::COW).unwrap();
         plugin
             .open(&paths[1].to_string_lossy(), IoMode::READ)
@@ -175,7 +176,7 @@ mod default_plugin_tests {
         let mut e = plugin.open(&paths[3].to_string_lossy(), IoMode::WRITE);
         match e {
             Err(IoError::Parse(io_err)) => {
-                assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied)
+                assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied);
             }
             _ => panic!("Permission Denied Error should have been generated"),
         };
@@ -183,7 +184,7 @@ mod default_plugin_tests {
         e = plugin.open(&paths[3].to_string_lossy(), IoMode::READ | IoMode::COW);
         match e {
             Err(IoError::Parse(io_err)) => {
-                assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied)
+                assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied);
             }
             _ => panic!("Permission Denied Error should have been generated"),
         };
@@ -194,7 +195,7 @@ mod default_plugin_tests {
         );
         match e {
             Err(IoError::Parse(io_err)) => {
-                assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied)
+                assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied);
             }
             _ => panic!("Permission Denied Error should have been generated"),
         };
@@ -225,7 +226,7 @@ mod default_plugin_tests {
     }
     #[test]
     fn test_read() {
-        operate_on_file(&test_read_cb, DATA)
+        operate_on_file(&test_read_cb, DATA);
     }
 
     fn test_read_errors_cb(path: &Path) {

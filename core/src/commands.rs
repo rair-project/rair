@@ -1,8 +1,8 @@
 //! Data Structure for holding rair commands.
 
-use crate::helper::*;
-use rair_trees::bktree::SpellTree;
-use std::collections::BTreeMap; // for suffex search
+use crate::helper::{Cmd, MRc};
+use alloc::collections::BTreeMap;
+use rair_trees::bktree::SpellTree; // for suffex search
 
 #[derive(Default)]
 pub struct Commands {
@@ -21,18 +21,21 @@ impl Commands {
         if self.search.contains_key(command_name) {
             false
         } else {
-            self.suggestions.insert(command_name.to_string(), ());
+            self.suggestions.insert(command_name.to_owned(), ());
             self.search.insert(command_name, functionality);
             true
         }
     }
 
+    #[must_use]
     pub fn find(&self, command: &str) -> Option<MRc<dyn Cmd + Sync + Send>> {
         self.search.get(command).cloned()
     }
+    #[must_use]
     pub fn suggest(&self, command: &str, tolerance: u64) -> Vec<&String> {
-        self.suggestions.find(&command.to_string(), tolerance).1
+        self.suggestions.find(&command.to_owned(), tolerance).1
     }
+    #[must_use]
     pub fn prefix<'a>(&'a self, command: &'a str) -> Vec<&&str> {
         self.search
             .range(command..)

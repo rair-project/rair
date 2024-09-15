@@ -1,7 +1,7 @@
 //! Augmented Interval Search Tree
 //! The plan is to make it self balancing tree
 //! implemented using  left-leaning red-black tree:
-//! https://www.cs.princeton.edu/~rs/talks/LLRB/LLRB.pdf
+//! <https://www.cs.princeton.edu>/~rs/talks/LLRB/LLRB.pdf
 //!
 use super::interval::Interval;
 use super::iter::ISTIterator;
@@ -11,7 +11,7 @@ use crate::rbtree::{Augment, RBTree};
 
 /// Interval Query data type based on augmented binary search tree,
 /// written as *IST* but pronounced 'Interval Search Tree'.
-/// IST is balanced using [RBTree].
+/// IST is balanced using [`RBTree`].
 ///
 /// IST support handling overlapping intervals, non-overlapping intervals,
 /// as well as keeping track of multiple insertions into same interval.
@@ -48,6 +48,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// use rair_trees::ist::IST;
     /// let mut ist: IST<u64, &'static str> = IST::new();
     /// ```
+    #[must_use]
     pub fn new() -> IST<K, V> {
         IST {
             root: RBTree::new(),
@@ -67,6 +68,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// ist.insert(4, 11, &"[4, 11]");
     ///assert_eq!(ist.size(), 3);
     /// ```
+    #[must_use]
     pub fn size(&self) -> u64 {
         if !self.root.is_node() {
             return 0;
@@ -74,7 +76,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
         self.root.aug_data().size
     }
 
-    /// 0 will be returned in case of empty *IST*. If *IST* has nodes, then *get_level*
+    /// 0 will be returned in case of empty *IST*. If *IST* has nodes, then *`get_level`*
     /// returns 1 + the number of connections between root and the farthest node from it.
     /// # Example
     /// ```
@@ -90,6 +92,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// ist.insert(0, 3, &"[0, 3]");
     /// assert_eq!(ist.get_level(), 3);
     /// ```
+    #[must_use]
     pub fn get_level(&self) -> u64 {
         self.root.get_level()
     }
@@ -432,6 +435,10 @@ impl<K: Ord + Copy, V> IST<K, V> {
 
         self.root.generic_delete(int, &recurse, &accept)
     }
+    #[must_use]
+    pub fn iter(&self) -> ISTRefIterator<'_, K, V> {
+        <&Self as IntoIterator>::into_iter(self)
+    }
 }
 
 impl<K: Ord + Copy, V> IntoIterator for IST<K, V> {
@@ -535,16 +542,16 @@ mod ist_tests {
     #[test]
     fn test_insert() {
         let mut ist = IST::new();
-        ist.insert(25, 30, "[25, 30]");
+        ist.insert(25i32, 30i32, "[25, 30]");
         assert_eq!(ist.get_level(), 1);
         assert_eq!(ist.size(), 1);
-        ist.insert(20, 30, "[20, 30]");
+        ist.insert(20i32, 30i32, "[20, 30]");
         assert_eq!(ist.get_level(), 2);
         assert_eq!(ist.size(), 2);
-        ist.insert(26, 30, "[26, 30]");
+        ist.insert(26i32, 30i32, "[26, 30]");
         assert_eq!(ist.get_level(), 2);
         assert_eq!(ist.size(), 3);
-        ist.insert(10, 30, "[10, 30]");
+        ist.insert(10i32, 30i32, "[10, 30]");
         assert_eq!(ist.get_level(), 3);
         assert_eq!(ist.size(), 4);
     }
@@ -686,7 +693,7 @@ mod ist_tests {
         // FIX #31
         let mut ist = get_a_good_tree();
         ist.insert(50, 60, "Attempt2");
-        assert_eq!(ist.size(), 10)
+        assert_eq!(ist.size(), 10);
     }
     #[test]
     fn test_iter() {

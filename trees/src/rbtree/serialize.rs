@@ -1,10 +1,10 @@
-//! Serializing  RBTree.
+//! Serializing  `RBTree`.
 
 use super::rbtree_wrapper::{Augment, RBTree};
+use core::fmt::{Formatter, Result as FResult};
 use serde::de;
 use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
 use serde::ser::{Serialize, SerializeSeq, Serializer};
-use std::fmt;
 
 impl<K: Ord + Copy + Serialize, A: Copy + Serialize, V: Serialize> Serialize for RBTree<K, A, V>
 where
@@ -34,7 +34,7 @@ where
     V: Deserialize<'de>,
 {
     type Value = RBTree<K, A, V>;
-    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn expecting(&self, formatter: &mut Formatter<'_>) -> FResult {
         formatter.write_str("struct RBTree")
     }
     fn visit_seq<VI>(self, mut seq: VI) -> Result<RBTree<K, A, V>, VI::Error>
@@ -82,13 +82,13 @@ mod test_rb_tree_serializing {
     use super::*;
     use serde::{Deserialize, Serialize};
     #[derive(Copy, Clone, Serialize, Deserialize)]
-    struct PlaceHolder();
+    struct PlaceHolder;
     impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, u64> {}
     #[test]
     fn test_serde() {
         let mut rbtree = RBTree::new();
         for i in 0..100 {
-            rbtree.insert(i, PlaceHolder(), i);
+            rbtree.insert(i, PlaceHolder, i);
         }
         let serialized = serde_json::to_string(&rbtree).unwrap();
         let mut deserialized: RBTree<u64, PlaceHolder, u64> =

@@ -36,13 +36,13 @@ pub enum Args {
 }
 impl Args {
     fn parse_perm(perms_str: &str) -> Result<IoMode, String> {
-        let mut perm = Default::default();
+        let mut perm = IoMode::default();
         for c in perms_str.chars() {
             match c.to_ascii_lowercase() {
                 'r' => perm |= IoMode::READ,
                 'w' => perm |= IoMode::WRITE,
                 'c' => perm |= IoMode::COW,
-                _ => return Err(format!("Unknown Permission: `{}`", c)),
+                _ => return Err(format!("Unknown Permission: `{c}`")),
             }
         }
         Ok(perm)

@@ -2,23 +2,22 @@
 
 use super::defaultplugin;
 use super::dummy::Dummy;
-use crate::plugin::*;
-use crate::utils::*;
+use crate::plugin::{RIOPlugin, RIOPluginDesc, RIOPluginMetadata, RIOPluginOperations};
+use crate::utils::{IoError, IoMode};
+use alloc::collections::BTreeMap;
+use core::num::ParseIntError;
+use core::{fmt::Write as _, str};
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_while_m_n},
     {combinator::map_res, sequence::tuple, IResult},
 };
 use std::{
-    collections::BTreeMap,
-    fmt::Write as _,
     fs::{File, OpenOptions},
     io,
     io::Write as _,
     path::Path,
-    str,
 };
-
 const METADATA: RIOPluginMetadata = RIOPluginMetadata {
     name: "IHex",
     desc: "This IO plugin is used to open Intel IHex files,\
@@ -39,8 +38,8 @@ struct FileInternals {
     sla: Option<u32>, // used for Record 05
 }
 
-fn parse_newline(buf: &[u8]) -> IResult<&[u8], &[u8]> {
-    alt((tag("\r\n"), tag("\n"), tag("\r")))(buf)
+fn parse_newline(buffer: &[u8]) -> IResult<&[u8], &[u8]> {
+    alt((tag("\r\n"), tag("\n"), tag("\r")))(buffer)
 }
 
 enum Record {
@@ -50,7 +49,7 @@ enum Record {
     Ssa(u32),           //Record 03
     Sla(u32),           // record 05
 }
-fn from_hex(input: &[u8]) -> Result<u8, std::num::ParseIntError> {
+fn from_hex(input: &[u8]) -> Result<u8, ParseIntError> {
     u8::from_str_radix(str::from_utf8(input).unwrap(), 16)
 }
 
@@ -64,12 +63,12 @@ fn hex_byte(input: &[u8]) -> IResult<&[u8], u8> {
 
 fn hex_big_word(input: &[u8]) -> IResult<&[u8], u16> {
     let (input, (byte1, byte2)) = tuple((hex_byte, hex_byte))(input)?;
-    let result = ((byte1 as u16) << 8) + byte2 as u16;
+    let result = ((byte1 as u16) << 8i32) + byte2 as u16;
     Ok((input, result))
 }
 fn hex_big_dword(input: &[u8]) -> IResult<&[u8], u32> {
     let (input, (word1, word2)) = tuple((hex_big_word, hex_big_word))(input)?;
-    let result = ((word1 as u32) << 16) + word2 as u32;
+    let result = ((word1 as u32) << 16i32) + word2 as u32;
     Ok((input, result))
 }
 fn parse_record00(input: &[u8]) -> IResult<&[u8], Record> {
@@ -152,19 +151,14 @@ impl FileInternals {
             parse_record05,
         ))(input)
     }
-    fn parse_ihex(&mut self, input: &[u8]) -> Result<(), IoError> {
-        let mut input = input;
+    fn parse_ihex(&mut self, mut input: &[u8]) -> Result<(), IoError> {
         let mut base = 0u64;
-        let mut line = 1;
+        let mut line = 1i32;
         loop {
-            let x = match Self::parse_record(input) {
-                Ok(x) => x,
-                Err(_) => {
-                    return Err(IoError::Custom(format!(
-                        "Invalid Ihex entry at line: {}",
-                        line
-                    )))
-                }
+            let Ok(x) = Self::parse_record(input) else {
+                return Err(IoError::Custom(format!(
+                    "Invalid Ihex entry at line: {line}"
+                )));
             };
             input = x.0;
             match x.1 {
@@ -178,48 +172,48 @@ impl FileInternals {
                 Record::Ssa(addr) => self.ssa = Some(addr),
                 Record::Sla(addr) => self.sla = Some(addr),
             }
-            line += 1;
+            line += 1i32;
         }
         Ok(())
     }
     fn write_sa(&self, file: &mut File) -> Result<(), IoError> {
         if let Some(ssa) = self.ssa {
             let mut checksum: u16 = 4 + 3;
-            for byte in ssa.to_be_bytes().iter() {
+            for byte in &ssa.to_be_bytes() {
                 checksum = (checksum + *byte as u16) & 0xFF;
             }
             checksum = 256 - checksum;
-            writeln!(file, ":04000003{:08x}{:02x}", ssa, checksum)?;
+            writeln!(file, ":04000003{ssa:08x}{checksum:02x}")?;
         }
         if let Some(sla) = self.sla {
             let mut checksum: u16 = 4 + 5;
-            for byte in sla.to_be_bytes().iter() {
+            for byte in &sla.to_be_bytes() {
                 checksum = (checksum + *byte as u16) & 0xFF;
             }
             checksum = 256 - checksum;
-            writeln!(file, ":04000005{:08x}{:02x}", sla, checksum)?;
+            writeln!(file, ":04000005{sla:08x}{checksum:02x}")?;
         }
         Ok(())
     }
-    fn write_record04(&self, file: &mut File, addr: u64) -> Result<(), IoError> {
-        let addr = (addr >> 16) as u16;
+    fn write_record04(file: &mut File, addr: u64) -> Result<(), IoError> {
+        let addr = (addr >> 16i32) as u16;
         let mut checksum = 6;
-        for byte in addr.to_be_bytes().iter() {
+        for byte in &addr.to_be_bytes() {
             checksum = (checksum + *byte as u16) & 0xFF;
         }
         checksum = 256 - checksum;
-        writeln!(file, ":02000004{:04x}{:02x}", addr, checksum)?;
+        writeln!(file, ":02000004{addr:04x}{checksum:02x}")?;
         Ok(())
     }
 
-    fn write_record02(&self, file: &mut File, addr: u64) -> Result<(), IoError> {
-        let addr = (addr >> 4) as u16 & 0xf000;
+    fn write_record02(file: &mut File, addr: u64) -> Result<(), IoError> {
+        let addr = (addr >> 4i32) as u16 & 0xf000;
         let mut checksum = 4;
-        for byte in addr.to_be_bytes().iter() {
+        for byte in &addr.to_be_bytes() {
             checksum = (checksum + *byte as u16) & 0xFF;
         }
         checksum = 256 - checksum;
-        writeln!(file, ":02000002{:04x}{:02x}", addr, checksum)?;
+        writeln!(file, ":02000002{addr:04x}{checksum:02x}")?;
         Ok(())
     }
 
@@ -227,14 +221,14 @@ impl FileInternals {
         let mut checksum: u16 = 0x10;
         let mut addr = self.base();
         let mut data = String::new();
-        let mut i = 0;
-        for (k, v) in self.bytes.iter() {
-            if i != 0 {
-                if i == 0x10 || *k != addr + 1 {
+        let mut i = 0i32;
+        for (k, v) in &self.bytes {
+            if i != 0i32 {
+                if i == 0x10i32 || *k != addr + 1 {
                     writeln!(file, ":{:02x}{}{:02x}", i, data, (256 - checksum) & 0xff)?;
                     data.clear();
                     checksum = 0x10;
-                    i = 0;
+                    i = 0i32;
                 } else {
                     // we know that *k == addr + 1
                     addr = *k;
@@ -242,23 +236,23 @@ impl FileInternals {
                     checksum = (checksum + *v as u16) & 0xff;
                 }
             }
-            if i == 0 {
+            if i == 0i32 {
                 if *k > 0xfffff {
                     // record 04
-                    self.write_record04(file, *k)?;
+                    Self::write_record04(file, *k)?;
                 } else if *k > 0xffff {
                     // record 02
-                    self.write_record02(file, *k)?;
+                    Self::write_record02(file, *k)?;
                 }
                 let offset = (*k & 0xffff) as u16;
-                for byte in offset.to_be_bytes().iter() {
+                for byte in &offset.to_be_bytes() {
                     checksum = (checksum + *byte as u16) & 0xff;
                 }
                 addr = *k;
                 write!(data, "{:04x}00{:02x}", offset, *v).unwrap();
                 checksum = (checksum + *v as u16) & 0xff;
             }
-            i += 1;
+            i += 1i32;
         }
         if !data.is_empty() {
             writeln!(file, ":{:02x}{}{:02x}", i, data, 256 - checksum)?;
@@ -280,14 +274,10 @@ impl FileInternals {
         Ok(())
     }
     fn size(&self) -> u64 {
-        let min = if let Some((k, _)) = self.bytes.iter().next() {
-            k
-        } else {
+        let Some((min, _)) = self.bytes.iter().next() else {
             return 0;
         };
-        let max = if let Some((k, _)) = self.bytes.iter().next_back() {
-            k
-        } else {
+        let Some((max, _)) = self.bytes.iter().next_back() else {
             return 0;
         };
         max - min + 1
@@ -314,7 +304,7 @@ impl RIOPluginOperations for FileInternals {
         Ok(())
     }
 
-    fn write(&mut self, raddr: usize, buf: &[u8]) -> Result<(), IoError> {
+    fn write(&mut self, raddr: usize, buffer: &[u8]) -> Result<(), IoError> {
         // if we are dealing with cow or write firs write data to the sparce array
         if !self.prot.contains(IoMode::COW) && !self.prot.contains(IoMode::WRITE) {
             return Err(IoError::Parse(io::Error::new(
@@ -322,7 +312,7 @@ impl RIOPluginOperations for FileInternals {
                 "File Not Writable",
             )));
         }
-        for (i, item) in buf.iter().enumerate() {
+        for (i, item) in buffer.iter().enumerate() {
             self.bytes.insert((i + raddr) as u64, *item);
         }
 
@@ -365,7 +355,9 @@ impl RIOPlugin for IHexPlugin {
     }
 
     fn open(&mut self, uri: &str, flags: IoMode) -> Result<RIOPluginDesc, IoError> {
-        assert!(self.accept_uri(uri));
+        if !self.accept_uri(uri) {
+            return Err(IoError::Custom(format!("Invalid uri {uri}")));
+        }
         let def_desc = self.defaultplugin.open(
             &IHexPlugin::uri_to_path(uri).to_string_lossy(),
             IoMode::READ,
@@ -376,7 +368,7 @@ impl RIOPlugin for IHexPlugin {
             ssa: None,
             sla: None,
             prot: flags,
-            uri: uri.to_string(),
+            uri: uri.to_owned(),
         };
         let mut data = vec![0; def_desc.size as usize];
         internal.file.read(0x0, &mut data)?;
@@ -435,7 +427,8 @@ mod test_ihex {
     }
     fn tiny_ihex_write_cb(path: &Path) {
         let mut p = plugin();
-        let uri = String::from("ihex://") + &path.to_string_lossy();
+        let mut uri = "ihex://".to_owned();
+        uri.push_str(&path.to_string_lossy());
         let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
 
         file.plugin_operations
@@ -484,7 +477,8 @@ mod test_ihex {
     }
     fn tiny_sparce_ihex_write_cb(path: &Path) {
         let mut p = plugin();
-        let uri = String::from("ihex://") + &path.to_string_lossy();
+        let mut uri = "ihex://".to_owned();
+        uri.push_str(&path.to_string_lossy());
         let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
 
         file.plugin_operations
@@ -536,7 +530,8 @@ mod test_ihex {
 
     fn big_write_cb(path: &Path) {
         let mut p = plugin();
-        let uri = String::from("ihex://") + &path.to_string_lossy();
+        let mut uri = "ihex://".to_owned();
+        uri.push_str(&path.to_string_lossy());
         let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
 
         file.plugin_operations
@@ -582,7 +577,7 @@ mod test_ihex {
         let mut data2 = vec![0; file.size as usize];
         file.plugin_operations.read(0, &mut data).unwrap();
         file2.plugin_operations.read(0, &mut data2).unwrap();
-        assert_eq!(data, data2)
+        assert_eq!(data, data2);
     }
 
     #[test]
@@ -627,7 +622,8 @@ mod test_ihex {
 
     fn write_02_03_cb(path: &Path) {
         let mut p = plugin();
-        let uri = String::from("ihex://") + &path.to_string_lossy();
+        let mut uri = "ihex://".to_owned();
+        uri.push_str(&path.to_string_lossy());
         let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
 
         file.plugin_operations
@@ -703,7 +699,8 @@ mod test_ihex {
 
     fn write_04_05_cb(path: &Path) {
         let mut p = plugin();
-        let uri = String::from("ihex://") + &path.to_string_lossy();
+        let mut uri = "ihex://".to_owned();
+        uri.push_str(&path.to_string_lossy());
         let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
 
         file.plugin_operations
@@ -757,7 +754,7 @@ mod test_ihex {
             .unwrap();
         assert_eq!(
             err,
-            IoError::Custom("Invalid Ihex entry at line: 4".to_string())
+            IoError::Custom("Invalid Ihex entry at line: 4".to_owned())
         );
     }
     #[test]

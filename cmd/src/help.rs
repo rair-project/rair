@@ -3,7 +3,7 @@
 use crate::grammar::Rule;
 use pest::iterators::Pair;
 
-#[derive(Default, Debug, PartialEq)]
+#[derive(Default, Debug, PartialEq, Eq)]
 pub struct HelpCmd {
     pub command: String,
 }
@@ -11,9 +11,9 @@ pub struct HelpCmd {
 impl HelpCmd {
     pub(crate) fn parse_help(root: Pair<Rule>) -> Self {
         assert_eq!(root.as_rule(), Rule::HelpLine);
-        HelpCmd {
+        return Self {
             command: root.into_inner().next().unwrap().as_str().to_owned(),
-        }
+        };
     }
 }
 
@@ -32,7 +32,7 @@ mod test_help_cmd {
         assert_eq!(
             help,
             HelpCmd {
-                command: "aa".to_string()
+                command: "aa".to_owned()
             }
         );
     }
@@ -46,7 +46,7 @@ mod test_help_cmd {
         assert_eq!(
             help,
             HelpCmd {
-                command: "aa".to_string()
+                command: "aa".to_owned()
             }
         );
     }

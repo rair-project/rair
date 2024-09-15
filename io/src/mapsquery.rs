@@ -1,10 +1,10 @@
 //! Data structure that enables queries and reverse queries on vaddr <--> paddr.
 
-use crate::utils::*;
+use crate::utils::IoError;
+use alloc::sync::Arc;
+use core::cmp::min;
 use rair_trees::ist::IST;
 use serde::{Deserialize, Serialize};
-use std::cmp::min;
-use std::sync::Arc;
 
 /// This struct describes a mapping between physical
 /// address space and virtual address space
@@ -189,11 +189,11 @@ impl RIOMapQuery {
                 if map.envelop(&frag) {
                     map.remove_projection(&frag).into_iter().for_each(|m| {
                         self.rev_maps
-                            .insert(m.paddr, m.paddr + m.size - 1, Arc::new(m))
+                            .insert(m.paddr, m.paddr + m.size - 1, Arc::new(m));
                     });
                 } else {
                     self.rev_maps
-                        .insert(map.paddr, map.paddr + map.size - 1, map)
+                        .insert(map.paddr, map.paddr + map.size - 1, map);
                 }
             }
         }

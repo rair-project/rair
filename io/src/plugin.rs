@@ -1,6 +1,6 @@
 //! RIO interface for implementing new plugin.
 
-use crate::utils::*;
+use crate::utils::{IoError, IoMode};
 
 /// Metadata that describes the plugin
 #[derive(PartialEq)]
@@ -17,7 +17,7 @@ pub struct RIOPluginMetadata {
     pub version: &'static str,
 }
 
-/// This class is populated via [RIOPlugin::open]
+/// This class is populated via [`RIOPlugin::open`]
 pub struct RIOPluginDesc {
     /// URI to be opened
     pub name: String,
@@ -36,25 +36,25 @@ pub struct RIOPluginDesc {
 pub trait RIOPlugin {
     /// Retrieve reference to the plugin metadata
     fn get_metadata(&self) -> &'static RIOPluginMetadata;
-    /// Open a file given a uri (extension://file path) using the mode specified by flags.
+    /// Open a file given a uri (<extension://file> path) using the mode specified by flags.
     fn open(&mut self, uri: &str, flags: IoMode) -> Result<RIOPluginDesc, IoError>;
     /// Check if the given file can be opened wit the current plugin (only by checking the uri
     /// without opening the file)
     fn accept_uri(&self, uri: &str) -> bool;
 }
-/// A call to [RIOPlugin::open] would normally return [RioPluginDesc] that contains member that
-/// implements [RIOPluginOperations]. This way we always have way of reading and writing from file
+/// A call to [`RIOPlugin::open`] would normally return [`RioPluginDesc`] that contains member that
+/// implements [`RIOPluginOperations`]. This way we always have way of reading and writing from file
 /// with custom data encoding.
 pub trait RIOPluginOperations {
     /// Function that read from a file represented by an object opened
-    /// by [RIOPlugin::open] raddr is the real address of the in the file.
+    /// by [`RIOPlugin::open`] raddr is the real address of the in the file.
     fn read(&mut self, raddr: usize, buffer: &mut [u8]) -> Result<(), IoError>;
     /// Function that writes to a file represented by an object opened
-    /// by [RIOPlugin::open] raddr is the real address of the in the file.
+    /// by [`RIOPlugin::open`] raddr is the real address of the in the file.
     fn write(&mut self, raddr: usize, buffer: &[u8]) -> Result<(), IoError>;
 }
 
-struct DefPluginOperations();
+struct DefPluginOperations;
 impl RIOPluginOperations for DefPluginOperations {
     fn read(&mut self, _raddr: usize, _buffer: &mut [u8]) -> Result<(), IoError> {
         Ok(())
@@ -66,6 +66,6 @@ impl RIOPluginOperations for DefPluginOperations {
 
 impl Default for Box<dyn RIOPluginOperations + Sync + Send> {
     fn default() -> Self {
-        Box::new(DefPluginOperations())
+        Box::new(DefPluginOperations)
     }
 }

@@ -3,10 +3,10 @@
 use crate::desc::RIODesc;
 use crate::plugin::RIOPlugin;
 use crate::utils::{IoError, IoMode};
+use alloc::collections::BinaryHeap;
+use core::cmp::{min, Reverse};
 use rair_trees::ist::IST;
 use serde::{Deserialize, Serialize};
-use std::cmp::{min, Reverse};
-use std::collections::BinaryHeap;
 
 #[derive(Default, Serialize, Deserialize)]
 pub(crate) struct RIODescQuery {
@@ -18,7 +18,7 @@ pub(crate) struct RIODescQuery {
 
 impl RIODescQuery {
     pub(crate) fn new() -> RIODescQuery {
-        Default::default()
+        Self::default()
     }
     // under the assumption that we will always have a free handle! I mean who can open 2^64 files!
     fn get_new_hndl(&mut self) -> u64 {
@@ -471,7 +471,7 @@ mod desc_query_tests {
                 .unwrap();
         }
         let mut paddr = 0;
-        for desc in descs.into_iter() {
+        for desc in &descs {
             assert_eq!(paddr, desc.paddr_base());
             assert_eq!(DATA.len() as u64, desc.size());
             assert_eq!(IoMode::READ, desc.perm());

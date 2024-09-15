@@ -1,8 +1,8 @@
 //! commands handling view mode (phy/vir).
 
 use super::history::History;
-use crate::core::*;
-use crate::helper::*;
+use crate::core::Core;
+use crate::helper::{error_msg, expect, help, AddrMode, Cmd, MRc};
 use yansi::Paint;
 #[derive(Default)]
 pub struct Mode {
@@ -37,7 +37,7 @@ impl Cmd for Mode {
                     core.set_loc(vir[0].paddr);
                 }
             }
-            core.mode = AddrMode::Phy
+            core.mode = AddrMode::Phy;
         } else {
             let msg = format!(
                 "Expected {} or {}, but found {}.",
@@ -74,7 +74,7 @@ mod test_mode {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mode: Mode = Default::default();
+        let mode = Mode::default();
         mode.help(&mut core);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
@@ -90,22 +90,22 @@ mod test_mode {
     fn test_mode_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         let len = DATA.len() as u64;
-        let mut mode: Mode = Default::default();
+        let mut mode = Mode::default();
         core.io.open(&path.to_string_lossy(), IoMode::READ).unwrap();
         core.io.map(0x0, 0x5000, len).unwrap();
         assert_eq!(core.get_loc(), 0x0);
-        mode.run(&mut core, &["vir".to_string()]);
+        mode.run(&mut core, &["vir".to_owned()]);
         assert_eq!(core.get_loc(), 0x5000);
         assert_eq!(core.mode, AddrMode::Vir);
         core.set_loc(0x5001);
-        mode.run(&mut core, &["phy".to_string()]);
+        mode.run(&mut core, &["phy".to_owned()]);
         assert_eq!(core.get_loc(), 1);
         assert_eq!(core.mode, AddrMode::Phy);
         core.set_loc(len + 10);
-        mode.run(&mut core, &["vir".to_string()]);
+        mode.run(&mut core, &["vir".to_owned()]);
         assert_eq!(core.get_loc(), len + 10);
         assert_eq!(core.mode, AddrMode::Vir);
-        mode.run(&mut core, &["phy".to_string()]);
+        mode.run(&mut core, &["phy".to_owned()]);
         assert_eq!(core.get_loc(), len + 10);
         assert_eq!(core.mode, AddrMode::Phy);
     }
@@ -119,7 +119,7 @@ mod test_mode {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut mode: Mode = Default::default();
+        let mut mode = Mode::default();
         mode.run(&mut core, &[]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
@@ -129,7 +129,7 @@ mod test_mode {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        mode.run(&mut core, &["not_real_arg".to_string()]);
+        mode.run(&mut core, &["not_real_arg".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),

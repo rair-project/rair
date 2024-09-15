@@ -1,13 +1,13 @@
 //! commands for opening, closing and listing files.
 
-use crate::core::*;
-use crate::helper::*;
-use rair_io::*;
+use crate::core::Core;
+use crate::helper::{error_msg, expect, expect_range, help, is_color, str_to_num, Cmd};
+use rair_io::IoMode;
 use std::io::Write;
 use yansi::Paint;
 
 #[derive(Default)]
-pub struct ListFiles {}
+pub struct ListFiles;
 
 impl ListFiles {
     pub fn new(core: &mut Core) -> Self {
@@ -21,7 +21,7 @@ impl ListFiles {
                 is_color,
             )
             .unwrap();
-        Default::default()
+        Self
     }
 }
 
@@ -64,21 +64,21 @@ impl Cmd for ListFiles {
 }
 
 #[derive(Default)]
-pub struct OpenFile {}
+pub struct OpenFile;
 
 impl OpenFile {
     pub fn new() -> Self {
-        Default::default()
+        Self
     }
 }
 fn parse_perm(p: &str) -> Result<IoMode, String> {
-    let mut perm = Default::default();
+    let mut perm = IoMode::default();
     for c in p.to_lowercase().chars() {
         match c {
             'r' => perm |= IoMode::READ,
             'w' => perm |= IoMode::WRITE,
             'c' => perm |= IoMode::COW,
-            _ => return Err(format!("Unknown Permission: `{}`", c)),
+            _ => return Err(format!("Unknown Permission: `{c}`")),
         }
     }
     Ok(perm)
@@ -101,7 +101,7 @@ impl Cmd for OpenFile {
             addr = match str_to_num(&args[2]) {
                 Ok(addr) => Some(addr),
                 Err(e) => {
-                    let err_str = format!("{}", e);
+                    let err_str = format!("{e}");
                     error_msg(core, "Failed to parse address", &err_str);
                     return;
                 }
@@ -126,7 +126,7 @@ impl Cmd for OpenFile {
             None => core.io.open(uri, perm),
         };
         if let Err(e) = result {
-            let err_str = format!("{}", e);
+            let err_str = format!("{e}");
             error_msg(core, "Failed to open file", &err_str);
         }
     }
@@ -141,11 +141,11 @@ impl Cmd for OpenFile {
 }
 
 #[derive(Default)]
-pub struct CloseFile {}
+pub struct CloseFile;
 
 impl CloseFile {
     pub fn new() -> Self {
-        Default::default()
+        Self
     }
 }
 
@@ -158,13 +158,13 @@ impl Cmd for CloseFile {
         let hndl = match str_to_num(&args[0]) {
             Ok(hndl) => hndl,
             Err(e) => {
-                let err_str = format!("{}", e);
+                let err_str = format!("{e}");
                 error_msg(core, "Invalid hndl", &err_str);
                 return;
             }
         };
         if let Err(e) = core.io.close(hndl) {
-            let err_str = format!("{}", e);
+            let err_str = format!("{e}");
             error_msg(core, "Failed to close file", &err_str);
         }
     }
@@ -216,22 +216,22 @@ mod test_files {
         let mut close = CloseFile::new();
         open.run(
             &mut core,
-            &["b64://../../testing_binaries/rio/base64/no_padding.b64".to_string()],
+            &["b64://../../testing_binaries/rio/base64/no_padding.b64".to_owned()],
         );
-        open.run(&mut core, &["rw".to_string(), "malloc://0x50".to_string()]);
+        open.run(&mut core, &["rw".to_owned(), "malloc://0x50".to_owned()]);
         open.run(
             &mut core,
             &[
-                "c".to_string(),
-                "../../testing_binaries/rio/base64/one_pad.b64".to_string(),
-                "0x5000".to_string(),
+                "c".to_owned(),
+                "../../testing_binaries/rio/base64/one_pad.b64".to_owned(),
+                "0x5000".to_owned(),
             ],
         );
         open.run(
             &mut core,
             &[
-                "b64://../../testing_binaries/rio/base64/no_padding.b64".to_string(),
-                "0xa000".to_string(),
+                "b64://../../testing_binaries/rio/base64/no_padding.b64".to_owned(),
+                "0xa000".to_owned(),
             ],
         );
 
@@ -247,7 +247,7 @@ mod test_files {
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        close.run(&mut core, &["1".to_string()]);
+        close.run(&mut core, &["1".to_owned()]);
         core.run("files", &[]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
@@ -265,21 +265,21 @@ mod test_files {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut open = OpenFile::new();
-        open.run(&mut core, &["z".to_string(), "malloc://0x50".to_string()]);
+        open.run(&mut core, &["z".to_owned(), "malloc://0x50".to_owned()]);
         open.run(
             &mut core,
             &[
-                "z".to_string(),
-                "malloc://0x50".to_string(),
-                "0x500".to_string(),
+                "z".to_owned(),
+                "malloc://0x50".to_owned(),
+                "0x500".to_owned(),
             ],
         );
         open.run(
             &mut core,
             &[
-                "rw".to_string(),
-                "malloc://0x50".to_string(),
-                "0b500".to_string(),
+                "rw".to_owned(),
+                "malloc://0x50".to_owned(),
+                "0b500".to_owned(),
             ],
         );
 
@@ -303,7 +303,7 @@ mod test_files {
         let mut open = OpenFile::new();
         let mut close = CloseFile::new();
         open.run(&mut core, &[]);
-        core.run("files", &["test".to_string()]);
+        core.run("files", &["test".to_owned()]);
         close.run(&mut core, &[]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
@@ -321,8 +321,8 @@ mod test_files {
         core.stdout = Writer::new_buf();
         let mut open = OpenFile::new();
         let mut close = CloseFile::new();
-        open.run(&mut core, &["file_that_doesnt_exist".to_string()]);
-        close.run(&mut core, &["5".to_string()]);
+        open.run(&mut core, &["file_that_doesnt_exist".to_owned()]);
+        close.run(&mut core, &["5".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         let err = core.stderr.utf8_string().unwrap();
         assert!(err.starts_with("Error: Failed to open file\n"));

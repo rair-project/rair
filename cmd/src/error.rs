@@ -6,7 +6,7 @@ use pest::error;
 use pest::iterators::Pair;
 use std::num;
 
-#[derive(Debug, Error, PartialEq)]
+#[derive(Debug, Error, PartialEq, Eq)]
 pub enum ParserError {
     #[error(display = "{})", _0)]
     Num(num::ParseIntError),
@@ -14,7 +14,7 @@ pub enum ParserError {
     Pest(Box<error::Error<Rule>>),
 }
 
-pub fn unimplemented_pair(root: Pair<Rule>) -> ! {
-    println!("{:#?}", root);
+pub fn unimplemented_pair(root: &Pair<Rule>) -> ! {
+    println!("{root:#?}");
     unimplemented!();
 }

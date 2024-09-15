@@ -1,7 +1,12 @@
 //! RIO plugin that opens  Motorola S-records files.
 
 use super::{defaultplugin, dummy::Dummy};
-use crate::{plugin::*, utils::*};
+use crate::{
+    plugin::{RIOPlugin, RIOPluginDesc, RIOPluginMetadata, RIOPluginOperations},
+    utils::{IoError, IoMode},
+};
+use alloc::collections::BTreeMap;
+use core::{fmt::Write as _, num::ParseIntError, str};
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_while_m_n},
@@ -10,13 +15,9 @@ use nom::{
     IResult,
 };
 use std::{
-    collections::BTreeMap,
-    fmt::Write as _,
     fs::{File, OpenOptions},
-    io,
-    io::Write as _,
+    io::{self, Write as _},
     path::Path,
-    str,
 };
 
 const METADATA: RIOPluginMetadata = RIOPluginMetadata {
@@ -41,7 +42,7 @@ struct SrecInternal {
 enum Record {
     Header(Vec<u8>),    // Record S0 (header data)
     Data(u64, Vec<u8>), // Record S1, S2, S3  (base address, bytes)
-    #[allow(
+    #[expect(
         dead_code,
         reason = "it is bunch of logic that we do no use, but it is ok to keep"
     )]
@@ -49,11 +50,11 @@ enum Record {
     Eof(u64),           // S7, s8, s9 (start address)
 }
 
-fn parse_newline(buf: &[u8]) -> IResult<&[u8], &[u8]> {
-    alt((tag("\r\n"), tag("\n"), tag("\r")))(buf)
+fn parse_newline(buffer: &[u8]) -> IResult<&[u8], &[u8]> {
+    alt((tag("\r\n"), tag("\n"), tag("\r")))(buffer)
 }
 
-fn from_hex(input: &[u8]) -> Result<u8, std::num::ParseIntError> {
+fn from_hex(input: &[u8]) -> Result<u8, ParseIntError> {
     u8::from_str_radix(str::from_utf8(input).unwrap(), 16)
 }
 
@@ -67,17 +68,17 @@ fn hex_byte(input: &[u8]) -> IResult<&[u8], u8> {
 
 fn hex_big_word(input: &[u8]) -> IResult<&[u8], u16> {
     let (input, (byte1, byte2)) = tuple((hex_byte, hex_byte))(input)?;
-    let result = ((byte1 as u16) << 8) + byte2 as u16;
+    let result = ((byte1 as u16) << 8i32) + byte2 as u16;
     Ok((input, result))
 }
 fn hex_big_24bits(input: &[u8]) -> IResult<&[u8], u32> {
     let (input, (byte, word)) = tuple((hex_byte, hex_big_word))(input)?;
-    let result = ((byte as u32) << 16) + word as u32;
+    let result = ((byte as u32) << 16i32) + word as u32;
     Ok((input, result))
 }
 fn hex_big_dword(input: &[u8]) -> IResult<&[u8], u32> {
     let (input, (word1, word2)) = tuple((hex_big_word, hex_big_word))(input)?;
-    let result = ((word1 as u32) << 16) + word2 as u32;
+    let result = ((word1 as u32) << 16i32) + word2 as u32;
     Ok((input, result))
 }
 
@@ -189,18 +190,11 @@ impl SrecInternal {
         ))(input)
     }
 
-    fn parse_srec(&mut self, input: &[u8]) -> Result<(), IoError> {
-        let mut input = input;
-        let mut line = 1;
+    fn parse_srec(&mut self, mut input: &[u8]) -> Result<(), IoError> {
+        let mut line = 1i32;
         loop {
-            let x = match Self::parse_record(input) {
-                Ok(x) => x,
-                Err(_) => {
-                    return Err(IoError::Custom(format!(
-                        "Invalid S-record at line: {}",
-                        line
-                    )))
-                }
+            let Ok(x) = Self::parse_record(input) else {
+                return Err(IoError::Custom(format!("Invalid S-record at line: {line}")));
             };
             input = x.0;
             match x.1 {
@@ -214,21 +208,17 @@ impl SrecInternal {
                     }
                 }
                 Record::Header(header) => self.header = header,
-                _ => (),
+                Record::Count(_) => (),
             }
-            line += 1;
+            line += 1i32;
         }
         Ok(())
     }
     fn size(&self) -> u64 {
-        let min = if let Some((k, _)) = self.bytes.iter().next() {
-            k
-        } else {
+        let Some((min, _)) = self.bytes.iter().next() else {
             return 0;
         };
-        let max = if let Some((k, _)) = self.bytes.iter().next_back() {
-            k
-        } else {
+        let Some((max, _)) = self.bytes.iter().next_back() else {
             return 0;
         };
         max - min + 1
@@ -243,14 +233,14 @@ impl SrecInternal {
     fn write_header(&mut self, file: &mut File) -> Result<(), IoError> {
         if self.header.len() > 0xff {
             return Err(IoError::Custom(
-                "Cannot write S0 Entry with size > 0xff".to_string(),
+                "Cannot write S0 Entry with size > 0xff".to_owned(),
             ));
         }
         write!(file, "S0{:02x}0000", self.header.len() + 3).unwrap();
         let mut checksum = self.header.len() as u16;
-        for byte in self.header.iter() {
+        for byte in &self.header {
             checksum = (checksum + *byte as u16) & 0xff;
-            write!(file, "{:02x}", byte).unwrap();
+            write!(file, "{byte:02x}").unwrap();
         }
         writeln!(file, "{:02x}", !((checksum & 0xff) as u8)).unwrap();
         Ok(())
@@ -258,16 +248,16 @@ impl SrecInternal {
     fn write_data(&mut self, file: &mut File) -> Result<(), IoError> {
         let mut checksum: u16 = 0x10;
         let mut data = String::new();
-        let mut record: &str = "S1";
+        let mut record = "S1";
         let mut addr = 0;
         let mut i = 0;
         let mut extra_data = 0;
-        for (k, v) in self.bytes.iter() {
+        for (k, v) in &self.bytes {
             if i != 0 {
                 if i == 0x10 || *k != addr + 1 {
                     let size = i + extra_data;
                     checksum = (!(checksum + size)) & 0xff;
-                    writeln!(file, "{}{:02x}{}{:02x}", record, size, data, checksum)?;
+                    writeln!(file, "{record}{size:02x}{data}{checksum:02x}")?;
 
                     data.clear();
                     checksum = 0;
@@ -296,7 +286,7 @@ impl SrecInternal {
                     extra_data = 3;
                     write!(data, "{:04x}", *k).unwrap();
                 }
-                for byte in k.to_be_bytes().iter() {
+                for byte in &k.to_be_bytes() {
                     checksum = (checksum + *byte as u16) & 0xff;
                 }
                 write!(data, "{:02x}", *v).unwrap();
@@ -308,34 +298,33 @@ impl SrecInternal {
         if !data.is_empty() {
             let size = i + extra_data;
             checksum = (!(checksum + size)) & 0xff;
-            writeln!(file, "{}{:02x}{}{:02x}", record, size, data, checksum)?;
+            writeln!(file, "{record}{size:02x}{data}{checksum:02x}")?;
         }
 
         Ok(())
     }
     fn write_eof(&mut self, file: &mut File) -> Result<(), IoError> {
-        let start = match self.start_address {
-            Some(start) => start,
-            None => return Ok(()),
+        let Some(start) = self.start_address else {
+            return Ok(());
         };
         let mut checksum: u16;
         if start > 0x00ff_ffff {
             // record S7
-            write!(file, "S705{:08x}", start)?;
+            write!(file, "S705{start:08x}")?;
             checksum = 0x5;
         } else if start > 0xffff {
             //record S8
-            write!(file, "S804{:06x}", start)?;
+            write!(file, "S804{start:06x}")?;
             checksum = 0x4;
         } else {
             // record S9
-            write!(file, "S903{:04x}", start)?;
+            write!(file, "S903{start:04x}")?;
             checksum = 0x3;
         }
-        for byte in start.to_be_bytes().iter() {
+        for byte in &start.to_be_bytes() {
             checksum = (checksum + *byte as u16) & 0xff;
         }
-        writeln!(file, "{:02x}", checksum).unwrap();
+        writeln!(file, "{checksum:02x}").unwrap();
         Ok(())
     }
     fn save_srec(&mut self) -> Result<(), IoError> {
@@ -363,7 +352,7 @@ impl RIOPluginOperations for SrecInternal {
         Ok(())
     }
 
-    fn write(&mut self, raddr: usize, buf: &[u8]) -> Result<(), IoError> {
+    fn write(&mut self, raddr: usize, buffer: &[u8]) -> Result<(), IoError> {
         // if we are dealing with cow or write first write data to the sparce array
         if !self.prot.contains(IoMode::COW) && !self.prot.contains(IoMode::WRITE) {
             return Err(IoError::Parse(io::Error::new(
@@ -371,7 +360,7 @@ impl RIOPluginOperations for SrecInternal {
                 "File Not Writable",
             )));
         }
-        for (i, item) in buf.iter().enumerate() {
+        for (i, item) in buffer.iter().enumerate() {
             self.bytes.insert((i + raddr) as u64, *item);
         }
 
@@ -414,7 +403,9 @@ impl RIOPlugin for SrecPlugin {
     }
 
     fn open(&mut self, uri: &str, flags: IoMode) -> Result<RIOPluginDesc, IoError> {
-        assert!(self.accept_uri(uri));
+        if !self.accept_uri(uri) {
+            return Err(IoError::Custom(format!("Invalid uri {uri}")));
+        };
         let def_desc = self.defaultplugin.open(
             &SrecPlugin::uri_to_path(uri).to_string_lossy(),
             IoMode::READ,
@@ -423,7 +414,7 @@ impl RIOPlugin for SrecPlugin {
             file: def_desc.plugin_operations,
             bytes: BTreeMap::new(),
             prot: flags,
-            uri: uri.to_string(),
+            uri: uri.to_owned(),
             start_address: None,
             header: Vec::new(),
         };
@@ -461,7 +452,9 @@ mod test_srec {
         assert_eq!(input, b"");
         match rec {
             Record::Header(header) => assert_eq!(header, b"68KPROG   20CREATED BY EASY68K"),
-            _ => panic!("Expected Header record"),
+            Record::Data(..) | Record::Count(_) | Record::Eof(_) => {
+                panic!("Expected Header record")
+            }
         }
     }
 
@@ -554,7 +547,9 @@ mod test_srec {
         assert_eq!(input, b"");
         match rec {
             Record::Eof(addr) => assert_eq!(addr, 0x12001000),
-            _ => panic!("Expected Eof record"),
+            Record::Header(_) | Record::Data(..) | Record::Count(_) => {
+                panic!("Expected Eof record")
+            }
         }
     }
     #[test]
@@ -564,7 +559,9 @@ mod test_srec {
         assert_eq!(input, b"");
         match rec {
             Record::Eof(addr) => assert_eq!(addr, 0x100000),
-            _ => panic!("Expected Eof record"),
+            Record::Header(_) | Record::Data(..) | Record::Count(_) => {
+                panic!("Expected Eof record")
+            }
         }
     }
     #[test]
@@ -574,7 +571,9 @@ mod test_srec {
         assert_eq!(input, b"");
         match rec {
             Record::Eof(addr) => assert_eq!(addr, 0x1234),
-            _ => panic!("Expected Eof record"),
+            Record::Header(_) | Record::Data(..) | Record::Count(_) => {
+                panic!("Expected Eof record")
+            }
         }
     }
     #[test]
@@ -608,7 +607,8 @@ mod test_srec {
 
     fn write_s0_s1_s9_cb(path: &Path) {
         let mut p = plugin();
-        let uri = String::from("srec://") + &path.to_string_lossy();
+        let mut uri = "srec://".to_owned();
+        uri.push_str(&path.to_string_lossy());
         let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
 
         file.plugin_operations
@@ -688,7 +688,8 @@ mod test_srec {
     }
     fn write_s2_cb(path: &Path) {
         let mut p = plugin();
-        let uri = String::from("srec://") + &path.to_string_lossy();
+        let mut uri = "srec://".to_owned();
+        uri.push_str(&path.to_string_lossy());
         let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
 
         file.plugin_operations
@@ -755,7 +756,8 @@ mod test_srec {
 
     fn write_s3_cb(path: &Path) {
         let mut p = plugin();
-        let uri = String::from("srec://") + &path.to_string_lossy();
+        let mut uri = "srec://".to_owned();
+        uri.push_str(&path.to_string_lossy());
         let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
 
         file.plugin_operations
@@ -814,7 +816,7 @@ mod test_srec {
             .unwrap();
         assert_eq!(
             err,
-            IoError::Custom("Invalid S-record at line: 2".to_string())
+            IoError::Custom("Invalid S-record at line: 2".to_owned())
         );
     }
 }

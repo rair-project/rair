@@ -10,7 +10,7 @@ pub struct History {
 
 impl History {
     pub fn new() -> Self {
-        Default::default()
+        Self::default()
     }
     pub fn backward(&mut self, core: &Core) -> Option<(AddrMode, u64)> {
         let (mode, addr) = self.back.pop()?;

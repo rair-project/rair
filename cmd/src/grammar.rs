@@ -4,4 +4,4 @@ use pest_derive::Parser;
 
 #[derive(Parser)]
 #[grammar = "cli.pest"]
-pub(crate) struct CliParser;
+pub struct CliParser;

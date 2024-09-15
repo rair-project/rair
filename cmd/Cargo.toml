@@ -14,3 +14,6 @@ readme = "readme.md"
 err-derive = {workspace = true}
 pest = {workspace = true}
 pest_derive = {workspace = true}
+
+[lints]
+workspace = true
