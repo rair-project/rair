@@ -42,7 +42,7 @@ struct SrecInternal {
 enum Record {
     Header(Vec<u8>),    // Record S0 (header data)
     Data(u64, Vec<u8>), // Record S1, S2, S3  (base address, bytes)
-    #[expect(
+    #[allow(
         dead_code,
         reason = "it is bunch of logic that we do no use, but it is ok to keep"
     )]
