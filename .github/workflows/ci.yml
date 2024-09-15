@@ -75,3 +75,26 @@ jobs:
         with:
           command: clippy
           args: --all-targets -- -D warnings
+  coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - name: Checkout Test Binaries
+        uses: actions/checkout@v4
+        with:
+          repository: Rair-Project/testing_binaries
+          path: testing_binaries
+      - name: Install Tarpaulin
+        run: cargo install cargo-tarpaulin
+      - name: Run Tarpaulin
+        run: cargo tarpaulin --ignore-tests -l --all --out Xml
+      - name: Upload coverage reports to Codecov with GitHub Action
+        uses: codecov/codecov-action@v4.2.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
