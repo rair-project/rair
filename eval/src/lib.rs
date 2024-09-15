@@ -138,3 +138,6 @@ fn eval_non_literal_arg(core: &mut Core, cmd: Cmd) -> Result<String, String> {
         Ok(out)
     }
 }
+
+#[cfg(test)]
+mod test;
