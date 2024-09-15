@@ -9,4 +9,5 @@ target
 Cargo.lock
 target
 tarpaulin-report.html
+*.xml
 testing_binaries/
