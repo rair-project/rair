@@ -412,10 +412,7 @@ mod test_ihex {
         // no sparce file with holes, no nothing but basic record 00 and record 01
         let mut p = plugin();
         let mut file = p
-            .open(
-                "ihex://../../testing_binaries/rio/ihex/tiny.hex",
-                IoMode::READ,
-            )
+            .open("ihex://../testing_binaries/rio/ihex/tiny.hex", IoMode::READ)
             .unwrap();
         assert_eq!(file.size, 11);
         let mut buffer = vec![0; file.size as usize];
@@ -448,10 +445,7 @@ mod test_ihex {
     fn test_tiny_ihex_write() {
         // this is simple ihex file testing,
         // no sparce file with holes, no nothing but basic record 00 and record 01
-        operate_on_copy(
-            &tiny_ihex_write_cb,
-            "../../testing_binaries/rio/ihex/tiny.hex",
-        );
+        operate_on_copy(&tiny_ihex_write_cb, "../testing_binaries/rio/ihex/tiny.hex");
     }
     #[test]
     fn test_tiny_sparce_ihex_read() {
@@ -459,7 +453,7 @@ mod test_ihex {
         let mut p = plugin();
         let mut file = p
             .open(
-                "ihex://../../testing_binaries/rio/ihex/tiny_sparce.hex",
+                "ihex://../testing_binaries/rio/ihex/tiny_sparce.hex",
                 IoMode::READ,
             )
             .unwrap();
@@ -504,7 +498,7 @@ mod test_ihex {
         // no sparce file with holes, no nothing but basic record 00 and record 01
         operate_on_copy(
             &tiny_sparce_ihex_write_cb,
-            "../../testing_binaries/rio/ihex/tiny_sparce.hex",
+            "../testing_binaries/rio/ihex/tiny_sparce.hex",
         );
     }
 
@@ -514,7 +508,7 @@ mod test_ihex {
         let mut p = plugin();
         let mut file = p
             .open(
-                "ihex://../../testing_binaries/rio/ihex/record_00_01.hex",
+                "ihex://../testing_binaries/rio/ihex/record_00_01.hex",
                 IoMode::READ,
             )
             .unwrap();
@@ -568,7 +562,7 @@ mod test_ihex {
         file = p.open(&uri, IoMode::READ).unwrap();
         let mut file2 = p
             .open(
-                "ihex://../../testing_binaries/rio/ihex/record_00_01.hex",
+                "ihex://../testing_binaries/rio/ihex/record_00_01.hex",
                 IoMode::READ,
             )
             .unwrap();
@@ -585,7 +579,7 @@ mod test_ihex {
         //test writing to huge file with record 00 and record 01
         operate_on_copy(
             &big_write_cb,
-            "../../testing_binaries/rio/ihex/record_00_01.hex",
+            "../testing_binaries/rio/ihex/record_00_01.hex",
         );
     }
 
@@ -594,7 +588,7 @@ mod test_ihex {
         let mut p = plugin();
         let mut file = p
             .open(
-                "ihex://../../testing_binaries/rio/ihex/record_02_03.hex",
+                "ihex://../testing_binaries/rio/ihex/record_02_03.hex",
                 IoMode::READ,
             )
             .unwrap();
@@ -660,7 +654,7 @@ mod test_ihex {
         file = p.open(&uri, IoMode::READ).unwrap();
         let mut file2 = p
             .open(
-                "ihex://../../testing_binaries/rio/ihex/record_02_03.hex",
+                "ihex://../testing_binaries/rio/ihex/record_02_03.hex",
                 IoMode::READ,
             )
             .unwrap();
@@ -676,7 +670,7 @@ mod test_ihex {
     fn test_write_02_03() {
         operate_on_copy(
             &write_02_03_cb,
-            "../../testing_binaries/rio/ihex/record_02_03.hex",
+            "../testing_binaries/rio/ihex/record_02_03.hex",
         );
     }
 
@@ -685,7 +679,7 @@ mod test_ihex {
         let mut p = plugin();
         let mut file = p
             .open(
-                "ihex://../../testing_binaries/rio/ihex/record_04_05.hex",
+                "ihex://../testing_binaries/rio/ihex/record_04_05.hex",
                 IoMode::READ,
             )
             .unwrap();
@@ -722,7 +716,7 @@ mod test_ihex {
         file = p.open(&uri, IoMode::READ).unwrap();
         let mut file2 = p
             .open(
-                "ihex://../../testing_binaries/rio/ihex/record_04_05.hex",
+                "ihex://../testing_binaries/rio/ihex/record_04_05.hex",
                 IoMode::READ,
             )
             .unwrap();
@@ -738,7 +732,7 @@ mod test_ihex {
     fn test_write_04_05() {
         operate_on_copy(
             &write_04_05_cb,
-            "../../testing_binaries/rio/ihex/record_04_05.hex",
+            "../testing_binaries/rio/ihex/record_04_05.hex",
         );
     }
 
@@ -747,7 +741,7 @@ mod test_ihex {
         let mut p = plugin();
         let err = p
             .open(
-                "ihex://../../testing_binaries/rio/ihex/broken.hex",
+                "ihex://../testing_binaries/rio/ihex/broken.hex",
                 IoMode::READ,
             )
             .err()
@@ -762,7 +756,7 @@ mod test_ihex {
         let mut p = plugin();
         let f = p
             .open(
-                "ihex://../../testing_binaries/rio/ihex/empty.hex",
+                "ihex://../testing_binaries/rio/ihex/empty.hex",
                 IoMode::READ,
             )
             .unwrap();

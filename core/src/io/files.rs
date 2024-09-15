@@ -216,21 +216,21 @@ mod test_files {
         let mut close = CloseFile::new();
         open.run(
             &mut core,
-            &["b64://../../testing_binaries/rio/base64/no_padding.b64".to_owned()],
+            &["b64://../testing_binaries/rio/base64/no_padding.b64".to_owned()],
         );
         open.run(&mut core, &["rw".to_owned(), "malloc://0x50".to_owned()]);
         open.run(
             &mut core,
             &[
                 "c".to_owned(),
-                "../../testing_binaries/rio/base64/one_pad.b64".to_owned(),
+                "../testing_binaries/rio/base64/one_pad.b64".to_owned(),
                 "0x5000".to_owned(),
             ],
         );
         open.run(
             &mut core,
             &[
-                "b64://../../testing_binaries/rio/base64/no_padding.b64".to_owned(),
+                "b64://../testing_binaries/rio/base64/no_padding.b64".to_owned(),
                 "0xa000".to_owned(),
             ],
         );
@@ -239,10 +239,10 @@ mod test_files {
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "Handle\tStart address\tsize\t\tPermissions\tURI\n\
-             0\t0x00000000\t0x0000002d\tREAD\t\tb64://../../testing_binaries/rio/base64/no_padding.b64\n\
+             0\t0x00000000\t0x0000002d\tREAD\t\tb64://../testing_binaries/rio/base64/no_padding.b64\n\
              1\t0x0000002d\t0x00000050\tWRITE | READ\tmalloc://0x50\n\
-             2\t0x00005000\t0x00000005\tCOW\t\t../../testing_binaries/rio/base64/one_pad.b64\n\
-             3\t0x0000a000\t0x0000002d\tREAD\t\tb64://../../testing_binaries/rio/base64/no_padding.b64\n"
+             2\t0x00005000\t0x00000005\tCOW\t\t../testing_binaries/rio/base64/one_pad.b64\n\
+             3\t0x0000a000\t0x0000002d\tREAD\t\tb64://../testing_binaries/rio/base64/no_padding.b64\n"
         );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
@@ -252,9 +252,9 @@ mod test_files {
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "Handle\tStart address\tsize\t\tPermissions\tURI\n\
-             0\t0x00000000\t0x0000002d\tREAD\t\tb64://../../testing_binaries/rio/base64/no_padding.b64\n\
-             2\t0x00005000\t0x00000005\tCOW\t\t../../testing_binaries/rio/base64/one_pad.b64\n\
-             3\t0x0000a000\t0x0000002d\tREAD\t\tb64://../../testing_binaries/rio/base64/no_padding.b64\n"
+             0\t0x00000000\t0x0000002d\tREAD\t\tb64://../testing_binaries/rio/base64/no_padding.b64\n\
+             2\t0x00005000\t0x00000005\tCOW\t\t../testing_binaries/rio/base64/one_pad.b64\n\
+             3\t0x0000a000\t0x0000002d\tREAD\t\tb64://../testing_binaries/rio/base64/no_padding.b64\n"
         );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }

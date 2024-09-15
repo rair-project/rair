@@ -581,7 +581,7 @@ mod test_srec {
         let mut p = plugin();
         let mut file = p
             .open(
-                "srec://../../testing_binaries/rio/srec/record_0_1_9.srec",
+                "srec://../testing_binaries/rio/srec/record_0_1_9.srec",
                 IoMode::READ,
             )
             .unwrap();
@@ -646,7 +646,7 @@ mod test_srec {
         drop(file);
         let mut original = p
             .open(
-                "srec://../../testing_binaries/rio/srec/record_0_1_9.srec",
+                "srec://../testing_binaries/rio/srec/record_0_1_9.srec",
                 IoMode::READ,
             )
             .unwrap();
@@ -662,7 +662,7 @@ mod test_srec {
     fn test_write_s0_s1_s9() {
         operate_on_copy(
             &write_s0_s1_s9_cb,
-            "../../testing_binaries/rio/srec/record_0_1_9.srec",
+            "../testing_binaries/rio/srec/record_0_1_9.srec",
         );
     }
 
@@ -671,7 +671,7 @@ mod test_srec {
         let mut p = plugin();
         let mut file = p
             .open(
-                "srec://../../testing_binaries/rio/srec/record_0_2_8.srec",
+                "srec://../testing_binaries/rio/srec/record_0_2_8.srec",
                 IoMode::READ,
             )
             .unwrap();
@@ -713,7 +713,7 @@ mod test_srec {
         drop(file);
         let mut original = p
             .open(
-                "srec://../../testing_binaries/rio/srec/record_0_2_8.srec",
+                "srec://../testing_binaries/rio/srec/record_0_2_8.srec",
                 IoMode::READ,
             )
             .unwrap();
@@ -729,7 +729,7 @@ mod test_srec {
     fn test_write_s2() {
         operate_on_copy(
             &write_s2_cb,
-            "../../testing_binaries/rio/srec/record_0_2_8.srec",
+            "../testing_binaries/rio/srec/record_0_2_8.srec",
         );
     }
 
@@ -738,7 +738,7 @@ mod test_srec {
         let mut p = plugin();
         let mut file = p
             .open(
-                "srec://../../testing_binaries/rio/srec/record_0_3_7.srec",
+                "srec://../testing_binaries/rio/srec/record_0_3_7.srec",
                 IoMode::READ,
             )
             .unwrap();
@@ -781,7 +781,7 @@ mod test_srec {
         drop(file);
         let mut original = p
             .open(
-                "srec://../../testing_binaries/rio/srec/record_0_3_7.srec",
+                "srec://../testing_binaries/rio/srec/record_0_3_7.srec",
                 IoMode::READ,
             )
             .unwrap();
@@ -800,7 +800,7 @@ mod test_srec {
     fn test_write_s3() {
         operate_on_copy(
             &write_s3_cb,
-            "../../testing_binaries/rio/srec/record_0_3_7.srec",
+            "../testing_binaries/rio/srec/record_0_3_7.srec",
         );
     }
 
@@ -809,7 +809,7 @@ mod test_srec {
         let mut p = plugin();
         let err = p
             .open(
-                "srec://../../testing_binaries/rio/srec/corrupted.srec",
+                "srec://../testing_binaries/rio/srec/corrupted.srec",
                 IoMode::READ,
             )
             .err()

@@ -1094,7 +1094,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.io
             .open(
-                "../../testing_binaries/rio/base64/no_padding.b64",
+                "../testing_binaries/rio/base64/no_padding.b64",
                 IoMode::READ,
             )
             .unwrap();
@@ -1130,7 +1130,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.io
             .open(
-                "../../testing_binaries/rio/base64/no_padding.b64",
+                "../testing_binaries/rio/base64/no_padding.b64",
                 IoMode::READ,
             )
             .unwrap();
@@ -1161,7 +1161,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.io
             .open(
-                "../../testing_binaries/rio/base64/no_padding.b64",
+                "../testing_binaries/rio/base64/no_padding.b64",
                 IoMode::READ,
             )
             .unwrap();
@@ -1207,7 +1207,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.io
             .open(
-                "../../testing_binaries/rio/base64/no_padding.b64",
+                "../testing_binaries/rio/base64/no_padding.b64",
                 IoMode::READ,
             )
             .unwrap();
@@ -1241,7 +1241,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.io
             .open(
-                "../../testing_binaries/rio/base64/no_padding.b64",
+                "../testing_binaries/rio/base64/no_padding.b64",
                 IoMode::READ,
             )
             .unwrap();
@@ -1276,7 +1276,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.io
             .open(
-                "../../testing_binaries/rio/base64/no_padding.b64",
+                "../testing_binaries/rio/base64/no_padding.b64",
                 IoMode::READ,
             )
             .unwrap();
@@ -1309,7 +1309,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.io
             .open(
-                "../../testing_binaries/rio/srec/record_0_1_9.srec",
+                "../testing_binaries/rio/srec/record_0_1_9.srec",
                 IoMode::READ,
             )
             .unwrap();
@@ -1345,7 +1345,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.io
             .open(
-                "../../testing_binaries/rio/srec/record_0_1_9.srec",
+                "../testing_binaries/rio/srec/record_0_1_9.srec",
                 IoMode::READ,
             )
             .unwrap();
@@ -1381,7 +1381,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.io
             .open(
-                "../../testing_binaries/rio/srec/record_0_1_9.srec",
+                "../testing_binaries/rio/srec/record_0_1_9.srec",
                 IoMode::READ,
             )
             .unwrap();
@@ -1416,7 +1416,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.io
             .open(
-                "../../testing_binaries/rio/srec/record_0_1_9.srec",
+                "../testing_binaries/rio/srec/record_0_1_9.srec",
                 IoMode::READ,
             )
             .unwrap();
@@ -1451,7 +1451,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.io
             .open(
-                "../../testing_binaries/rio/srec/record_0_1_9.srec",
+                "../testing_binaries/rio/srec/record_0_1_9.srec",
                 IoMode::READ,
             )
             .unwrap();
@@ -1507,7 +1507,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.io
             .open(
-                "../../testing_binaries/rio/srec/record_0_1_9.srec",
+                "../testing_binaries/rio/srec/record_0_1_9.srec",
                 IoMode::READ,
             )
             .unwrap();
@@ -1563,7 +1563,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.io
             .open(
-                "../../testing_binaries/rio/base64/no_padding.b64",
+                "../testing_binaries/rio/base64/no_padding.b64",
                 IoMode::READ,
             )
             .unwrap();
@@ -1597,7 +1597,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.io
             .open(
-                "../../testing_binaries/rio/base64/no_padding.b64",
+                "../testing_binaries/rio/base64/no_padding.b64",
                 IoMode::READ,
             )
             .unwrap();
@@ -1632,7 +1632,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.io
             .open(
-                "../../testing_binaries/rio/base64/no_padding.b64",
+                "../testing_binaries/rio/base64/no_padding.b64",
                 IoMode::READ,
             )
             .unwrap();
@@ -1665,7 +1665,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.io
             .open(
-                "../../testing_binaries/rio/srec/record_0_1_9.srec",
+                "../testing_binaries/rio/srec/record_0_1_9.srec",
                 IoMode::READ,
             )
             .unwrap();
@@ -1701,7 +1701,7 @@ mod test_print_hex {
         core.stdout = Writer::new_buf();
         core.io
             .open(
-                "../../testing_binaries/rio/srec/record_0_1_9.srec",
+                "../testing_binaries/rio/srec/record_0_1_9.srec",
                 IoMode::READ,
             )
             .unwrap();
