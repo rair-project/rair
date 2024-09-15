@@ -272,7 +272,7 @@ mod test_base64 {
         let mut p = plugin();
         let mut file = p
             .open(
-                "b64://../../testing_binaries/rio/base64/no_padding.b64",
+                "b64://../testing_binaries/rio/base64/no_padding.b64",
                 IoMode::READ,
             )
             .unwrap();
@@ -296,7 +296,7 @@ mod test_base64 {
         let mut p = plugin();
         let mut file = p
             .open(
-                "b64://../../testing_binaries/rio/base64/one_pad.b64",
+                "b64://../testing_binaries/rio/base64/one_pad.b64",
                 IoMode::READ,
             )
             .unwrap();
@@ -324,7 +324,7 @@ mod test_base64 {
         let mut p = plugin();
         let mut file = p
             .open(
-                "b64://../../testing_binaries/rio/base64/two_pad.b64",
+                "b64://../testing_binaries/rio/base64/two_pad.b64",
                 IoMode::READ,
             )
             .unwrap();
@@ -366,7 +366,7 @@ mod test_base64 {
     fn test_nopad_write() {
         operate_on_copy(
             &nopad_write_cb,
-            "../../testing_binaries/rio/base64/no_padding.b64",
+            "../testing_binaries/rio/base64/no_padding.b64",
         );
     }
 
@@ -397,7 +397,7 @@ mod test_base64 {
     fn test_one_pad_write() {
         operate_on_copy(
             &one_pad_write_cb,
-            "../../testing_binaries/rio/base64/one_pad.b64",
+            "../testing_binaries/rio/base64/one_pad.b64",
         );
     }
 
@@ -426,7 +426,7 @@ mod test_base64 {
     fn test_two_pad_write() {
         operate_on_copy(
             &two_pad_write_cb,
-            "../../testing_binaries/rio/base64/two_pad.b64",
+            "../testing_binaries/rio/base64/two_pad.b64",
         );
     }
 }
