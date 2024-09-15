@@ -530,8 +530,7 @@ impl<T> Environment<T> {
 }
 
 impl<'a, T> IntoIterator for &'a Environment<T> {
-    type IntoIter =
-        Box<(dyn Iterator<Item = (&'a str, EnvData<'a>)> + 'a)>;
+    type IntoIter = Box<(dyn Iterator<Item = (&'a str, EnvData<'a>)> + 'a)>;
     type Item = (&'a str, EnvData<'a>);
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
