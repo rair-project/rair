@@ -3,20 +3,20 @@
 use super::color::Color;
 use super::iter::TreeIterator;
 use super::iter_ref::TreeRefIterator;
-use super::node::*;
-use std::cmp::Ordering;
-use std::mem;
+use super::node::Node;
+use core::cmp::Ordering;
+use core::mem;
 
 pub(super) type RBTreeOp<K, A, V> = Option<Box<Node<K, A, V>>>;
 
-/// Tuple of 3 elements used with [RBTree::mut_me]. The first element is mutable reference to the left subtree,
+/// Tuple of 3 elements used with [`RBTree::mut_me`]. The first element is mutable reference to the left subtree,
 /// the second element is a mutable reference to the right subtree and the third element is a mutable reference
 /// to the data stored in the current node.
 pub type LeftRightDataTuple<'a, K, A, V> =
     (&'a mut RBTree<K, A, V>, &'a mut RBTree<K, A, V>, &'a mut V);
 
 ///  Used to recalculate augmented data stored in each node.
-/// This trait is mainly meant to be only implemented for [RBTree]
+/// This trait is mainly meant to be only implemented for [`RBTree`]
 /// before using the tree.
 pub trait Augment<T: Copy> {
     /// Recalculate the agumented data in the current node
@@ -28,7 +28,7 @@ pub trait Augment<T: Copy> {
 /// tree design and complexity analysis is available in the paper titled
 /// [*Left-leaning Red-Black Trees*](https://www.cs.princeton.edu/~rs/talks/LLRB/LLRB.pdf) by
 /// Robert Sedgewick. If you just need a normal non-augmentable tree-baesed map check
-/// [std::collections::BTreeMap] instead.
+/// [`std::collections::BTreeMap`] instead.
 #[derive(Default)]
 pub struct RBTree<K: Ord + Copy, A: Copy, V>(RBTreeOp<K, A, V>);
 
@@ -48,6 +48,7 @@ where
         RBTree(self.0.take())
     }
     /// Return True if the current node is not null node.
+    #[must_use]
     pub fn is_node(&self) -> bool {
         self.0.is_some()
     }
@@ -63,9 +64,10 @@ where
     }
 
     #[inline]
-    pub(super) fn unwrap(self) -> Box<Node<K, A, V>> {
-        self.0.unwrap()
+    pub(super) fn unwrap(self) -> Node<K, A, V> {
+        *self.0.unwrap()
     }
+
     #[inline]
     pub(super) fn is_red(&self) -> bool {
         self.is_node() && self.as_ref().unwrap().is_red()
@@ -74,20 +76,22 @@ where
     /// Returns copy of key of the current Tree node
     /// # Panics
     /// panics if current subtree is not a *node*
+    #[must_use]
     pub fn key(&self) -> K {
         self.as_ref().unwrap().key
     }
 
-    /// Changes the *aug_data* stored in the current Tree node.
+    /// Changes the *`aug_data`* stored in the current Tree node.
     /// # Panics
     /// panics if current subtree is not a *node*.
     pub fn set_aug_data(&mut self, aug_data: A) {
         self.as_mut().unwrap().aug_data = aug_data;
     }
 
-    /// Returns *aug_data* stored in the current Tree node.
+    /// Returns *`aug_data`* stored in the current Tree node.
     /// # Panics
     /// panics if current subtree is not a *node*
+    #[must_use]
     pub fn aug_data(&self) -> A {
         self.as_ref().unwrap().aug_data
     }
@@ -102,6 +106,7 @@ where
     /// Returns data stored in the current Tree node.
     /// # Panics
     /// panics if current subtree is not a *node*
+    #[must_use]
     pub fn data(self) -> V {
         self.unwrap().data
     }
@@ -110,9 +115,9 @@ where
     /// inside the current node. The reason such functionality might be
     /// desired, is when user wants to keep mutual reference of at
     /// least any 2 of either left node, right node or data.
-    /// [left_mut()](struct.RBTree.html#method.left_mut),
-    /// [right_mut()](struct.RBTree.html#method.right_mut)
-    /// and [data_mut()](struct.RBTree.html#method.data_mut) will not
+    /// [`left_mut()`](struct.RBTree.html#method.left_mut),
+    /// [`right_mut()`](struct.RBTree.html#method.right_mut)
+    /// and [`data_mut()`](struct.RBTree.html#method.data_mut) will not
     /// work because rust does not support partial
     /// borrowing [yet](https://github.com/rust-lang/rfcs/issues/1215).
     pub fn mut_me(&mut self) -> LeftRightDataTuple<'_, K, A, V> {
@@ -122,6 +127,7 @@ where
     /// Returns non-mutable reference to data stored in the current Tree node
     /// # Panics
     /// panics if current subtree is not a *node*
+    #[must_use]
     pub fn data_ref(&self) -> &V {
         &self.as_ref().unwrap().data
     }
@@ -143,6 +149,7 @@ where
     /// Returns the left subtree after ripping it from the current node.
     /// # Panics
     /// panics if current subtree is not a *node*
+    #[must_use]
     pub fn left(&mut self) -> RBTree<K, A, V> {
         self.as_mut().unwrap().left.take()
     }
@@ -150,6 +157,7 @@ where
     /// Returns a non-mutable reference to left subtree.
     /// # Panics
     /// panics if current subtree is not a *node*
+    #[must_use]
     pub fn left_ref(&self) -> &RBTree<K, A, V> {
         &self.as_ref().unwrap().left
     }
@@ -171,6 +179,7 @@ where
     /// Returns the right subtree after ripping it from the current node.
     /// # Panics
     /// panics if current subtree is not a *node*
+    #[must_use]
     pub fn right(&mut self) -> RBTree<K, A, V> {
         self.as_mut().unwrap().right.take()
     }
@@ -178,6 +187,7 @@ where
     /// Returns a non-mutable reference to right subtree.
     /// # Panics
     /// panics if current subtree is not a *node*
+    #[must_use]
     pub fn right_ref(&self) -> &RBTree<K, A, V> {
         &self.as_ref().unwrap().right
     }
@@ -194,11 +204,12 @@ where
     /// ```
     /// use rair_trees::rbtree::*;
     /// #[derive(Copy, Clone)]
-    /// struct PlaceHolder();
+    /// struct PlaceHolder;
     /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
     /// type Tree = RBTree<u64, PlaceHolder,  &'static str>;
     /// let my_tree = Tree::new();
     /// ```
+    #[must_use]
     pub fn new() -> RBTree<K, A, V> {
         RBTree(None)
     }
@@ -208,18 +219,19 @@ where
     /// ```
     /// use rair_trees::rbtree::*;
     /// #[derive(Copy, Clone)]
-    /// struct PlaceHolder();
+    /// struct PlaceHolder;
     /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
     /// type Tree = RBTree<u64, PlaceHolder,  &'static str>;
     /// let mut rbtree = Tree::new();
     /// assert_eq!(rbtree.size(), 0);
-    /// rbtree.insert(0, PlaceHolder(), "Zero");
+    /// rbtree.insert(0, PlaceHolder, "Zero");
     /// assert_eq!(rbtree.size(), 1);
-    /// rbtree.insert(1, PlaceHolder(), "One");
+    /// rbtree.insert(1, PlaceHolder, "One");
     /// assert_eq!(rbtree.size(), 2);
-    /// rbtree.insert(2, PlaceHolder(), "Two");
+    /// rbtree.insert(2, PlaceHolder, "Two");
     /// assert_eq!(rbtree.size(), 3);
     /// ```
+    #[must_use]
     pub fn size(&self) -> u64 {
         if let Some(node) = &self.0 {
             node.size()
@@ -228,22 +240,23 @@ where
         }
     }
 
-    /// 0 will be returned in case of empty tree. If tree has nodes, then *get_level*
+    /// 0 will be returned in case of empty tree. If tree has nodes, then *`get_level`*
     /// returns 1 + the number of connections between root and the farthest node from it.
     /// # Example
     /// ```
     /// use rair_trees::rbtree::*;
     /// #[derive(Copy, Clone)]
-    /// struct PlaceHolder();
+    /// struct PlaceHolder;
     /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
     /// type Tree = RBTree<u64, PlaceHolder,  &'static str>;
     /// let mut rbtree = Tree::new();
     /// assert_eq!(rbtree.get_level(), 0);
     /// for i in 0..1024 {
-    ///     rbtree.insert(i, PlaceHolder(), "Random Value");
+    ///     rbtree.insert(i, PlaceHolder, "Random Value");
     /// }
     /// assert!(rbtree.get_level() >= 10 && rbtree.get_level() <= 20);
     /// ```
+    #[must_use]
     pub fn get_level(&self) -> u64 {
         if let Some(node) = self.as_ref() {
             node.get_level()
@@ -295,13 +308,13 @@ where
     /// ```
     /// use rair_trees::rbtree::*;
     /// #[derive(Copy, Clone)]
-    /// struct PlaceHolder();
+    /// struct PlaceHolder;
     /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
     /// type Tree = RBTree<u64, PlaceHolder,  &'static str>;
     /// let mut rbtree = RBTree::new();
-    /// rbtree.insert(0, PlaceHolder(), "First Insertion");
-    /// rbtree.insert(5, PlaceHolder(), "Second Insertion");
-    /// rbtree.insert(10, PlaceHolder(), "Third Insertion");
+    /// rbtree.insert(0, PlaceHolder, "First Insertion");
+    /// rbtree.insert(5, PlaceHolder, "Second Insertion");
+    /// rbtree.insert(10, PlaceHolder, "Third Insertion");
     /// assert_eq!(rbtree.delete_min().unwrap(), "First Insertion");
     /// assert_eq!(rbtree.delete_min().unwrap(), "Second Insertion");
     /// assert_eq!(rbtree.delete_min().unwrap(), "Third Insertion");
@@ -329,13 +342,13 @@ where
     /// ```
     /// use rair_trees::rbtree::*;
     /// #[derive(Copy, Clone)]
-    /// struct PlaceHolder();
+    /// struct PlaceHolder;
     /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, u64> {}
     /// type Tree = RBTree<u64, PlaceHolder, u64>;
     /// let mut rbtree = Tree::new();
-    /// rbtree.insert(0, PlaceHolder(), 0);
-    /// rbtree.insert(1, PlaceHolder(), 1);
-    /// rbtree.insert(2, PlaceHolder(), 2);
+    /// rbtree.insert(0, PlaceHolder, 0);
+    /// rbtree.insert(1, PlaceHolder, 1);
+    /// rbtree.insert(2, PlaceHolder, 2);
     /// assert_eq!(rbtree.search(0).unwrap(), &0);
     /// assert_eq!(rbtree.search(1).unwrap(), &1);
     /// assert_eq!(rbtree.search(2).unwrap(), &2);
@@ -352,7 +365,7 @@ where
         match key.cmp(&self.key()) {
             Ordering::Greater => self.right_mut().force_sync_aug(key),
             Ordering::Less => self.left_mut().force_sync_aug(key),
-            _ => (),
+            Ordering::Equal => (),
         }
         self.sync_aug();
     }
@@ -361,12 +374,12 @@ where
     /// ```
     /// use rair_trees::rbtree::*;
     /// #[derive(Copy, Clone)]
-    /// struct PlaceHolder();
+    /// struct PlaceHolder;
     /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
     /// type Tree = RBTree<u64, PlaceHolder,  &'static str>;
     /// let mut rbtree = Tree::new();
-    /// rbtree.insert(0, PlaceHolder(), "First Insertion");
-    /// rbtree.insert(5, PlaceHolder(), "Second Insertion");
+    /// rbtree.insert(0, PlaceHolder, "First Insertion");
+    /// rbtree.insert(5, PlaceHolder, "Second Insertion");
     /// assert_eq!(rbtree.search(0).unwrap(), &"First Insertion");
     /// assert_eq!(rbtree.search(5).unwrap(), &"Second Insertion");
     /// assert_eq!(rbtree.search(21), None);
@@ -389,11 +402,11 @@ where
     /// ```
     /// use rair_trees::rbtree::*;
     /// #[derive(Copy, Clone)]
-    /// struct PlaceHolder();
+    /// struct PlaceHolder;
     /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, String> {}
     /// type Tree = RBTree<u64, PlaceHolder,  String>;
     /// let mut rbtree = RBTree::new();
-    /// rbtree.insert(0, PlaceHolder(), String::from("First Insertion"));
+    /// rbtree.insert(0, PlaceHolder, String::from("First Insertion"));
     /// rbtree.search_mut(0).unwrap().push_str(" Modified");
     /// assert_eq!(rbtree.search(0).unwrap(), &"First Insertion Modified");
     /// ```
@@ -462,12 +475,12 @@ where
     /// ```
     /// use rair_trees::rbtree::*;
     /// #[derive(Copy, Clone)]
-    /// struct PlaceHolder();
+    /// struct PlaceHolder;
     /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
     /// type Tree = RBTree<u64, PlaceHolder,  &'static str>;
     /// let mut rbtree = Tree::new();
-    /// rbtree.insert(10, PlaceHolder(), "First Insertion");
-    /// rbtree.insert(15, PlaceHolder(), "Second Insertion");
+    /// rbtree.insert(10, PlaceHolder, "First Insertion");
+    /// rbtree.insert(15, PlaceHolder, "Second Insertion");
     /// assert_eq!(rbtree.delete(10).unwrap(), "First Insertion");
     /// assert_eq!(rbtree.delete(15).unwrap(), "Second Insertion");
     /// ```
@@ -503,6 +516,10 @@ where
         self = self.balance();
         (self, deleted_value)
     }
+    #[must_use]
+    pub fn iter(&self) -> TreeRefIterator<'_, K, A, V> {
+        <&Self as IntoIterator>::into_iter(self)
+    }
 }
 
 impl<K: Ord + Copy, A: Copy, V> IntoIterator for RBTree<K, A, V>
@@ -530,8 +547,10 @@ where
 #[cfg(test)]
 mod rbtree_tests {
     use super::{Augment, RBTree};
+    use core::cmp::max;
+
     #[derive(Copy, Clone)]
-    struct PlaceHolder();
+    struct PlaceHolder;
     impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, u64> {}
     type Tree = RBTree<u64, PlaceHolder, u64>;
     fn dfs(tree: &Tree, counter: &mut u64, blackcounter: u64, blackvec: &mut Vec<u64>) -> u64 {
@@ -551,13 +570,13 @@ mod rbtree_tests {
         assert_eq!(tree.data_ref(), &tree.key());
         *counter += 1;
         let l2 = dfs(tree.right_ref(), counter, newbc, blackvec);
-        1 + std::cmp::max(l1, l2)
+        1 + max(l1, l2)
     }
     fn verify_tree(tree: &Tree) {
         let mut counter = 0;
         let mut blackvec = Vec::with_capacity(tree.size() as usize / 2);
         let level = dfs(tree, &mut counter, 0, &mut blackvec);
-        blackvec.sort();
+        blackvec.sort_unstable();
         assert!(!tree.is_red());
         assert_eq!(counter, tree.size());
         assert_eq!(level, tree.get_level());
@@ -568,13 +587,13 @@ mod rbtree_tests {
         let mut rbtree = RBTree::new();
         assert_eq!(rbtree.get_level(), 0);
         for i in 0..1024 {
-            rbtree.insert(i, PlaceHolder(), i);
+            rbtree.insert(i, PlaceHolder, i);
             verify_tree(&rbtree);
         }
         assert!(rbtree.get_level() >= 10 && rbtree.get_level() <= 20);
         rbtree = RBTree::new();
         for i in (0..1024).rev() {
-            rbtree.insert(i, PlaceHolder(), i);
+            rbtree.insert(i, PlaceHolder, i);
             verify_tree(&rbtree);
         }
         assert!(rbtree.get_level() >= 10 && rbtree.get_level() <= 20);
@@ -585,7 +604,7 @@ mod rbtree_tests {
         let mut rbtree = RBTree::new();
         assert_eq!(rbtree.get_level(), 0);
         for i in 0..1024 {
-            rbtree.insert(i, PlaceHolder(), i);
+            rbtree.insert(i, PlaceHolder, i);
         }
         for i in 0..1024 {
             assert_eq!(rbtree.search(i).unwrap(), &i);
@@ -596,7 +615,7 @@ mod rbtree_tests {
     fn test_delete() {
         let mut rbtree = RBTree::new();
         for i in 0..10 {
-            rbtree.insert(i, PlaceHolder(), i);
+            rbtree.insert(i, PlaceHolder, i);
             verify_tree(&rbtree);
         }
         for i in 0..10 {
@@ -604,7 +623,7 @@ mod rbtree_tests {
             verify_tree(&rbtree);
         }
         for i in 0..20 {
-            rbtree.insert(i, PlaceHolder(), i);
+            rbtree.insert(i, PlaceHolder, i);
             verify_tree(&rbtree);
         }
         for i in 15..20 {
@@ -612,7 +631,7 @@ mod rbtree_tests {
             verify_tree(&rbtree);
         }
         for i in 15..2000 {
-            rbtree.insert(i, PlaceHolder(), i);
+            rbtree.insert(i, PlaceHolder, i);
             verify_tree(&rbtree);
         }
         for i in 100..2000 {
@@ -627,7 +646,7 @@ mod rbtree_tests {
         let mut rbtree = RBTree::new();
         assert_eq!(rbtree.delete_min(), None);
         for i in 0..2000 {
-            rbtree.insert(i, PlaceHolder(), i);
+            rbtree.insert(i, PlaceHolder, i);
         }
         for i in 0..2000 {
             assert_eq!(rbtree.delete_min().unwrap(), i);
@@ -639,22 +658,22 @@ mod rbtree_tests {
     fn test_iter() {
         let mut rbtree = RBTree::new();
         for i in 0..2000 {
-            rbtree.insert(i, PlaceHolder(), i);
+            rbtree.insert(i, PlaceHolder, i);
         }
         let mut iter = rbtree.into_iter();
         for i in 0..2000 {
-            assert_eq!(i, iter.next().unwrap().0)
+            assert_eq!(i, iter.next().unwrap().0);
         }
     }
     #[test]
     fn test_iter_ref() {
         let mut rbtree = RBTree::new();
         for i in 0..2000 {
-            rbtree.insert(i, PlaceHolder(), i);
+            rbtree.insert(i, PlaceHolder, i);
         }
         let mut iter = (&rbtree).into_iter();
         for i in 0..2000 {
-            assert_eq!(i, iter.next().unwrap().0)
+            assert_eq!(i, iter.next().unwrap().0);
         }
     }
 
@@ -664,7 +683,7 @@ mod rbtree_tests {
         // The point here is that at some point in time, iterating over
         // empty tree, triggered a bug that crashed.
         let rbtree: RBTree<u64, PlaceHolder, u64> = RBTree::new();
-        for (key, _, value) in rbtree.into_iter() {
+        for (key, _, value) in rbtree {
             assert_eq!(key, 5);
             assert_eq!(value, 5);
         }
@@ -675,7 +694,7 @@ mod rbtree_tests {
         // The point here is that at some point in time, iterating over
         // empty tree, triggered a bug that crashed.
         let rbtree: RBTree<u64, PlaceHolder, u64> = RBTree::new();
-        for (key, _, value) in (&rbtree).into_iter() {
+        for (key, _, value) in &rbtree {
             assert_eq!(key, 5);
             assert_eq!(*value, 5);
         }

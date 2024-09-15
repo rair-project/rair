@@ -1,7 +1,7 @@
 //! file descriptor data structure and needed tools to operate on single file.
 
-use crate::plugin::*;
-use crate::utils::*;
+use crate::plugin::{RIOPlugin, RIOPluginOperations};
+use crate::utils::{IoError, IoMode};
 use serde::{Deserialize, Serialize};
 
 /// This struct represents a file that is opened in [RIO]
@@ -57,26 +57,32 @@ impl RIODesc {
             .write(paddr - self.paddr as usize + self.raddr as usize, buffer)
     }
     /// Returns URI of current file descriptor.
+    #[must_use]
     pub fn name(&self) -> &str {
         &self.name
     }
     /// Returns *true* if paddr exists in this file descriptor and *false* otherwise.
+    #[must_use]
     pub fn has_paddr(&self, paddr: u64) -> bool {
         paddr >= self.paddr && paddr < self.paddr + self.size
     }
     /// Returns the base physical address of this file.
+    #[must_use]
     pub fn paddr_base(&self) -> u64 {
         self.paddr
     }
     /// Returns size of file on disk.
+    #[must_use]
     pub fn size(&self) -> u64 {
         self.size
     }
     /// Returns the permissions which the file was opened with.
+    #[must_use]
     pub fn perm(&self) -> IoMode {
         self.perm
     }
     /// Returns the Handle of given file descriptor.
+    #[must_use]
     pub fn hndl(&self) -> u64 {
         self.hndl
     }
@@ -106,7 +112,7 @@ mod default_plugin_tests {
     }
     #[test]
     fn test_desc_read() {
-        operate_on_file(&test_desc_read_cb, DATA)
+        operate_on_file(&test_desc_read_cb, DATA);
     }
     fn test_desc_has_paddr_cb(path: &Path) {
         let mut plugin = defaultplugin::plugin();

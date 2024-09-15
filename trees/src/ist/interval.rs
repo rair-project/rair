@@ -1,6 +1,6 @@
 //! Auxilary closed Interval data structure for IST.
 
-use std::cmp::{max, min};
+use core::cmp::{max, min};
 
 #[derive(Clone, Copy, Default, Ord, Eq, PartialOrd, PartialEq)]
 pub(super) struct Interval<T: Ord + Copy> {

@@ -1,20 +1,20 @@
 //! Commands to save/load projects.
 
-use crate::core::*;
-use crate::helper::*;
+use crate::core::Core;
+use crate::helper::{error_msg, expect, help, Cmd};
+use core::mem;
 use flate2::write::{ZlibDecoder, ZlibEncoder};
 use flate2::Compression;
 use serde::Deserialize;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::prelude::*;
-use std::mem;
 
 #[derive(Default)]
-pub struct Save {}
+pub struct Save;
 
 impl Save {
     pub fn new() -> Self {
-        Default::default()
+        Self
     }
 }
 impl Cmd for Save {
@@ -35,7 +35,7 @@ impl Cmd for Save {
         compressor.write_all(&data).unwrap();
         let compressed_data = compressor.finish().unwrap();
         if let Err(e) = file.write_all(&compressed_data) {
-            error_msg(core, "Failed to save project", &e.to_string())
+            error_msg(core, "Failed to save project", &e.to_string());
         }
     }
 
@@ -50,11 +50,11 @@ impl Cmd for Save {
 }
 
 #[derive(Default)]
-pub struct Load {}
+pub struct Load;
 
 impl Load {
     pub fn new() -> Self {
-        Default::default()
+        Self
     }
 }
 impl Cmd for Load {
@@ -63,14 +63,10 @@ impl Cmd for Load {
             expect(core, args.len() as u64, 1);
             return;
         }
-        let mut file = match File::open(&args[0]) {
-            Ok(file) => file,
-            Err(e) => return error_msg(core, "Failed to open file", &e.to_string()),
+        let compressed_data = match fs::read(&args[0]) {
+            Ok(data) => data,
+            Err(e) => return error_msg(core, "Failed to load project", &e.to_string()),
         };
-        let mut compressed_data: Vec<u8> = Vec::new();
-        if let Err(e) = file.read_to_end(&mut compressed_data) {
-            return error_msg(core, "Failed to load project", &e.to_string());
-        }
         let mut data = Vec::new();
         let mut decompressor = ZlibDecoder::new(data);
         if let Err(e) = decompressor.write_all(&compressed_data) {
@@ -143,9 +139,9 @@ mod test_project {
             .open_at("malloc://0x1337", IoMode::READ | IoMode::WRITE, 0x31000)
             .unwrap();
         core.io.map(0x31000, 0xfff31000, 0x337).unwrap();
-        save.run(&mut core, &["rair_project".to_string()]);
+        save.run(&mut core, &["rair_project".to_owned()]);
         core.io.close_all();
-        load.run(&mut core, &["rair_project".to_string()]);
+        load.run(&mut core, &["rair_project".to_owned()]);
         core.run("files", &[]);
         core.run("maps", &[]);
         assert_eq!(

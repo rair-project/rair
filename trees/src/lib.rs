@@ -1,8 +1,8 @@
 //!various trees impelementation for rair project
 
+extern crate alloc;
 #[cfg(feature = "serialize")]
 extern crate serde;
-
 /// Approximate String search data structure.
 pub mod bktree;
 /// Interval search tree implementation.

@@ -1,6 +1,6 @@
-//! Extend RBTree functionality so it suits IST.
+//! Extend `RBTree` functionality so it suits IST.
 
-use super::interval::*;
+use super::interval::Interval;
 use crate::rbtree::RBTree;
 
 #[derive(Copy, Clone)]

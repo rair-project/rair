@@ -1,16 +1,16 @@
 //! commands handling data writing to files.
 
-use crate::core::*;
-use crate::helper::*;
+use crate::core::Core;
+use crate::helper::{error_msg, expect, help, str_to_num, AddrMode, Cmd};
 use std::fs::File;
 use std::io::prelude::*;
 
 #[derive(Default)]
-pub struct WriteHex {}
+pub struct WriteHex;
 
 impl WriteHex {
     pub fn new() -> Self {
-        Default::default()
+        Self
     }
 }
 
@@ -35,7 +35,7 @@ impl Cmd for WriteHex {
             let byte = match u8::from_str_radix(&chunk, 16) {
                 Ok(byte) => byte,
                 Err(e) => {
-                    let msg = format!("{}.", e);
+                    let msg = format!("{e}.");
                     return error_msg(core, "Failed to parse data", &msg);
                 }
             };
@@ -64,11 +64,11 @@ impl Cmd for WriteHex {
 }
 
 #[derive(Default)]
-pub struct WriteToFile {}
+pub struct WriteToFile;
 
 impl WriteToFile {
     pub fn new() -> Self {
-        Default::default()
+        Self
     }
 }
 
@@ -81,7 +81,7 @@ impl Cmd for WriteToFile {
         let size = match str_to_num(&args[0]) {
             Ok(size) => size as usize,
             Err(e) => {
-                let err_str = format!("{}.", e);
+                let err_str = format!("{e}.");
                 error_msg(core, "Failed to parse size", &err_str);
                 return;
             }
@@ -99,13 +99,13 @@ impl Cmd for WriteToFile {
         let mut file = match File::create(&args[1]) {
             Ok(file) => file,
             Err(e) => {
-                let err_str = format!("{}.", e);
+                let err_str = format!("{e}.");
                 error_msg(core, "Failed to open file", &err_str);
                 return;
             }
         };
         if let Err(e) = file.write_all(&data) {
-            let err_str = format!("{}.", e);
+            let err_str = format!("{e}.");
             error_msg(core, "Failed to write data to file", &err_str);
         }
     }
@@ -160,13 +160,13 @@ mod test_write {
             .open("malloc://0x5000", IoMode::READ | IoMode::WRITE)
             .unwrap();
         core.io.map(0x0, 0x500, 0x500).unwrap();
-        wx.run(&mut core, &["123456789abcde".to_string()]);
+        wx.run(&mut core, &["123456789abcde".to_owned()]);
         let mut data = [0; 7];
         core.io.pread(0x0, &mut data).unwrap();
         assert_eq!(data, [0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde]);
         core.set_loc(0x500);
         core.mode = AddrMode::Vir;
-        wx.run(&mut core, &["23456789abcde1".to_string()]);
+        wx.run(&mut core, &["23456789abcde1".to_owned()]);
         core.io.vread(0x500, &mut data).unwrap();
         assert_eq!(data, [0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xe1]);
     }
@@ -184,26 +184,20 @@ mod test_write {
 
         wtf.run(
             &mut core,
-            &["0x50".to_string(), "out_test_wtf_phy".to_string()],
+            &["0x50".to_owned(), "out_test_wtf_phy".to_owned()],
         );
-        let mut file = File::open("out_test_wtf_phy").unwrap();
-        let mut data = vec![];
-        file.read_to_end(&mut data).unwrap();
-        assert_eq!(&data[..], &[0u8; 0x50][..]);
-        drop(file);
+        let data = fs::read("out_test_wtf_phy").unwrap();
+        assert_eq!(&*data, &[0u8; 0x50][..]);
         fs::remove_file("out_test_wtf_phy").unwrap();
 
         core.set_loc(0x500);
         core.mode = AddrMode::Vir;
-        data = vec![];
         wtf.run(
             &mut core,
-            &["0x50".to_string(), "out_test_wtf_vir".to_string()],
+            &["0x50".to_owned(), "out_test_wtf_vir".to_owned()],
         );
-        file = File::open("out_test_wtf_vir").unwrap();
-        file.read_to_end(&mut data).unwrap();
-        assert_eq!(&data[..], &[0u8; 0x50][..]);
-        drop(file);
+        let data = fs::read("out_test_wtf_vir").unwrap();
+        assert_eq!(&*data, &[0u8; 0x50][..]);
         fs::remove_file("out_test_wtf_vir").unwrap();
     }
 
@@ -225,7 +219,7 @@ mod test_write {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        wx.run(&mut core, &["012".to_string()]);
+        wx.run(&mut core, &["012".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -234,7 +228,7 @@ mod test_write {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        wx.run(&mut core, &["012x".to_string()]);
+        wx.run(&mut core, &["012x".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -244,7 +238,7 @@ mod test_write {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         core.set_loc(0x500);
-        wx.run(&mut core, &["0123".to_string()]);
+        wx.run(&mut core, &["0123".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -272,7 +266,7 @@ mod test_write {
         core.stdout = Writer::new_buf();
         wtf.run(
             &mut core,
-            &["0b12".to_string(), "file_that_won't_be_created".to_string()],
+            &["0b12".to_owned(), "file_that_won't_be_created".to_owned()],
         );
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
@@ -284,10 +278,7 @@ mod test_write {
         core.stdout = Writer::new_buf();
         wtf.run(
             &mut core,
-            &[
-                "0x1234".to_string(),
-                "file_that_won't_be_created".to_string(),
-            ],
+            &["0x1234".to_owned(), "file_that_won't_be_created".to_owned()],
         );
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(

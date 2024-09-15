@@ -1,26 +1,26 @@
 //! commands for mapping/unmapping memory regions and listing mapped regions as well.
 
-use crate::core::*;
-use crate::helper::*;
+use crate::core::Core;
+use crate::helper::{error_msg, expect, help, is_color, str_to_num, Cmd};
 use std::io::Write;
 use yansi::Paint;
 
 #[derive(Default)]
-pub struct Map {}
+pub struct Map;
 
 fn map_error(core: &mut Core, name: &str, err: &str) {
     let name = name.primary().bold();
-    let msg = format!("Failed to parse {}, {}.", name, err);
+    let msg = format!("Failed to parse {name}, {err}.");
     error_msg(core, "Failed to map memory", &msg);
 }
 fn unmap_error(core: &mut Core, name: &str, err: &str) {
     let name = name.primary().bold();
-    let msg = format!("Failed to parse {}, {}.", name, err);
+    let msg = format!("Failed to parse {name}, {err}.");
     error_msg(core, "Failed to unmap memory", &msg);
 }
 impl Map {
     pub fn new() -> Self {
-        Default::default()
+        Self
     }
 }
 
@@ -63,11 +63,11 @@ impl Cmd for Map {
 }
 
 #[derive(Default)]
-pub struct UnMap {}
+pub struct UnMap;
 
 impl UnMap {
     pub fn new() -> Self {
-        Default::default()
+        Self
     }
 }
 
@@ -104,7 +104,7 @@ impl Cmd for UnMap {
 }
 
 #[derive(Default)]
-pub struct ListMap {}
+pub struct ListMap;
 
 impl ListMap {
     pub fn new(core: &mut Core) -> Self {
@@ -118,7 +118,7 @@ impl ListMap {
                 is_color,
             )
             .unwrap();
-        Default::default()
+        Self
     }
 }
 
@@ -208,19 +208,19 @@ mod test_mapping {
         core.io.open(&path.to_string_lossy(), IoMode::READ).unwrap();
         map.run(
             &mut core,
-            &["0x0".to_string(), "0x500".to_string(), "0x20".to_string()],
+            &["0x0".to_owned(), "0x500".to_owned(), "0x20".to_owned()],
         );
         map.run(
             &mut core,
-            &["0x10".to_string(), "0x520".to_string(), "0x20".to_string()],
+            &["0x10".to_owned(), "0x520".to_owned(), "0x20".to_owned()],
         );
         map.run(
             &mut core,
-            &["0x20".to_string(), "0x540".to_string(), "0x20".to_string()],
+            &["0x20".to_owned(), "0x540".to_owned(), "0x20".to_owned()],
         );
         map.run(
             &mut core,
-            &["0x20".to_string(), "0x540".to_string(), "0".to_string()],
+            &["0x20".to_owned(), "0x540".to_owned(), "0".to_owned()],
         );
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
@@ -237,9 +237,9 @@ mod test_mapping {
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        unmap.run(&mut core, &["0x520".to_string(), "0x20".to_string()]);
-        unmap.run(&mut core, &["0x510".to_string(), "0x5".to_string()]);
-        unmap.run(&mut core, &["0x510".to_string(), "0".to_string()]);
+        unmap.run(&mut core, &["0x520".to_owned(), "0x20".to_owned()]);
+        unmap.run(&mut core, &["0x510".to_owned(), "0x5".to_owned()]);
+        unmap.run(&mut core, &["0x510".to_owned(), "0".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
@@ -275,7 +275,7 @@ mod test_mapping {
         core.stdout = Writer::new_buf();
         map.run(
             &mut core,
-            &["08".to_string(), "0x500".to_string(), "0x20".to_string()],
+            &["08".to_owned(), "0x500".to_owned(), "0x20".to_owned()],
         );
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
@@ -286,7 +286,7 @@ mod test_mapping {
         core.stdout = Writer::new_buf();
         map.run(
             &mut core,
-            &["0x0".to_string(), "0b500".to_string(), "0x20".to_string()],
+            &["0x0".to_owned(), "0b500".to_owned(), "0x20".to_owned()],
         );
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
@@ -297,7 +297,7 @@ mod test_mapping {
         core.stdout = Writer::new_buf();
         map.run(
             &mut core,
-            &["0x0".to_string(), "0x500".to_string(), "ff".to_string()],
+            &["0x0".to_owned(), "0x500".to_owned(), "ff".to_owned()],
         );
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
@@ -308,7 +308,7 @@ mod test_mapping {
         core.stdout = Writer::new_buf();
         map.run(
             &mut core,
-            &["0x0".to_string(), "0x500".to_string(), "0x20".to_string()],
+            &["0x0".to_owned(), "0x500".to_owned(), "0x20".to_owned()],
         );
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
@@ -317,7 +317,7 @@ mod test_mapping {
         );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.run("maps", &["0xff".to_string()]);
+        core.run("maps", &["0xff".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -325,7 +325,7 @@ mod test_mapping {
         );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        unmap.run(&mut core, &["0xff".to_string()]);
+        unmap.run(&mut core, &["0xff".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -333,7 +333,7 @@ mod test_mapping {
         );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        unmap.run(&mut core, &["0b500".to_string(), "0x20".to_string()]);
+        unmap.run(&mut core, &["0b500".to_owned(), "0x20".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -341,7 +341,7 @@ mod test_mapping {
         );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        unmap.run(&mut core, &["0x500".to_string(), "ff".to_string()]);
+        unmap.run(&mut core, &["0x500".to_owned(), "ff".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -349,7 +349,7 @@ mod test_mapping {
         );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        unmap.run(&mut core, &["0x500".to_string(), "0x20".to_string()]);
+        unmap.run(&mut core, &["0x500".to_owned(), "0x20".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),

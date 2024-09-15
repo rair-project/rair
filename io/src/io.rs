@@ -3,12 +3,11 @@
 use crate::desc::RIODesc;
 use crate::descquery::RIODescQuery;
 use crate::mapsquery::{RIOMap, RIOMapQuery};
-use crate::plugin::*;
+use crate::plugin::RIOPlugin;
 use crate::plugins;
-use crate::utils::*;
+use crate::utils::{IoError, IoMode};
+use alloc::{collections::BTreeMap, sync::Arc};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-use std::collections::BTreeMap;
-use std::sync::Arc;
 
 // Credits goes to @Talchas#7429 for the idea of using remote
 // to create something that behaves as finalize_hook() for
@@ -44,13 +43,13 @@ impl Serialize for RIO {
 }
 
 impl<'de> Deserialize<'de> for RIO {
-    fn deserialize<D>(d: D) -> Result<RIO, D::Error>
+    fn deserialize<D>(deserializer: D) -> Result<RIO, D::Error>
     where
         D: Deserializer<'de>,
     {
-        let mut io = RIO::deserialize(d)?;
+        let mut io = RIO::deserialize(deserializer)?;
         plugins::load_plugins(&mut io);
-        for desc in (&mut io.descs).into_iter() {
+        for desc in &mut io.descs {
             let mut found = false;
             for plugin in &mut io.plugins {
                 if plugin.accept_uri(&desc.name) {
@@ -75,8 +74,9 @@ impl RIO {
     /// use rair_io::RIO;
     /// let mut io = RIO::new();
     /// ````
+    #[must_use]
     pub fn new() -> RIO {
-        let mut io: RIO = Default::default();
+        let mut io: RIO = RIO::default();
         plugins::load_plugins(&mut io);
         io
     }
@@ -88,12 +88,12 @@ impl RIO {
     }
     /// Allows us to open file and have it accessable from out physical address space,
     /// *open* will automatically load the file in the smallest available physical address while
-    /// [RIO::open_at] will allow user to determine what physical address to use. `uri` is
+    /// [`RIO::open_at`] will allow user to determine what physical address to use. `uri` is
     /// used to describe file path as well as data encoding if needed. `flags` is used to
     /// describe permision used while opening file.
     ///
     /// # Return value
-    /// the unique file handler represented by [u64] is returned. In case of error, an [IoError]
+    /// the unique file handler represented by [u64] is returned. In case of error, an [`IoError`]
     /// is returned explaining why opening file failed.
     ///
     /// # Example
@@ -109,9 +109,8 @@ impl RIO {
             if plugin.accept_uri(uri) {
                 if let Ok(hndl) = self.descs.register_open_default(&mut **plugin, uri, flags) {
                     return Ok(hndl);
-                } else {
-                    return self.descs.register_open(&mut **plugin, uri, flags);
                 }
+                return self.descs.register_open(&mut **plugin, uri, flags);
             }
         }
         Err(IoError::IoPluginNotFoundError)
@@ -123,7 +122,7 @@ impl RIO {
     /// while opening file.
     ///
     /// # Return value
-    /// the unique file handler represented by [u64] is returned. In case of error, an [IoError]
+    /// the unique file handler represented by [u64] is returned. In case of error, an [`IoError`]
     /// is returned explaining why opening file failed.
     ///
     /// # Example
@@ -146,7 +145,7 @@ impl RIO {
     }
 
     /// Close an opened file, delete its physical and virtual address space.
-    /// In case of Error, an [IoError] is returned explaining why *close* failed.
+    /// In case of Error, an [`IoError`] is returned explaining why *close* failed.
     ///
     /// # Example
     ///
@@ -221,7 +220,7 @@ impl RIO {
         }
     }
     /// Read from the physical address space of current [RIO] object. Data is stored in a sparce
-    /// vector represented by [BTreeMap]. Error is returned only in case of internal IO errors.
+    /// vector represented by [`BTreeMap`]. Error is returned only in case of internal IO errors.
     ///
     /// # Example
     ///
@@ -307,7 +306,7 @@ impl RIO {
         }
     }
     /// read memory from virtual address space. Data is stored in a sparce
-    /// vector represented by [BTreeMap]. Error is returned only in case of
+    /// vector represented by [`BTreeMap`]. Error is returned only in case of
     /// internal IO errors.
     pub fn vread_sparce(&mut self, vaddr: u64, size: u64) -> Result<BTreeMap<u64, u8>, IoError> {
         let mut result = BTreeMap::new();
@@ -337,26 +336,31 @@ impl RIO {
     }
 
     /// convert virtual address to physical address
+    #[must_use]
     pub fn vir_to_phy(&self, vaddr: u64, size: u64) -> Option<Vec<RIOMap>> {
         self.maps.split_vaddr_range(vaddr, size)
     }
     /// This funciton reverse-queries individual physical addresses. It convert
     /// physical address to virtual address. The return value is a vector of
     /// virtual addresses, all of which would map to the provided physical address
+    #[must_use]
     pub fn phy_to_vir(&self, phy: u64) -> Vec<u64> {
         self.maps.rev_query(phy)
     }
 
     /// Iterate over open URIs
+    #[must_use]
     pub fn uri_iter<'a>(&'a self) -> Box<dyn Iterator<Item = &'a RIODesc> + 'a> {
         self.descs.into_iter()
     }
 
     /// Iterate over memory maps
+    #[must_use]
     pub fn map_iter<'a>(&'a self) -> Box<dyn Iterator<Item = Arc<RIOMap>> + 'a> {
         self.maps.into_iter()
     }
-    /// Return equivalent [RIODesc] structure for the given *hndl*
+    /// Return equivalent [`RIODesc`] structure for the given *hndl*
+    #[must_use]
     pub fn hndl_to_desc(&self, hndl: u64) -> Option<&RIODesc> {
         self.descs.hndl_to_desc(hndl)
     }
@@ -606,7 +610,7 @@ mod rio_tests {
         // Now we make sure that we can read through all maps
         sanity_data = Vec::with_capacity(DATA.len());
         fillme = vec![1; DATA.len() * 3];
-        for _ in 0..3 {
+        for _ in 0i32..3i32 {
             sanity_data.extend(DATA);
         }
         io.vread(0x400, &mut fillme).unwrap();
@@ -847,7 +851,7 @@ mod rio_tests {
     }
     #[test]
     fn test_hndl_to_desc() {
-        operate_on_file(&hndl_to_desc_cb, DATA)
+        operate_on_file(&hndl_to_desc_cb, DATA);
     }
     fn serde_cb(paths: &[&Path]) {
         let mut io = RIO::new();

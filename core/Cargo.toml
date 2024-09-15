@@ -22,3 +22,6 @@ yansi = {workspace = true}
 
 [dev-dependencies]
 test_file = {workspace = true}
+
+[lints]
+workspace = true

@@ -12,7 +12,7 @@ enum Hint<'a, K: Ord + Copy, A: Copy, V> {
     LR(&'a RBTree<K, A, V>),
 }
 
-/// Iterator for [RBTree] reference
+/// Iterator for [`RBTree`] reference
 pub struct TreeRefIterator<'a, K: Ord + Copy, A: Copy, V> {
     right: Vec<Hint<'a, K, A, V>>,
     current: Option<&'a RBTree<K, A, V>>,
@@ -44,7 +44,7 @@ where
                 break;
             }
         }
-        self.current = if node.is_node() { Some(node) } else { None }
+        self.current = node.is_node().then_some(node);
     }
 }
 impl<'a, K: Ord + Copy, A: Copy, V> Iterator for TreeRefIterator<'a, K, A, V>

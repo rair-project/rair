@@ -1,10 +1,10 @@
 //! Serialize and deserialize interval search tree.
 
-use super::tree::*;
+use super::tree::IST;
+use core::fmt::{Formatter, Result as FResult};
 use serde::de;
 use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
 use serde::ser::{Serialize, SerializeSeq, Serializer};
-use std::fmt;
 impl<K: Ord + Copy + Serialize, V: Serialize> Serialize for IST<K, V> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -30,7 +30,7 @@ where
     V: Deserialize<'de>,
 {
     type Value = IST<K, V>;
-    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn expecting(&self, formatter: &mut Formatter<'_>) -> FResult {
         formatter.write_str("struct IST")
     }
     fn visit_seq<VI>(self, mut seq: VI) -> Result<IST<K, V>, VI::Error>

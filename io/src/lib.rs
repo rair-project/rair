@@ -1,5 +1,5 @@
 //! Rair IO abstraction layer
-
+extern crate alloc;
 mod desc;
 mod descquery;
 mod io;

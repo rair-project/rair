@@ -1,6 +1,6 @@
 //! Approximate String search data structure.
 
-use std::cmp::min;
+use core::cmp::min;
 use std::collections::HashMap;
 /// Generic BK-Tree Template used to store dictionary like
 /// structures and perform fuzzy search on them. *K* must implement trait
@@ -61,11 +61,11 @@ where
         (exact, close)
     }
 }
-/// This trait used by [BKTree] to tell how close are 2 objects when fuzzy searching.
+/// This trait used by [`BKTree`] to tell how close are 2 objects when fuzzy searching.
 /// In case of strings, the distance function could be something like Levenshtein distance,
 /// Damerau–Levenshtein distance, Optimal string alignment distance or anything similar.
 pub trait Distance {
-    /// Calculate the distance between two nodes in the [BKTree]
+    /// Calculate the distance between two nodes in the [`BKTree`]
     fn distance(&self, other: &Self) -> u64;
 }
 
@@ -74,6 +74,7 @@ where
     K: Distance,
 {
     /// Returns a new BK-Tree
+    #[must_use]
     pub fn new() -> BKTree<K, V> {
         BKTree { root: None }
     }
@@ -118,7 +119,7 @@ fn osa_distance(str1: &str, str2: &str) -> u64 {
     }
     for i in 1..=a.len() {
         for j in 1..=b.len() {
-            let cost = if a[i - 1] == b[j - 1] { 0 } else { 1 };
+            let cost = u64::from(a[i - 1] != b[j - 1]);
             d[i][j] = min(
                 d[i - 1][j] + 1, // deletion
                 min(
@@ -127,7 +128,7 @@ fn osa_distance(str1: &str, str2: &str) -> u64 {
                 ),
             ); // substitution
             if i > 1 && j > 1 && a[i - 1] == b[j - 2] && a[i - 2] == b[j - 1] {
-                d[i][j] = min(d[i][j], d[i - 2][j - 2] + cost) // transposition
+                d[i][j] = min(d[i][j], d[i - 2][j - 2] + cost); // transposition
             }
         }
     }
@@ -140,7 +141,7 @@ impl Distance for String {
     }
 }
 
-/// A BKTree with string based Key and distance trait optimized for
+/// A `BKTree` with string based Key and distance trait optimized for
 /// capturing spelling and typing mistakes.
 ///
 /// # Example
@@ -168,7 +169,7 @@ mod bktree_tests {
             ("hello world", "hello world ", 1),
             ("hello world", "h ello World", 2),
         ];
-        for (s1, s2, d) in s.iter() {
+        for (s1, s2, d) in &s {
             assert_eq!(osa_distance(s1, s2), *d);
         }
     }
@@ -184,18 +185,18 @@ mod bktree_tests {
             "helix",
             "helmet",
         ];
-        for word in words.iter() {
-            tree.insert(word.to_string(), word);
+        for word in &words {
+            tree.insert((*word).to_owned(), word);
         }
-        let mut res = tree.find(&"hello".to_string(), 1);
+        let mut res = tree.find(&"hello".to_owned(), 1);
         assert_eq!(res.0[0], &"hello");
         assert_eq!(res.1.len(), 1);
         assert_eq!(res.1[0], &"hell");
-        res = tree.find(&"helicoptre".to_string(), 1);
+        res = tree.find(&"helicoptre".to_owned(), 1);
         assert_eq!(res.0.len(), 0);
         assert_eq!(res.1.len(), 1);
         assert_eq!(res.1[0], "helicopter");
-        res = tree.find(&"attempt".to_string(), 1);
+        res = tree.find(&"attempt".to_owned(), 1);
         assert_eq!(res.0.len(), 0);
         assert_eq!(res.1.len(), 0);
     }

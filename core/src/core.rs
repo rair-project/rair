@@ -1,19 +1,19 @@
 //! Linking all rair parts together into 1 module.
 
 use crate::commands::Commands;
-use crate::helper::*;
-use crate::io::*;
-use crate::loc::*;
+use crate::helper::{error_msg, AddrMode, Cmd, MRc};
+use crate::io::register_io;
+use crate::loc::register_loc;
 use crate::utils::register_utils;
 use crate::writer::Writer;
+use alloc::sync::Arc;
+use core::mem;
 use parking_lot::{Mutex, RwLock};
-use rair_env::*;
-use rair_io::*;
+use rair_env::Environment;
+use rair_io::RIO;
 use serde::{Deserialize, Serialize};
 use std::io;
 use std::io::Write;
-use std::mem;
-use std::sync::Arc;
 use yansi::Paint;
 #[derive(Serialize, Deserialize)]
 pub struct Core {
@@ -41,8 +41,8 @@ impl Default for Core {
             stderr: Writer::new_write(Box::new(io::stderr())),
             io: RIO::new(),
             loc: 0,
-            commands: Default::default(),
-            env: Default::default(),
+            commands: Arc::default(),
+            env: Arc::default(),
         }
     }
 }
@@ -65,7 +65,7 @@ impl Core {
         self.commands.clone()
     }
     pub fn set_commands(&mut self, commands: Arc<Mutex<Commands>>) {
-        self.commands = commands
+        self.commands = commands;
     }
     fn init_core_env(&mut self) {
         let locked_env = self.env.clone();
@@ -100,15 +100,17 @@ impl Core {
         env.add_color("color.9", (0x85, 0x99, 0x00), "").unwrap();
     }
     fn new_settings(color: bool) -> Self {
-        let mut core: Core = Default::default();
+        let mut core = Core::default();
         core.init_colors(color);
         core.init_core_env();
         core.load_commands();
         core
     }
+    #[must_use]
     pub fn new() -> Self {
         Core::new_settings(true)
     }
+    #[must_use]
     pub fn new_no_colors() -> Self {
         Core::new_settings(false)
     }
@@ -116,6 +118,7 @@ impl Core {
         self.loc = loc;
     }
 
+    #[must_use]
     pub fn get_loc(&self) -> u64 {
         self.loc
     }
@@ -156,7 +159,7 @@ impl Core {
             let similar: Vec<String> = similar.iter().map(|s| (*s).to_owned()).collect();
             drop(commands);
             for suggestion in similar {
-                self.help(&suggestion.to_owned());
+                self.help(&suggestion.clone());
             }
         }
     }
@@ -169,7 +172,7 @@ impl Core {
             cmd.lock().run(self, args);
         } else {
             drop(cmds_ref);
-            self.command_not_found(command)
+            self.command_not_found(command);
         }
     }
 
@@ -196,8 +199,8 @@ impl Core {
 mod test_core {
     use super::*;
     use crate::utils::Quit;
+    use alloc::sync::Arc;
     use parking_lot::Mutex;
-    use std::sync::Arc;
     fn testings_env(core: &mut Core) {
         let locked_env = core.env.clone();
         let mut env = locked_env.write();

@@ -1,7 +1,9 @@
 //! Autocompletion / hinting / colorzing input.
 
+use alloc::borrow::Cow::{self, Owned};
+use alloc::sync::Arc;
 use parking_lot::Mutex;
-use rair_cmd::*;
+use rair_cmd::ParseTree;
 use rair_core::Commands;
 use rustyline::completion::{Completer, Pair};
 use rustyline::error::ReadlineError;
@@ -9,8 +11,6 @@ use rustyline::highlight::Highlighter;
 use rustyline::hint::{Hinter, HistoryHinter};
 use rustyline::Context;
 use rustyline_derive::{Helper, Validator};
-use std::borrow::Cow::{self, Owned};
-use std::sync::Arc;
 use yansi::Paint;
 
 #[derive(Helper, Validator)]
@@ -26,40 +26,42 @@ impl LineFormatter {
             commands,
         }
     }
-    fn tree_complete(&self, tree: ParseTree) -> Result<(usize, Vec<Pair>), ReadlineError> {
+    fn tree_complete(&self, tree: ParseTree) -> (usize, Vec<Pair>) {
         match tree {
             // If we have a help then we just return
             // all the commands sharing same prefix ending with the help token
             ParseTree::Help(help) => {
                 let mut ret = Vec::new();
                 for suggestion in self.commands.lock().prefix(&help.command) {
-                    let display = (*suggestion).to_string();
-                    let replacement = (*suggestion).to_string() + "?";
+                    let display = (*suggestion).to_owned();
+                    let mut replacement = (*suggestion).to_owned();
+                    replacement.push('?');
                     ret.push(Pair {
                         display,
                         replacement,
                     });
                 }
-                Ok((0, ret))
+                (0, ret)
             }
             // if it is command
             // first if we are taking arguments no autocomplate else autocomplete normally ;)
             ParseTree::Cmd(cmd) => {
                 if !cmd.args.is_empty() {
-                    return Ok((0, Vec::new()));
+                    return (0, Vec::new());
                 }
                 let mut ret = Vec::new();
                 for suggestion in self.commands.lock().prefix(&cmd.command) {
-                    let display = (*suggestion).to_string();
-                    let replacement = (*suggestion).to_string();
+                    let display = (*suggestion).to_owned();
+                    let replacement = (*suggestion).to_owned();
                     ret.push(Pair {
                         display,
                         replacement,
                     });
                 }
-                Ok((0, ret))
+                (0, ret)
             }
-            _ => Ok((0, Vec::new())),
+            ParseTree::Comment | ParseTree::NewLine => (0, Vec::new()),
+            _ => unreachable!(),
         }
     }
 }
@@ -91,7 +93,7 @@ impl Completer for LineFormatter {
         let t = ParseTree::construct(&line[0..p]);
         match t {
             Err(_) => Ok((0, Vec::new())),
-            Ok(tree) => self.tree_complete(tree),
+            Ok(tree) => Ok(self.tree_complete(tree)),
         }
     }
 }

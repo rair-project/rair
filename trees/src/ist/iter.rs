@@ -1,10 +1,10 @@
 //! Iterator implementation for ist.
 
-use super::interval::*;
-use super::rb_helpers::*;
-use super::tree::*;
+use super::interval::Interval;
+use super::rb_helpers::AugData;
+use super::tree::IST;
 use crate::rbtree::TreeIterator;
-use std::vec::IntoIter;
+use alloc::vec::IntoIter;
 
 /// Iterator for [IST]
 pub struct ISTIterator<K: Ord + Copy, V> {

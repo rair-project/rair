@@ -1,4 +1,4 @@
-//! Abstract implementation for Io::Write stream
+//! Abstract implementation for `Io::Write` stream
 
 use std::io;
 use std::io::Write;
@@ -6,6 +6,7 @@ use std::io::Write;
 /// This union acts as thin abstraction layer over over input streams.
 /// Its goal is to allow allow seamingless redirection of output to
 /// either a buffer, a file or even terminal IO.
+#[non_exhaustive]
 pub enum Writer {
     #[doc(hidden)]
     Write(Box<dyn Write + Sync + Send>),
@@ -34,16 +35,19 @@ impl Default for Writer {
 }
 impl Writer {
     /// Creates a new [Writer] backed by object that implements [Write].
+    #[must_use]
     pub fn new_write(out: Box<dyn Write + Sync + Send>) -> Self {
         Writer::Write(out)
     }
 
     /// Returns a new buffer based [Writer].
+    #[must_use]
     pub fn new_buf() -> Self {
         Writer::Bytes(Vec::new())
     }
     /// This function consumes the [Writer] object, it returns the
     /// data stored there if the object is buffer based.
+    #[must_use]
     pub fn bytes(self) -> Option<Vec<u8>> {
         if let Writer::Bytes(b) = self {
             Some(b)
@@ -54,6 +58,7 @@ impl Writer {
     /// This function consumes the [Writer] object, it returns UTF-8
     /// String representation of the data stored there if it is buffer.
     /// based and the buffer holds UTF-8 data.
+    #[must_use]
     pub fn utf8_string(self) -> Option<String> {
         if let Writer::Bytes(b) = self {
             if let Ok(s) = String::from_utf8(b) {
@@ -67,6 +72,7 @@ impl Writer {
     }
     /// This function returns a reference to the data stored
     /// in respective [Writer] if the object is buffer based.
+    #[must_use]
     pub fn bytes_ref(&self) -> Option<&Vec<u8>> {
         if let Writer::Bytes(b) = self {
             Some(b)

@@ -5,13 +5,13 @@ mod map;
 mod print;
 mod write;
 
-use self::files::*;
-use self::map::*;
-use self::print::*;
-use self::write::*;
+use self::files::{CloseFile, ListFiles, OpenFile};
+use self::map::{ListMap, Map, UnMap};
+use self::print::{PrintBase, PrintCSV, PrintHex, PrintSignedCSV};
+use self::write::{WriteHex, WriteToFile};
 use crate::core::Core;
+use alloc::sync::Arc;
 use parking_lot::Mutex;
-use std::sync::Arc;
 pub fn register_io(core: &mut Core) {
     let maps = Arc::new(Mutex::new(ListMap::new(core)));
     let files = Arc::new(Mutex::new(ListFiles::new(core)));

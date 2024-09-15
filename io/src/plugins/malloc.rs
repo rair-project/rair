@@ -1,7 +1,7 @@
 //! RIO plugin that opens memory based virtual files.
 
-use crate::plugin::*;
-use crate::utils::*;
+use crate::plugin::{RIOPlugin, RIOPluginDesc, RIOPluginMetadata, RIOPluginOperations};
+use crate::utils::{IoError, IoMode};
 use std::io;
 
 const METADATA: RIOPluginMetadata = RIOPluginMetadata {
@@ -39,19 +39,19 @@ impl RIOPluginOperations for MallocInternal {
         Ok(())
     }
 
-    fn write(&mut self, raddr: usize, buf: &[u8]) -> Result<(), IoError> {
-        if raddr + buf.len() > self.len() {
+    fn write(&mut self, raddr: usize, buffer: &[u8]) -> Result<(), IoError> {
+        if raddr + buffer.len() > self.len() {
             return Err(IoError::Parse(io::Error::new(
                 io::ErrorKind::UnexpectedEof,
                 "BufferOverflow",
             )));
         }
-        self.data[raddr..raddr + buf.len()].copy_from_slice(buf);
+        self.data[raddr..raddr + buffer.len()].copy_from_slice(buffer);
         Ok(())
     }
 }
 
-struct MallocPlugin {}
+struct MallocPlugin;
 
 impl MallocPlugin {
     fn uri_to_size(uri: &str) -> Option<u64> {
@@ -99,7 +99,7 @@ impl RIOPlugin for MallocPlugin {
             Some(size) => MallocInternal::new(size),
             None => {
                 return Err(IoError::Custom(
-                    "Failed to parse given uri as usize".to_string(),
+                    "Failed to parse given uri as usize".to_owned(),
                 ))
             }
         };
@@ -157,7 +157,7 @@ mod test_malloc {
             .unwrap();
         assert_eq!(
             err,
-            IoError::Custom("Failed to parse given uri as usize".to_string())
+            IoError::Custom("Failed to parse given uri as usize".to_owned())
         );
         err = p.open("malloc://0x500", IoMode::READ).err().unwrap();
         assert_eq!(

@@ -1,8 +1,8 @@
 //! seek forward or backward in file.
 
 use super::history::History;
-use crate::core::*;
-use crate::helper::*;
+use crate::core::Core;
+use crate::helper::{error_msg, expect, help, str_to_num, Cmd, MRc};
 
 #[derive(Default)]
 pub struct Seek {
@@ -59,7 +59,7 @@ impl Cmd for Seek {
         if args[0] == "-" {
             self.backward(core);
         } else if args[0] == "+" {
-            self.forward(core)
+            self.forward(core);
         } else if args[0].starts_with('+') {
             match str_to_num(&args[0][1..]) {
                 Ok(offset) => self.add_loc(core, offset),
@@ -97,13 +97,13 @@ impl Cmd for Seek {
 
 mod test_seek {
     use super::*;
-    use crate::writer::Writer;
+    use crate::{writer::Writer, AddrMode};
     #[test]
     fn test_docs() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let seek: Seek = Default::default();
+        let seek = Seek::default();
         seek.help(&mut core);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
@@ -123,35 +123,35 @@ mod test_seek {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut seek: Seek = Default::default();
+        let mut seek = Seek::default();
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0x0);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        seek.run(&mut core, &["+0x5".to_string()]);
+        seek.run(&mut core, &["+0x5".to_owned()]);
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0x5);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        seek.run(&mut core, &["+0x17".to_string()]);
+        seek.run(&mut core, &["+0x17".to_owned()]);
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0x1c);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        seek.run(&mut core, &["-12".to_string()]);
+        seek.run(&mut core, &["-12".to_owned()]);
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0x10);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        seek.run(&mut core, &["0b101011".to_string()]);
+        seek.run(&mut core, &["0b101011".to_owned()]);
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0b101011);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
@@ -159,14 +159,14 @@ mod test_seek {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        seek.run(&mut core, &["-".to_string()]);
+        seek.run(&mut core, &["-".to_owned()]);
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0x10);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        seek.run(&mut core, &["+".to_string()]);
+        seek.run(&mut core, &["+".to_owned()]);
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0b101011);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
@@ -174,7 +174,7 @@ mod test_seek {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        seek.run(&mut core, &["+".to_string()]);
+        seek.run(&mut core, &["+".to_owned()]);
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0b101011);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
@@ -184,8 +184,8 @@ mod test_seek {
         );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        for _ in 0..4 {
-            seek.run(&mut core, &["-".to_string()]);
+        for _ in 0i32..4i32 {
+            seek.run(&mut core, &["-".to_owned()]);
         }
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0b0);
@@ -193,7 +193,7 @@ mod test_seek {
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        seek.run(&mut core, &["-".to_string()]);
+        seek.run(&mut core, &["-".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -205,10 +205,10 @@ mod test_seek {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut seek: Seek = Default::default();
+        let mut seek = Seek::default();
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0x0);
-        seek.run(&mut core, &["-0x5".to_string()]);
+        seek.run(&mut core, &["-0x5".to_owned()]);
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0x0);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
@@ -219,7 +219,7 @@ mod test_seek {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        seek.run(&mut core, &["0xffffffffffffffff".to_string()]);
+        seek.run(&mut core, &["0xffffffffffffffff".to_owned()]);
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0xffffffffffffffff);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
@@ -227,7 +227,7 @@ mod test_seek {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        seek.run(&mut core, &["+1".to_string()]);
+        seek.run(&mut core, &["+1".to_owned()]);
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0xffffffffffffffff);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
@@ -242,7 +242,7 @@ mod test_seek {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut seek: Seek = Default::default();
+        let mut seek = Seek::default();
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0x0);
 
@@ -257,7 +257,7 @@ mod test_seek {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        seek.run(&mut core, &["+ff".to_string()]);
+        seek.run(&mut core, &["+ff".to_owned()]);
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0x0);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
@@ -268,7 +268,7 @@ mod test_seek {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        seek.run(&mut core, &["-ff".to_string()]);
+        seek.run(&mut core, &["-ff".to_owned()]);
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0x0);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
@@ -279,7 +279,7 @@ mod test_seek {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        seek.run(&mut core, &["ff".to_string()]);
+        seek.run(&mut core, &["ff".to_owned()]);
         assert_eq!(core.mode, AddrMode::Phy);
         assert_eq!(core.get_loc(), 0x0);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");

@@ -1,15 +1,15 @@
 //! Helper functions for implementing external or internal commands.
 
-use crate::core::*;
+use crate::core::Core;
+use alloc::fmt;
+use alloc::sync::Arc;
+use core::fmt::Display;
 use parking_lot::Mutex;
 use rair_env::Environment;
 use serde::{Deserialize, Serialize};
-use std::fmt;
-use std::fmt::Display;
 use std::io::Write;
 use std::num;
 use std::process::exit;
-use std::sync::Arc;
 use yansi::Paint;
 
 pub type MRc<T> = Arc<Mutex<T>>; //mutable refcounter that is thread safe
@@ -31,8 +31,8 @@ pub fn str_to_num(n: &str) -> Result<u64, num::ParseIntError> {
 pub fn expect(core: &mut Core, args_len: u64, expect: u64) {
     let (r, g, b) = core.env.read().get_color("color.4").unwrap();
     let error = "Arguments Error";
-    let expected = format!("{}", expect);
-    let found = format!("{}", args_len);
+    let expected = format!("{expect}");
+    let found = format!("{args_len}");
     writeln!(
         core.stderr,
         "{}: Expected {} argument(s), found {}.",
@@ -47,9 +47,9 @@ pub fn expect_range(core: &mut Core, args_len: u64, min: u64, max: u64) {
     assert!(min < max);
     let (r, g, b) = core.env.read().get_color("color.4").unwrap();
     let error = "Arguments Error";
-    let min_str = format!("{}", min);
-    let max_str = format!("{}", max);
-    let found = format!("{}", args_len);
+    let min_str = format!("{min}");
+    let max_str = format!("{max}");
+    let found = format!("{args_len}");
     writeln!(
         core.stderr,
         "{}: Expected between {} and {} arguments, found {}.",
@@ -70,7 +70,7 @@ pub fn error_msg(core: &mut Core, title: &str, msg: &str) {
         title.rgb(r, g, b)
     )
     .unwrap();
-    writeln!(core.stderr, "{}", msg).unwrap();
+    writeln!(core.stderr, "{msg}").unwrap();
 }
 
 pub fn panic_msg(core: &mut Core, title: &str, msg: &str) -> ! {
@@ -83,7 +83,7 @@ pub fn panic_msg(core: &mut Core, title: &str, msg: &str) -> ! {
     )
     .unwrap();
     if !msg.is_empty() {
-        writeln!(core.stderr, "{}", msg).unwrap();
+        writeln!(core.stderr, "{msg}").unwrap();
     }
     writeln!(core.stderr, "{}", "Exiting!".rgb(r, g, b).bold()).unwrap();
     exit(-1);
@@ -111,7 +111,7 @@ pub fn help(core: &mut Core, long: &str, short: &str, usage: Vec<(&str, &str)>) 
         if !args.is_empty() {
             write!(core.stdout, " {}", args.rgb(r2, g2, b2)).unwrap();
         }
-        writeln!(core.stdout, "\t{}", description,).unwrap()
+        writeln!(core.stdout, "\t{description}",).unwrap();
     }
 }
 
@@ -125,6 +125,7 @@ pub trait Cmd {
     fn help(&self, _: &mut Core);
 }
 #[derive(Copy, Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[non_exhaustive]
 pub enum AddrMode {
     Vir,
     Phy,
@@ -139,6 +140,7 @@ impl Display for AddrMode {
     }
 }
 
+#[must_use]
 pub fn is_color<Core>(_: &str, value: &str, env: &Environment<Core>, _: &mut Core) -> bool {
     env.is_color(value)
 }
@@ -147,7 +149,7 @@ pub fn is_color<Core>(_: &str, value: &str, env: &Environment<Core>, _: &mut Cor
 mod test_helper {
     use super::*;
     use crate::writer::Writer;
-    use std::fmt::Write;
+    use core::fmt::Write;
     #[test]
     fn test_str_to_num() {
         assert_eq!(str_to_num("12345").unwrap(), 12345);
@@ -156,7 +158,7 @@ mod test_helper {
         assert_eq!(str_to_num("0x12345").unwrap(), 0x12345);
         assert_eq!(str_to_num("0X1F2f345").unwrap(), 0x1f2f345);
         assert_eq!(str_to_num("0").unwrap(), 0);
-        assert!(str_to_num("0x12345123451234512").is_err());
+        str_to_num("0x12345123451234512").unwrap_err();
     }
 
     #[test]

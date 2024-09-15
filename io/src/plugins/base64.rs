@@ -1,10 +1,10 @@
 //! RIO plugin that opens base64 encoded files.
 
 use super::defaultplugin;
-use crate::plugin::*;
-use crate::utils::*;
+use crate::plugin::{RIOPlugin, RIOPluginDesc, RIOPluginMetadata, RIOPluginOperations};
+use crate::utils::{IoError, IoMode};
 use base64::prelude::*;
-use std::cmp;
+use core::cmp;
 use std::io;
 use std::path::Path;
 const METADATA: RIOPluginMetadata = RIOPluginMetadata {
@@ -41,7 +41,7 @@ impl Base64Internal {
             .decode_slice(b64data, &mut decoded_data)
             .is_err()
         {
-            return Err(IoError::Custom("Corrupted base64 data".to_string()));
+            return Err(IoError::Custom("Corrupted base64 data".to_owned()));
         }
         buffer[0..size].copy_from_slice(&decoded_data[offset..offset + size]);
         Ok((raddr + size, &mut buffer[size..]))
@@ -67,7 +67,7 @@ impl Base64Internal {
             .decode_slice(b64data, &mut decoded_data)
             .is_err()
         {
-            return Err(IoError::Custom("Corrupted base64 data".to_string()));
+            return Err(IoError::Custom("Corrupted base64 data".to_owned()));
         }
         buffer[offset..].copy_from_slice(&decoded_data[0..size]);
         Ok((raddr, &mut buffer[..offset]))
@@ -91,7 +91,7 @@ impl Base64Internal {
         let mut b64data = vec![0; b64size];
         self.file.read(b64addr, &mut b64data)?;
         if BASE64_STANDARD.decode_slice(b64data, buffer).is_err() {
-            return Err(IoError::Custom("Corrupted base64 data".to_string()));
+            return Err(IoError::Custom("Corrupted base64 data".to_owned()));
         }
         Ok(())
     }
@@ -115,7 +115,7 @@ impl Base64Internal {
             .decode_slice(b64data, &mut decoded_data)
             .is_err()
         {
-            return Err(IoError::Custom("Corrupted base64 data".to_string()));
+            return Err(IoError::Custom("Corrupted base64 data".to_owned()));
         }
         decoded_data[offset..offset + size].copy_from_slice(&buffer[0..size]);
         BASE64_STANDARD
@@ -145,7 +145,7 @@ impl Base64Internal {
             .decode_slice(b64data, &mut decoded_data)
             .is_err()
         {
-            return Err(IoError::Custom("Corrupted base64 data".to_string()));
+            return Err(IoError::Custom("Corrupted base64 data".to_owned()));
         }
         decoded_data[0..size].copy_from_slice(&buffer[offset..]);
         BASE64_STANDARD
@@ -234,7 +234,7 @@ impl RIOPlugin for Base64Plugin {
             .read(def_desc.size as usize - paddings.len(), &mut paddings)
             .is_err()
         {
-            return Err(IoError::Custom("Corrupted base64 data".to_string()));
+            return Err(IoError::Custom("Corrupted base64 data".to_owned()));
         };
         let padding_size = paddings.iter().filter(|&n| *n == b'=').count();
         let internal = Base64Internal {
@@ -343,7 +343,8 @@ mod test_base64 {
     }
     fn nopad_write_cb(path: &Path) {
         let mut p = plugin();
-        let uri = String::from("b64://") + &path.to_string_lossy();
+        let mut uri = "b64://".to_owned();
+        uri.push_str(&path.to_string_lossy());
         let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
         file.plugin_operations.write(0, b"t").unwrap();
         file.plugin_operations.write(1, b"HE").unwrap();
@@ -371,7 +372,8 @@ mod test_base64 {
 
     fn one_pad_write_cb(path: &Path) {
         let mut p = plugin();
-        let uri = String::from("b64://") + &path.to_string_lossy();
+        let mut uri = "b64://".to_owned();
+        uri.push_str(&path.to_string_lossy());
         let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
         file.plugin_operations.write(0, b"t").unwrap();
         file.plugin_operations.write(1, b"H").unwrap();
@@ -401,7 +403,8 @@ mod test_base64 {
 
     fn two_pad_write_cb(path: &Path) {
         let mut p = plugin();
-        let uri = String::from("b64://") + &path.to_string_lossy();
+        let mut uri = "b64://".to_owned();
+        uri.push_str(&path.to_string_lossy());
         let mut file = p.open(&uri, IoMode::READ | IoMode::WRITE).unwrap();
         file.plugin_operations.write(0, b"t").unwrap();
         let mut d2 = [0; 1];

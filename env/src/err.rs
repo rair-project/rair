@@ -1,8 +1,9 @@
 //! error handling for renv.
 
-use std::fmt;
+use alloc::fmt;
 
 #[derive(Debug, PartialEq)]
+#[non_exhaustive]
 pub enum EnvErr {
     NotFound,
     DifferentType,

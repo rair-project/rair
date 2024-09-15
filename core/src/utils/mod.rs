@@ -3,12 +3,12 @@ mod env;
 mod project;
 mod quit;
 
-use self::env::*;
-use self::project::*;
+use self::env::{Environment, EnvironmentHelp, EnvironmentReset};
+use self::project::{Load, Save};
 pub use self::quit::Quit;
 use crate::core::Core;
+use alloc::sync::Arc;
 use parking_lot::Mutex;
-use std::sync::Arc;
 
 pub fn register_utils(core: &mut Core) {
     core.add_command("quit", "q", Arc::new(Mutex::new(Quit::new())));

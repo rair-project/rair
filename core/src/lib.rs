@@ -1,4 +1,6 @@
 //! rair core library
+extern crate alloc;
+
 mod commands;
 mod core;
 mod helper;

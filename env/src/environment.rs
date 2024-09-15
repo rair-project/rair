@@ -1,9 +1,11 @@
 //! Linking all rair configuration parts together into place.
 
-use super::err::*;
-use super::metadata::*;
+use super::err::EnvErr;
+use super::metadata::{
+    BoolFn, ColorFn, EnvBool, EnvColor, EnvI64, EnvMetaData, EnvStr, EnvU64, I64Fn, StrFn, U64Fn,
+};
+use core::mem;
 use std::collections::HashMap;
-use std::mem;
 #[derive(PartialEq, Debug)]
 pub enum EnvData<'a> {
     Str(&'a str),
@@ -29,6 +31,7 @@ pub struct Environment<T> {
 }
 
 impl<T> Environment<T> {
+    #[must_use]
     pub fn new() -> Self {
         Environment {
             data: HashMap::new(),
@@ -36,7 +39,7 @@ impl<T> Environment<T> {
     }
     // All exec_*_cb function are guaranteed to be running on the correct type
     fn exec_str_cb(&self, key: &str, data: &mut T) -> bool {
-        let meta = self.data.get(key).unwrap().as_str().unwrap();
+        let meta = self.data[key].as_str().unwrap();
         let val = &meta.data;
         if let Some(cb) = meta.cb {
             return cb(key, val, self, data);
@@ -56,12 +59,12 @@ impl<T> Environment<T> {
             return Err(EnvErr::AlreadyExist);
         }
         let meta = EnvStr {
-            data: val.to_string(),
-            default: val.to_string(),
-            help: help.to_string(),
+            data: val.to_owned(),
+            default: val.to_owned(),
+            help: help.to_owned(),
             cb: Some(cb),
         };
-        self.data.insert(key.to_string(), EnvMetaData::Str(meta));
+        self.data.insert(key.to_owned(), EnvMetaData::Str(meta));
         if !self.exec_str_cb(key, data) {
             self.data.remove(key).unwrap();
             return Err(EnvErr::CbFailed);
@@ -74,19 +77,18 @@ impl<T> Environment<T> {
             return Err(EnvErr::AlreadyExist);
         }
         let meta = EnvStr {
-            data: val.to_string(),
-            default: val.to_string(),
-            help: help.to_string(),
+            data: val.to_owned(),
+            default: val.to_owned(),
+            help: help.to_owned(),
             cb: None,
         };
-        self.data.insert(key.to_string(), EnvMetaData::Str(meta));
+        self.data.insert(key.to_owned(), EnvMetaData::Str(meta));
         Ok(())
     }
 
     pub fn get_str(&self, key: &str) -> Result<&str, EnvErr> {
-        let meta = match self.data.get(key) {
-            Some(meta) => meta,
-            None => return Err(EnvErr::NotFound),
+        let Some(meta) = self.data.get(key) else {
+            return Err(EnvErr::NotFound);
         };
         match meta.as_str() {
             Some(s) => Ok(&s.data),
@@ -95,11 +97,10 @@ impl<T> Environment<T> {
     }
 
     pub fn set_str(&mut self, key: &str, value: &str, data: &mut T) -> Result<(), EnvErr> {
-        let meta = match self.data.get_mut(key) {
-            Some(meta) => meta,
-            None => return Err(EnvErr::NotFound),
+        let Some(meta) = self.data.get_mut(key) else {
+            return Err(EnvErr::NotFound);
         };
-        let mut tmp = value.to_string();
+        let mut tmp = value.to_owned();
         if let Some(s) = meta.mut_str() {
             mem::swap(&mut tmp, &mut s.data);
             if !self.exec_str_cb(key, data) {
@@ -115,16 +116,16 @@ impl<T> Environment<T> {
         }
     }
 
+    #[must_use]
     pub fn is_str(&self, key: &str) -> bool {
-        let meta = match self.data.get(key) {
-            Some(meta) => meta,
-            None => return false,
+        let Some(meta) = self.data.get(key) else {
+            return false;
         };
         meta.as_str().is_some()
     }
 
     fn exec_u64_cb(&self, key: &str, data: &mut T) -> bool {
-        let meta = self.data.get(key).unwrap().as_u64().unwrap();
+        let meta = self.data[key].as_u64().unwrap();
         if let Some(cb) = meta.cb {
             return cb(key, meta.data, self, data);
         }
@@ -145,10 +146,10 @@ impl<T> Environment<T> {
         let meta = EnvU64 {
             data: val,
             default: val,
-            help: help.to_string(),
+            help: help.to_owned(),
             cb: Some(cb),
         };
-        self.data.insert(key.to_string(), EnvMetaData::U64(meta));
+        self.data.insert(key.to_owned(), EnvMetaData::U64(meta));
         if !self.exec_u64_cb(key, data) {
             self.data.remove(key).unwrap();
             return Err(EnvErr::CbFailed);
@@ -163,17 +164,16 @@ impl<T> Environment<T> {
         let meta = EnvU64 {
             data: val,
             default: val,
-            help: help.to_string(),
+            help: help.to_owned(),
             cb: None,
         };
-        self.data.insert(key.to_string(), EnvMetaData::U64(meta));
+        self.data.insert(key.to_owned(), EnvMetaData::U64(meta));
         Ok(())
     }
 
     pub fn get_u64(&self, key: &str) -> Result<u64, EnvErr> {
-        let meta = match self.data.get(key) {
-            Some(meta) => meta,
-            None => return Err(EnvErr::NotFound),
+        let Some(meta) = self.data.get(key) else {
+            return Err(EnvErr::NotFound);
         };
         match meta.as_u64() {
             Some(s) => Ok(s.data),
@@ -182,9 +182,8 @@ impl<T> Environment<T> {
     }
 
     pub fn set_u64(&mut self, key: &str, value: u64, data: &mut T) -> Result<(), EnvErr> {
-        let meta = match self.data.get_mut(key) {
-            Some(meta) => meta,
-            None => return Err(EnvErr::NotFound),
+        let Some(meta) = self.data.get_mut(key) else {
+            return Err(EnvErr::NotFound);
         };
         let mut tmp = value;
         if let Some(s) = meta.mut_u64() {
@@ -202,16 +201,16 @@ impl<T> Environment<T> {
         }
     }
 
+    #[must_use]
     pub fn is_u64(&self, key: &str) -> bool {
-        let meta = match self.data.get(key) {
-            Some(meta) => meta,
-            None => return false,
+        let Some(meta) = self.data.get(key) else {
+            return false;
         };
         meta.as_u64().is_some()
     }
 
     fn exec_i64_cb(&self, key: &str, data: &mut T) -> bool {
-        let meta = self.data.get(key).unwrap().as_i64().unwrap();
+        let meta = self.data[key].as_i64().unwrap();
         if let Some(cb) = meta.cb {
             return cb(key, meta.data, self, data);
         }
@@ -232,10 +231,10 @@ impl<T> Environment<T> {
         let meta = EnvI64 {
             data: val,
             default: val,
-            help: help.to_string(),
+            help: help.to_owned(),
             cb: Some(cb),
         };
-        self.data.insert(key.to_string(), EnvMetaData::I64(meta));
+        self.data.insert(key.to_owned(), EnvMetaData::I64(meta));
         if !self.exec_i64_cb(key, data) {
             self.data.remove(key).unwrap();
             return Err(EnvErr::CbFailed);
@@ -250,17 +249,16 @@ impl<T> Environment<T> {
         let meta = EnvI64 {
             data: val,
             default: val,
-            help: help.to_string(),
+            help: help.to_owned(),
             cb: None,
         };
-        self.data.insert(key.to_string(), EnvMetaData::I64(meta));
+        self.data.insert(key.to_owned(), EnvMetaData::I64(meta));
         Ok(())
     }
 
     pub fn get_i64(&self, key: &str) -> Result<i64, EnvErr> {
-        let meta = match self.data.get(key) {
-            Some(meta) => meta,
-            None => return Err(EnvErr::NotFound),
+        let Some(meta) = self.data.get(key) else {
+            return Err(EnvErr::NotFound);
         };
         match meta.as_i64() {
             Some(s) => Ok(s.data),
@@ -269,9 +267,8 @@ impl<T> Environment<T> {
     }
 
     pub fn set_i64(&mut self, key: &str, value: i64, data: &mut T) -> Result<(), EnvErr> {
-        let meta = match self.data.get_mut(key) {
-            Some(meta) => meta,
-            None => return Err(EnvErr::NotFound),
+        let Some(meta) = self.data.get_mut(key) else {
+            return Err(EnvErr::NotFound);
         };
         let mut tmp = value;
         if let Some(s) = meta.mut_i64() {
@@ -289,16 +286,16 @@ impl<T> Environment<T> {
         }
     }
 
+    #[must_use]
     pub fn is_i64(&self, key: &str) -> bool {
-        let meta = match self.data.get(key) {
-            Some(meta) => meta,
-            None => return false,
+        let Some(meta) = self.data.get(key) else {
+            return false;
         };
         meta.as_i64().is_some()
     }
 
     fn exec_bool_cb(&self, key: &str, data: &mut T) -> bool {
-        let meta = self.data.get(key).unwrap().as_bool().unwrap();
+        let meta = self.data[key].as_bool().unwrap();
         if let Some(cb) = meta.cb {
             return cb(key, meta.data, self, data);
         }
@@ -319,10 +316,10 @@ impl<T> Environment<T> {
         let meta = EnvBool {
             data: val,
             default: val,
-            help: help.to_string(),
+            help: help.to_owned(),
             cb: Some(cb),
         };
-        self.data.insert(key.to_string(), EnvMetaData::Bool(meta));
+        self.data.insert(key.to_owned(), EnvMetaData::Bool(meta));
         if !self.exec_bool_cb(key, data) {
             self.data.remove(key).unwrap();
             return Err(EnvErr::CbFailed);
@@ -337,17 +334,16 @@ impl<T> Environment<T> {
         let meta = EnvBool {
             data: val,
             default: val,
-            help: help.to_string(),
+            help: help.to_owned(),
             cb: None,
         };
-        self.data.insert(key.to_string(), EnvMetaData::Bool(meta));
+        self.data.insert(key.to_owned(), EnvMetaData::Bool(meta));
         Ok(())
     }
 
     pub fn get_bool(&self, key: &str) -> Result<bool, EnvErr> {
-        let meta = match self.data.get(key) {
-            Some(meta) => meta,
-            None => return Err(EnvErr::NotFound),
+        let Some(meta) = self.data.get(key) else {
+            return Err(EnvErr::NotFound);
         };
         match meta.as_bool() {
             Some(s) => Ok(s.data),
@@ -356,9 +352,8 @@ impl<T> Environment<T> {
     }
 
     pub fn set_bool(&mut self, key: &str, value: bool, data: &mut T) -> Result<(), EnvErr> {
-        let meta = match self.data.get_mut(key) {
-            Some(meta) => meta,
-            None => return Err(EnvErr::NotFound),
+        let Some(meta) = self.data.get_mut(key) else {
+            return Err(EnvErr::NotFound);
         };
         let mut tmp = value;
         if let Some(s) = meta.mut_bool() {
@@ -376,16 +371,16 @@ impl<T> Environment<T> {
         }
     }
 
+    #[must_use]
     pub fn is_bool(&self, key: &str) -> bool {
-        let meta = match self.data.get(key) {
-            Some(meta) => meta,
-            None => return false,
+        let Some(meta) = self.data.get(key) else {
+            return false;
         };
         meta.as_bool().is_some()
     }
 
     fn exec_color_cb(&self, key: &str, data: &mut T) -> bool {
-        let meta = self.data.get(key).unwrap().as_color().unwrap();
+        let meta = self.data[key].as_color().unwrap();
         if let Some(cb) = meta.cb {
             return cb(key, meta.data, self, data);
         }
@@ -406,10 +401,10 @@ impl<T> Environment<T> {
         let meta = EnvColor {
             data: val,
             default: val,
-            help: help.to_string(),
+            help: help.to_owned(),
             cb: Some(cb),
         };
-        self.data.insert(key.to_string(), EnvMetaData::Color(meta));
+        self.data.insert(key.to_owned(), EnvMetaData::Color(meta));
         if !self.exec_color_cb(key, data) {
             self.data.remove(key).unwrap();
             return Err(EnvErr::CbFailed);
@@ -424,17 +419,16 @@ impl<T> Environment<T> {
         let meta = EnvColor {
             data: val,
             default: val,
-            help: help.to_string(),
+            help: help.to_owned(),
             cb: None,
         };
-        self.data.insert(key.to_string(), EnvMetaData::Color(meta));
+        self.data.insert(key.to_owned(), EnvMetaData::Color(meta));
         Ok(())
     }
 
     pub fn get_color(&self, key: &str) -> Result<(u8, u8, u8), EnvErr> {
-        let meta = match self.data.get(key) {
-            Some(meta) => meta,
-            None => return Err(EnvErr::NotFound),
+        let Some(meta) = self.data.get(key) else {
+            return Err(EnvErr::NotFound);
         };
         match meta.as_color() {
             Some(s) => Ok(s.data),
@@ -448,9 +442,8 @@ impl<T> Environment<T> {
         value: (u8, u8, u8),
         data: &mut T,
     ) -> Result<(), EnvErr> {
-        let meta = match self.data.get_mut(key) {
-            Some(meta) => meta,
-            None => return Err(EnvErr::NotFound),
+        let Some(meta) = self.data.get_mut(key) else {
+            return Err(EnvErr::NotFound);
         };
         let mut tmp = value;
         if let Some(s) = meta.mut_color() {
@@ -468,18 +461,17 @@ impl<T> Environment<T> {
         }
     }
 
+    #[must_use]
     pub fn is_color(&self, key: &str) -> bool {
-        let meta = match self.data.get(key) {
-            Some(meta) => meta,
-            None => return false,
+        let Some(meta) = self.data.get(key) else {
+            return false;
         };
         meta.as_color().is_some()
     }
 
     pub fn reset(&mut self, key: &str, data: &mut T) -> Result<(), EnvErr> {
-        let meta = match self.data.get_mut(key) {
-            Some(meta) => meta,
-            None => return Err(EnvErr::NotFound),
+        let Some(meta) = self.data.get_mut(key) else {
+            return Err(EnvErr::NotFound);
         };
         match meta {
             EnvMetaData::Bool(b) => {
@@ -505,6 +497,7 @@ impl<T> Environment<T> {
         }
         Ok(())
     }
+    #[must_use]
     pub fn get(&self, key: &str) -> Option<EnvData<'_>> {
         let meta = self.data.get(key)?;
         match meta {
@@ -515,6 +508,7 @@ impl<T> Environment<T> {
             EnvMetaData::Color(c) => Some(EnvData::Color(c.data.0, c.data.1, c.data.2)),
         }
     }
+    #[must_use]
     pub fn get_help(&self, key: &str) -> Option<&str> {
         let meta = self.data.get(key)?;
         match meta {
@@ -525,12 +519,22 @@ impl<T> Environment<T> {
             EnvMetaData::Color(c) => Some(&c.help),
         }
     }
+    #[must_use]
     pub fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = (&str, EnvData<'_>)> + 'a> {
         Box::new(
             self.data
                 .iter()
                 .map(|(k, v)| (k.as_str(), EnvData::from(v))),
         )
+    }
+}
+
+impl<'a, T> IntoIterator for &'a Environment<T> {
+    type IntoIter =
+        Box<(dyn Iterator<Item = (&'a str, EnvData<'a>)> + 'a)>;
+    type Item = (&'a str, EnvData<'a>);
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
     }
 }
 

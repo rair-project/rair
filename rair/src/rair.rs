@@ -1,4 +1,5 @@
 //! rair CLI.
+extern crate alloc;
 
 mod cli;
 mod files;
@@ -7,10 +8,10 @@ mod lineformatter;
 mod rpel;
 
 use cli::Args;
-use init::*;
+use core::mem;
+use init::init_editor_from_core;
 use rair_core::{panic_msg, Core, Writer};
-use rpel::*;
-use std::mem;
+use rpel::prompt_read_parse_evaluate_loop;
 
 fn main() {
     let mut core = Core::new();

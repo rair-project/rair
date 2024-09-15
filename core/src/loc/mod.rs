@@ -4,11 +4,11 @@ mod history;
 mod mode;
 mod seek;
 use self::history::History;
-use self::mode::*;
-use self::seek::*;
+use self::mode::Mode;
+use self::seek::Seek;
 use crate::core::Core;
+use alloc::sync::Arc;
 use parking_lot::Mutex;
-use std::sync::Arc;
 
 pub fn register_loc(core: &mut Core) {
     let history = Arc::new(Mutex::new(History::new()));

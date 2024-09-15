@@ -1,33 +1,33 @@
 //! commands for handling environment variables.
 
-use crate::core::*;
-use crate::helper::*;
+use crate::core::Core;
+use crate::helper::{error_msg, expect, expect_range, help, is_color, str_to_num, Cmd};
 use rair_env::EnvData;
 use std::io::Write;
 use yansi::Paint;
 #[derive(Default)]
-pub struct Environment {}
+pub struct Environment;
 
 impl Environment {
     pub fn new() -> Self {
-        Default::default()
+        Self
     }
-    fn iterate(&self, core: &mut Core) {
+    fn iterate(core: &mut Core) {
         let env = core.env.clone();
         for (k, v) in env.read().iter() {
             match v {
-                EnvData::Bool(b) => writeln!(core.stdout, "{} = {}", k, b).unwrap(),
-                EnvData::I64(i) => writeln!(core.stdout, "{} = {}", k, i).unwrap(),
-                EnvData::U64(u) => writeln!(core.stdout, "{} = 0x{:x}", k, u).unwrap(),
-                EnvData::Str(s) => writeln!(core.stdout, "{} = {}", k, s).unwrap(),
+                EnvData::Bool(b) => writeln!(core.stdout, "{k} = {b}").unwrap(),
+                EnvData::I64(i) => writeln!(core.stdout, "{k} = {i}").unwrap(),
+                EnvData::U64(u) => writeln!(core.stdout, "{k} = 0x{u:x}").unwrap(),
+                EnvData::Str(s) => writeln!(core.stdout, "{k} = {s}").unwrap(),
                 EnvData::Color(r, g, b) => {
-                    let color = format!("#{:02x}{:02x}{:02x}", r, g, b);
+                    let color = format!("#{r:02x}{g:02x}{b:02x}");
                     writeln!(core.stdout, "{} = {}", k, color.rgb(r, g, b)).unwrap();
                 }
             }
         }
     }
-    fn set(&self, core: &mut Core, key: &str, value: &str) {
+    fn set(core: &mut Core, key: &str, value: &str) {
         let env = core.env.clone();
         let mut res = Ok(());
         if env.read().is_bool(key) {
@@ -36,7 +36,7 @@ impl Environment {
                 "true" => true,
                 "false" => false,
                 _ => {
-                    let message = format!("Expected `true` or `false`, found `{}`.", value);
+                    let message = format!("Expected `true` or `false`, found `{value}`.");
                     return error_msg(core, "Failed to set variable.", &message);
                 }
             };
@@ -57,7 +57,7 @@ impl Environment {
             res = env.write().set_str(key, value, core);
         } else if env.read().is_color(key) {
             if value.len() != 7 || !value.starts_with('#') {
-                let message = format!("Expected color code, found `{}`.", value);
+                let message = format!("Expected color code, found `{value}`.");
                 return error_msg(core, "Failed to set variable.", &message);
             }
             let r = match u8::from_str_radix(&value[1..3], 16) {
@@ -75,26 +75,23 @@ impl Environment {
             res = env.write().set_color(key, (r, g, b), core);
         }
         if let Err(e) = res {
-            error_msg(core, "Failed to set variable.", &e.to_string())
+            error_msg(core, "Failed to set variable.", &e.to_string());
         }
     }
-    fn display(&self, core: &mut Core, key: &str) {
+    fn display(core: &mut Core, key: &str) {
         let env = core.env.read();
-        let data = match env.get(key) {
-            Some(data) => data,
-            None => {
-                drop(env);
-                let message = format!("Variable `{}` doesn't exist.", key);
-                return error_msg(core, "Failed to display variable.", &message);
-            }
+        let Some(data) = env.get(key) else {
+            drop(env);
+            let message = format!("Variable `{key}` doesn't exist.");
+            return error_msg(core, "Failed to display variable.", &message);
         };
         match data {
-            EnvData::Bool(b) => writeln!(core.stdout, "{}", b).unwrap(),
-            EnvData::I64(i) => writeln!(core.stdout, "{}", i).unwrap(),
-            EnvData::U64(u) => writeln!(core.stdout, "0x{:x}", u).unwrap(),
-            EnvData::Str(s) => writeln!(core.stdout, "{}", s).unwrap(),
+            EnvData::Bool(b) => writeln!(core.stdout, "{b}").unwrap(),
+            EnvData::I64(i) => writeln!(core.stdout, "{i}").unwrap(),
+            EnvData::U64(u) => writeln!(core.stdout, "0x{u:x}").unwrap(),
+            EnvData::Str(s) => writeln!(core.stdout, "{s}").unwrap(),
             EnvData::Color(r, g, b) => {
-                let color = format!("#{:02x}{:02x}{:02x}", r, g, b);
+                let color = format!("#{r:02x}{g:02x}{b:02x}");
                 writeln!(core.stdout, "{}", color.rgb(r, g, b)).unwrap();
             }
         }
@@ -104,31 +101,31 @@ impl Environment {
 impl Cmd for Environment {
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if args.len() > 3 {
-            expect_range(core, args.len() as u64, 0, 3)
+            expect_range(core, args.len() as u64, 0, 3);
         } else if args.is_empty() {
-            self.iterate(core);
+            Self::iterate(core);
         } else if args.len() == 1 {
             let args: Vec<&str> = args[0].split('=').collect();
             if args.len() == 2 {
-                self.set(core, args[0].trim(), args[1].trim());
+                Self::set(core, args[0].trim(), args[1].trim());
             } else {
-                self.display(core, args[0]);
+                Self::display(core, args[0]);
             }
         } else if args.len() == 2 {
             // either args[0] ends with = or args[1] starts with = but not both!
             if args[0].ends_with('=') ^ args[1].starts_with('=') {
                 let key = args[0].split('=').next().unwrap().trim();
                 let value = args[1].split('=').last().unwrap().trim();
-                self.set(core, key, value);
+                Self::set(core, key, value);
             } else {
-                error_msg(core, "Failed to set variable.", "Expected `=`.")
+                error_msg(core, "Failed to set variable.", "Expected `=`.");
             }
         } else if args.len() == 3 {
             if args[1] == "=" {
-                self.set(core, &args[0], &args[2]);
+                Self::set(core, &args[0], &args[2]);
             } else {
                 let message = format!("Expected `=` found `{}`.", args[1]);
-                error_msg(core, "Failed to set variable.", &message)
+                error_msg(core, "Failed to set variable.", &message);
             }
         }
     }
@@ -147,11 +144,11 @@ impl Cmd for Environment {
 }
 
 #[derive(Default)]
-pub struct EnvironmentReset {}
+pub struct EnvironmentReset;
 
 impl EnvironmentReset {
     pub fn new() -> Self {
-        Default::default()
+        Self
     }
 }
 
@@ -164,7 +161,7 @@ impl Cmd for EnvironmentReset {
         let env = core.env.clone();
         let res = env.write().reset(&args[0], core);
         if let Err(e) = res {
-            error_msg(core, "Failed to reset variable.", &e.to_string())
+            error_msg(core, "Failed to reset variable.", &e.to_string());
         }
     }
     fn help(&self, core: &mut Core) {
@@ -178,7 +175,7 @@ impl Cmd for EnvironmentReset {
 }
 
 #[derive(Default)]
-pub struct EnvironmentHelp {}
+pub struct EnvironmentHelp;
 
 impl EnvironmentHelp {
     pub fn new(core: &mut Core) -> Self {
@@ -192,7 +189,7 @@ impl EnvironmentHelp {
                 is_color,
             )
             .unwrap();
-        Default::default()
+        Self
     }
 }
 
@@ -225,8 +222,11 @@ impl Cmd for EnvironmentHelp {
 
 #[cfg(test)]
 mod test_env {
+    extern crate alloc;
+
     use super::*;
     use crate::writer::*;
+    use alloc::sync::Arc;
     use rair_env::Environment as Env;
     #[test]
     fn test_help() {
@@ -260,7 +260,7 @@ mod test_env {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.run("eh", &["environmentHelp.envColor".to_string()]);
+        core.run("eh", &["environmentHelp.envColor".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "environmentHelp.envColor:\tColor used in the environment variable\n"
@@ -269,7 +269,7 @@ mod test_env {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.run("eh", &["doesnt.exist".to_string()]);
+        core.run("eh", &["doesnt.exist".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -287,7 +287,7 @@ mod test_env {
         env.write()
             .set_color("color.1", (r + 1, g + 1, b + 1), &mut core)
             .unwrap();
-        er.run(&mut core, &["color.1".to_string()]);
+        er.run(&mut core, &["color.1".to_owned()]);
         let (r2, g2, b2) = env.read().get_color("color.1").unwrap();
         assert_eq!(r, r2);
         assert_eq!(g, g2);
@@ -299,7 +299,7 @@ mod test_env {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut er = EnvironmentReset::new();
-        er.run(&mut core, &["doest.exist".to_string()]);
+        er.run(&mut core, &["doest.exist".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -317,7 +317,7 @@ mod test_env {
     }
     fn get_good_core() -> Core {
         let mut core = Core::new_no_colors();
-        core.env = Default::default();
+        core.env = Arc::default();
         core.env.write().add_bool("b", false, "").unwrap();
         core.env.write().add_u64("u", 500, "").unwrap();
         core.env.write().add_i64("i", -500, "").unwrap();
@@ -351,11 +351,11 @@ mod test_env {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut env = Environment::new();
-        env.run(&mut core, &["b".to_string()]);
-        env.run(&mut core, &["u".to_string()]);
-        env.run(&mut core, &["i".to_string()]);
-        env.run(&mut core, &["s".to_string()]);
-        env.run(&mut core, &["c".to_string()]);
+        env.run(&mut core, &["b".to_owned()]);
+        env.run(&mut core, &["u".to_owned()]);
+        env.run(&mut core, &["i".to_owned()]);
+        env.run(&mut core, &["s".to_owned()]);
+        env.run(&mut core, &["c".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "false\n0x1f4\n-500\nhello world\n#ffeedd\n"
@@ -364,18 +364,18 @@ mod test_env {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        env.run(&mut core, &["b  = true ".to_string()]);
-        env.run(&mut core, &["u= 0x5".to_string()]);
-        env.run(&mut core, &["i=-1".to_string()]);
-        env.run(&mut core, &["s=happy birthday".to_string()]);
-        env.run(&mut core, &["c=#aaaaaa".to_string()]);
-        env.run(&mut core, &["b".to_string()]);
-        env.run(&mut core, &["u".to_string()]);
-        env.run(&mut core, &["i".to_string()]);
-        env.run(&mut core, &["s".to_string()]);
-        env.run(&mut core, &["c".to_string()]);
-        env.run(&mut core, &["b  = false".to_string()]);
-        env.run(&mut core, &["b".to_string()]);
+        env.run(&mut core, &["b  = true ".to_owned()]);
+        env.run(&mut core, &["u= 0x5".to_owned()]);
+        env.run(&mut core, &["i=-1".to_owned()]);
+        env.run(&mut core, &["s=happy birthday".to_owned()]);
+        env.run(&mut core, &["c=#aaaaaa".to_owned()]);
+        env.run(&mut core, &["b".to_owned()]);
+        env.run(&mut core, &["u".to_owned()]);
+        env.run(&mut core, &["i".to_owned()]);
+        env.run(&mut core, &["s".to_owned()]);
+        env.run(&mut core, &["c".to_owned()]);
+        env.run(&mut core, &["b  = false".to_owned()]);
+        env.run(&mut core, &["b".to_owned()]);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "true\n0x5\n-1\nhappy birthday\n#aaaaaa\nfalse\n"
@@ -389,10 +389,10 @@ mod test_env {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut env = Environment::new();
-        env.run(&mut core, &["b  =".to_string(), "true ".to_string()]);
-        env.run(&mut core, &["u".to_string(), "= 0x5".to_string()]);
-        env.run(&mut core, &["b".to_string()]);
-        env.run(&mut core, &["u".to_string()]);
+        env.run(&mut core, &["b  =".to_owned(), "true ".to_owned()]);
+        env.run(&mut core, &["u".to_owned(), "= 0x5".to_owned()]);
+        env.run(&mut core, &["b".to_owned()]);
+        env.run(&mut core, &["u".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "true\n0x5\n");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
@@ -405,9 +405,9 @@ mod test_env {
         let mut env = Environment::new();
         env.run(
             &mut core,
-            &["b".to_string(), "=".to_string(), "true".to_string()],
+            &["b".to_owned(), "=".to_owned(), "true".to_owned()],
         );
-        env.run(&mut core, &["b".to_string()]);
+        env.run(&mut core, &["b".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "true\n");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
@@ -422,10 +422,10 @@ mod test_env {
         env.run(
             &mut core,
             &[
-                "b".to_string(),
-                "=".to_string(),
-                "true".to_string(),
-                "extra".to_string(),
+                "b".to_owned(),
+                "=".to_owned(),
+                "true".to_owned(),
+                "extra".to_owned(),
             ],
         );
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
@@ -437,7 +437,7 @@ mod test_env {
         core.stdout = Writer::new_buf();
         env.run(
             &mut core,
-            &["b".to_string(), "true".to_string(), "extra".to_string()],
+            &["b".to_owned(), "true".to_owned(), "extra".to_owned()],
         );
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
@@ -446,7 +446,7 @@ mod test_env {
         );
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        env.run(&mut core, &["b".to_string(), "true".to_string()]);
+        env.run(&mut core, &["b".to_owned(), "true".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -459,7 +459,7 @@ mod test_env {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut env = Environment::new();
-        env.run(&mut core, &["b".to_string()]);
+        env.run(&mut core, &["b".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -485,7 +485,7 @@ mod test_env {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut env = Environment::new();
-        env.run(&mut core, &["b=no".to_string()]);
+        env.run(&mut core, &["b=no".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -494,7 +494,7 @@ mod test_env {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        env.run(&mut core, &["b=true".to_string()]);
+        env.run(&mut core, &["b=true".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -503,7 +503,7 @@ mod test_env {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        env.run(&mut core, &["i=x5".to_string()]);
+        env.run(&mut core, &["i=x5".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -512,7 +512,7 @@ mod test_env {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        env.run(&mut core, &["u=x5".to_string()]);
+        env.run(&mut core, &["u=x5".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -521,7 +521,7 @@ mod test_env {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        env.run(&mut core, &["c=5".to_string()]);
+        env.run(&mut core, &["c=5".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -530,7 +530,7 @@ mod test_env {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        env.run(&mut core, &["c=#1x2233".to_string()]);
+        env.run(&mut core, &["c=#1x2233".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -539,7 +539,7 @@ mod test_env {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        env.run(&mut core, &["c=#11x233".to_string()]);
+        env.run(&mut core, &["c=#11x233".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -548,7 +548,7 @@ mod test_env {
 
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        env.run(&mut core, &["c=#11223x".to_string()]);
+        env.run(&mut core, &["c=#11223x".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),

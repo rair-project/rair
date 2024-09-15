@@ -1,9 +1,9 @@
+use core::mem;
 use rair_cmd::{Argument, Cmd, ParseTree, RedPipe};
 use rair_core::{Core, Writer};
 use std::{
     fs::{File, OpenOptions},
     io::{prelude::*, Write},
-    mem,
     process::{Child, Command, Stdio},
 };
 
@@ -18,8 +18,8 @@ fn evaluate(core: &mut Core, tree: ParseTree) {
     match tree {
         ParseTree::Help(help) => core.help(&help.command),
         ParseTree::Cmd(cmd) => run_cmd(core, cmd),
-        ParseTree::NewLine => (),
-        ParseTree::Comment => (),
+        ParseTree::NewLine | ParseTree::Comment => (),
+        _ => unreachable!(),
     }
 }
 
@@ -29,7 +29,7 @@ fn run_cmd(core: &mut Core, cmd: Cmd) {
     for arg in cmd.args {
         match eval_arg(core, arg) {
             Ok(arg) => args.push(arg),
-            Err(e) => return writeln!(core.stderr, "{}", e).unwrap(),
+            Err(e) => return writeln!(core.stderr, "{e}").unwrap(),
         }
     }
     // process redirections or pipes
@@ -38,18 +38,18 @@ fn run_cmd(core: &mut Core, cmd: Cmd) {
     match *cmd.red_pipe {
         RedPipe::Redirect(arg) => match create_redirect(core, *arg) {
             Ok(out) => stdout = Some(mem::replace(&mut core.stdout, out)),
-            Err(e) => return writeln!(core.stderr, "{}", e).unwrap(),
+            Err(e) => return writeln!(core.stderr, "{e}").unwrap(),
         },
         RedPipe::RedirectCat(arg) => match create_redirect_cat(core, *arg) {
             Ok(out) => stdout = Some(mem::replace(&mut core.stdout, out)),
-            Err(e) => return writeln!(core.stderr, "{}", e).unwrap(),
+            Err(e) => return writeln!(core.stderr, "{e}").unwrap(),
         },
         RedPipe::Pipe(arg) => match create_pipe(core, arg) {
             Ok((process, writer)) => {
                 child = Some(process);
                 stdout = Some(mem::replace(&mut core.stdout, writer));
             }
-            Err(e) => return writeln!(core.stderr, "{}", e).unwrap(),
+            Err(e) => return writeln!(core.stderr, "{e}").unwrap(),
         },
         RedPipe::None => (),
     }
@@ -67,7 +67,7 @@ fn run_cmd(core: &mut Core, cmd: Cmd) {
             .write_all(core.stdout.bytes_ref().unwrap())
             .unwrap();
         process.stdout.unwrap().read_to_string(&mut s).unwrap();
-        writeln!(stdout.as_mut().unwrap(), "{}", s).unwrap();
+        writeln!(stdout.as_mut().unwrap(), "{s}").unwrap();
     }
     // if we have a temporary stdout restore it
     if let Some(outstream) = stdout {
@@ -115,6 +115,7 @@ fn eval_arg(core: &mut Core, arg: Argument) -> Result<String, String> {
         Argument::Literal(s) => Ok(s),
         Argument::Err(e) => Err(e.to_string()),
         Argument::NonLiteral(c) => eval_non_literal_arg(core, c),
+        _ => unreachable!(),
     }
 }
 

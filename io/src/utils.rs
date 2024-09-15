@@ -1,9 +1,9 @@
 //! Utility data structures for managing RIO.
 
+use alloc::fmt;
 use bitflags::bitflags;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use std::fmt;
 use std::io;
 
 bitflags! {
@@ -28,6 +28,7 @@ impl fmt::Display for IoMode {
 
 /// Errors resultion from operations on [RIO]
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum IoError {
     /// Reading or writing to an invalid address.
     AddressNotFound,
@@ -41,44 +42,44 @@ pub enum IoError {
     TooManyFilesError,
     /// Custom error message.
     Custom(String),
-    /// Error that is originating from [std::io]
+    /// Error that is originating from [`std::io`]
     Parse(io::Error),
 }
 impl PartialEq for IoError {
-    fn eq(&self, rhs: &IoError) -> bool {
+    fn eq(&self, other: &IoError) -> bool {
         match self {
             IoError::AddressNotFound => {
-                if let IoError::AddressNotFound = rhs {
+                if let IoError::AddressNotFound = other {
                     return true;
                 }
             }
             IoError::AddressesOverlapError => {
-                if let IoError::AddressesOverlapError = rhs {
+                if let IoError::AddressesOverlapError = other {
                     return true;
                 }
             }
             IoError::IoPluginNotFoundError => {
-                if let IoError::IoPluginNotFoundError = rhs {
+                if let IoError::IoPluginNotFoundError = other {
                     return true;
                 }
             }
             IoError::TooManyFilesError => {
-                if let IoError::TooManyFilesError = rhs {
+                if let IoError::TooManyFilesError = other {
                     return true;
                 }
             }
             IoError::HndlNotFoundError => {
-                if let IoError::HndlNotFoundError = rhs {
+                if let IoError::HndlNotFoundError = other {
                     return true;
                 }
             }
             IoError::Custom(s) => {
-                if let IoError::Custom(s2) = rhs {
+                if let IoError::Custom(s2) = other {
                     return s == s2;
                 }
             }
             IoError::Parse(_) => {
-                if let IoError::Parse(_) = rhs {
+                if let IoError::Parse(_) = other {
                     return true;
                 }
             }
@@ -94,8 +95,8 @@ impl fmt::Display for IoError {
             IoError::IoPluginNotFoundError => write!(f, "Can not find Suitable IO Plugin."),
             IoError::TooManyFilesError => write!(f, "You have too many open files."),
             IoError::HndlNotFoundError => write!(f, "Handle Does not exist."),
-            IoError::Custom(s) => write!(f, "{}.", s),
-            IoError::Parse(ref e) => e.fmt(f),
+            IoError::Custom(s) => write!(f, "{s}."),
+            IoError::Parse(e) => e.fmt(f),
         }
     }
 }

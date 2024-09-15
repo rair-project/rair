@@ -11,3 +11,6 @@ categories = ["CLI"]
 readme = "readme.md"
 
 [dependencies]
+
+[lints]
+workspace = true
