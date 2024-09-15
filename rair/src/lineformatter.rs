@@ -61,7 +61,7 @@ impl LineFormatter {
                 (0, ret)
             }
             ParseTree::Comment | ParseTree::NewLine => (0, Vec::new()),
-            _ => unreachable!(),
+            ParseTree::HelpAll => unreachable!(),
         }
     }
 }

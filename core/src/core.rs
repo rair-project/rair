@@ -175,7 +175,13 @@ impl Core {
         self.run(command, args);
         self.loc = old_loc;
     }
-
+    pub fn help_all(&mut self) {
+        let cmds = self.commands.clone();
+        let cmds_ref = cmds.lock();
+        for cmd in cmds_ref.iter() {
+            cmd.as_ref().lock().help(self);
+        }
+    }
     pub fn help(&mut self, command: &str) {
         let cmds = self.commands.clone();
         let cmds_ref = cmds.lock();

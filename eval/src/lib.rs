@@ -18,8 +18,8 @@ fn evaluate(core: &mut Core, tree: ParseTree) {
     match tree {
         ParseTree::Help(help) => core.help(&help.command),
         ParseTree::Cmd(cmd) => run_cmd(core, cmd),
+        ParseTree::HelpAll => core.help_all(),
         ParseTree::NewLine | ParseTree::Comment => (),
-        _ => unreachable!(),
     }
 }
 
