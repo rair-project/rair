@@ -25,6 +25,7 @@ struct ArgsInner {
     pub file: Option<String>,
 }
 
+#[derive(PartialEq, Eq, Debug)]
 pub enum Args {
     Proj(String),
     File {
@@ -36,8 +37,8 @@ pub enum Args {
 impl Args {
     fn parse_perm(perms_str: &str) -> Result<IoMode, String> {
         let mut perm = Default::default();
-        for c in perms_str.to_lowercase().chars() {
-            match c {
+        for c in perms_str.chars() {
+            match c.to_ascii_lowercase() {
                 'r' => perm |= IoMode::READ,
                 'w' => perm |= IoMode::WRITE,
                 'c' => perm |= IoMode::COW,
@@ -61,7 +62,7 @@ impl TryFrom<ArgsInner> for Args {
                 Err("You must open either a binary file or Project file, but not both".to_owned())
             }
             (Some(_), _, Some(_), _) => {
-                Err("You cannot set Base address when opening a project".to_owned())
+                Err("You cannot set base address when opening a project".to_owned())
             }
             (Some(_), _, _, Some(_)) => {
                 Err("You cannot set permissions when opening a project".to_owned())
@@ -74,5 +75,133 @@ impl TryFrom<ArgsInner> for Args {
                 Ok(Args::File { uri, base, perms })
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod cli_tests {
+    use rair_io::IoMode;
+
+    use super::{Args, ArgsInner};
+
+    #[test]
+    fn parse_perm_small() {
+        let p1 = Args::parse_perm("c").unwrap();
+        assert_eq!(p1, IoMode::COW);
+        let p1 = Args::parse_perm("r").unwrap();
+        assert_eq!(p1, IoMode::READ);
+        let p1 = Args::parse_perm("w").unwrap();
+        assert_eq!(p1, IoMode::WRITE);
+    }
+
+    #[test]
+    fn parse_perm_capital() {
+        let p1 = Args::parse_perm("C").unwrap();
+        assert_eq!(p1, IoMode::COW);
+        let p1 = Args::parse_perm("R").unwrap();
+        assert_eq!(p1, IoMode::READ);
+        let p1 = Args::parse_perm("W").unwrap();
+        assert_eq!(p1, IoMode::WRITE);
+    }
+
+    #[test]
+    fn parse_perm_mixed() {
+        let p1 = Args::parse_perm("rW").unwrap();
+        assert_eq!(p1, IoMode::READ | IoMode::WRITE);
+    }
+
+    #[test]
+    fn parse_perm_bad() {
+        let err = Args::parse_perm("rWX").err().unwrap();
+        assert_eq!(err, "Unknown Permission: `X`");
+    }
+
+    #[test]
+    fn proj_test() {
+        let ai = ArgsInner {
+            perm: None,
+            base: None,
+            proj: Some("hello".to_owned()),
+            file: None,
+        };
+        let args: Args = ai.try_into().unwrap();
+        assert_eq!(args, Args::Proj("hello".to_owned()));
+    }
+    #[test]
+    fn file_test() {
+        let ai = ArgsInner {
+            perm: None,
+            base: None,
+            proj: None,
+            file: Some("hello".to_owned()),
+        };
+        let args: Args = ai.try_into().unwrap();
+        assert_eq!(
+            args,
+            Args::File {
+                uri: "hello".to_owned(),
+                base: 0,
+                perms: IoMode::READ
+            }
+        );
+    }
+    #[test]
+    fn file_with_attributes_test() {
+        let ai = ArgsInner {
+            perm: Some("c".to_owned()),
+            base: Some("0x1000".to_owned()),
+            proj: None,
+            file: Some("hello".to_owned()),
+        };
+        let args: Args = ai.try_into().unwrap();
+        assert_eq!(
+            args,
+            Args::File {
+                uri: "hello".to_owned(),
+                base: 0x1000,
+                perms: IoMode::COW
+            }
+        );
+    }
+
+    #[test]
+    fn proj_file() {
+        let ai = ArgsInner {
+            perm: None,
+            base: None,
+            proj: Some("hello".to_owned()),
+            file: Some("hello".to_owned()),
+        };
+        let err: Result<Args, _> = ai.try_into();
+        let err = err.err().unwrap();
+        assert_eq!(
+            err,
+            "You must open either a binary file or Project file, but not both"
+        );
+    }
+
+    #[test]
+    fn proj_base() {
+        let ai = ArgsInner {
+            perm: None,
+            base: Some("0x1000".to_owned()),
+            proj: Some("hello".to_owned()),
+            file: None,
+        };
+        let err: Result<Args, _> = ai.try_into();
+        let err = err.err().unwrap();
+        assert_eq!(err, "You cannot set base address when opening a project");
+    }
+    #[test]
+    fn proj_perm() {
+        let ai = ArgsInner {
+            perm: Some("c".to_owned()),
+            base: None,
+            proj: Some("hello".to_owned()),
+            file: None,
+        };
+        let err: Result<Args, _> = ai.try_into();
+        let err = err.err().unwrap();
+        assert_eq!(err, "You cannot set permissions when opening a project");
     }
 }
