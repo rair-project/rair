@@ -8,11 +8,9 @@ use std::{
 };
 
 pub fn rair_eval(core: &mut Core, line: &str) {
-    let t = ParseTree::construct(line);
-    if let Ok(tree) = t {
-        evaluate(core, tree);
-    } else {
-        writeln!(core.stderr, "{}", t.err().unwrap()).unwrap();
+    match ParseTree::construct(line) {
+        Ok(tree) => evaluate(core, tree),
+        Err(e) => writeln!(core.stderr, "{e}").unwrap(),
     }
 }
 
