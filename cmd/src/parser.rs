@@ -9,12 +9,12 @@ use crate::{
 use pest::Parser;
 
 #[derive(Debug, PartialEq)]
-#[non_exhaustive]
 pub enum ParseTree {
     Help(HelpCmd),
     Cmd(Cmd),
     Comment,
     NewLine,
+    HelpAll,
 }
 
 impl ParseTree {
@@ -29,6 +29,7 @@ impl ParseTree {
             Rule::Comment => Ok(Self::Comment),
             Rule::EmptyLine => Ok(Self::NewLine),
             Rule::CommandLine => Ok(Self::Cmd(Cmd::parse_cmd(pair)?)),
+            Rule::HelpAll => Ok(ParseTree::HelpAll),
             Rule::EOI
             | Rule::WHITESPACE
             | Rule::CustomAlpha

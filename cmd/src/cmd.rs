@@ -39,6 +39,7 @@ impl RedPipe {
             Rule::Red => Self::parse_red(pairs),
             Rule::RedCat => Self::parse_redcat(pairs),
             Rule::EOI
+            | Rule::HelpAll
             | Rule::WHITESPACE
             | Rule::CustomAlpha
             | Rule::CustomAlphaNum
@@ -127,7 +128,8 @@ fn pair_to_num(root: &Pair<Rule>) -> Result<u64, ParserError> {
         | Rule::EmptyLine
         | Rule::HelpLine
         | Rule::CommandLine
-        | Rule::Input => unimplemented_pair(root),
+        | Rule::Input
+        | Rule::HelpAll => unimplemented_pair(root),
     };
     match result {
         Ok(x) => Ok(x),
@@ -145,6 +147,7 @@ impl Cmd {
                 Rule::Arguments => cmd.args = Argument::parse_arguments(pair),
                 Rule::RedPipe => cmd.red_pipe = Box::new(RedPipe::parse_redpipe(pair)),
                 Rule::EOI
+                | Rule::HelpAll
                 | Rule::WHITESPACE
                 | Rule::CustomAlpha
                 | Rule::CustomAlphaNum
