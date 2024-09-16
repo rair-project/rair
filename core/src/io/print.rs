@@ -1,8 +1,9 @@
 //! commands handling raw data printing.
 
 use crate::core::Core;
-use crate::helper::{error_msg, expect, help, is_color, str_to_num, AddrMode, Cmd};
+use crate::helper::{error_msg, expect, is_color, str_to_num, AddrMode};
 use crate::writer::Writer;
+use crate::Cmd;
 use core::{cmp, fmt::Write as _};
 use rair_env::Environment;
 use std::io::Write;
@@ -146,13 +147,13 @@ impl Cmd for PrintHex {
             .unwrap();
         }
     }
-    fn help(&self, core: &mut Core) {
-        help(
-            core,
-            "printHex",
-            "px",
-            vec![("[size]", "View data at current location in hex format.")],
-        );
+
+    fn commands(&self) -> &'static [&'static str] {
+        &["printHex", "px"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[("[size]", "View data at current location in hex format.")]
     }
 }
 
@@ -212,17 +213,15 @@ impl Cmd for PrintBase {
         };
         writeln!(core.stdout, "{data_str}").unwrap();
     }
-    fn help(&self, core: &mut Core) {
-        help(
-            core,
-            "printBase",
-            "pb",
-            vec![(
-                "[base] [size]",
-                "Print data stream at current location in [base] format.",
-            )],
-        );
-        writeln!(core.stdout, "Supported bases: 2, 16.").unwrap();
+    fn commands(&self) -> &'static [&'static str] {
+        &["printBase", "pb"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[(
+            "[base] [size]",
+            "Print data stream at current location in [base] format.  Supported bases: 2, 16.",
+        )]
     }
 }
 
@@ -423,14 +422,18 @@ impl Cmd for PrintCSV {
         };
         writeln!(core.stdout, "{data_str}").unwrap();
     }
-    fn help(&self, core: &mut Core) {
-        help(
-            core,
-            "printCSV",
-            "pcsv",
-            vec![("[size] [count]", "Print data at current location as unsigned comma seperated values, each value of size [size] bits.")],
-        );
-        writeln!(core.stdout, "Supported size: 8, 16, 32, 64, 128, 256, 512.").unwrap();
+    fn commands(&self) -> &'static [&'static str] {
+        &["printCSV", "pcsv"]
+    }
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[(
+            "[size] [count]",
+            concat!(
+                "Print data at current location as unsigned ",
+                "comma seperated values, each value of size [size] bits.  ",
+                "Supported size: 8, 16, 32, 64, 128, 256, 512."
+            ),
+        )]
     }
 }
 
@@ -590,21 +593,26 @@ impl Cmd for PrintSignedCSV {
         };
         writeln!(core.stdout, "{data_str}").unwrap();
     }
-    fn help(&self, core: &mut Core) {
-        help(
-            core,
-            "printSCSV",
-            "pscsv",
-            vec![("[size] [count]", "Print data at current location as signed comma seperated values, each value of size [size] bits.")],
-        );
-        writeln!(core.stdout, "Supported size: 8, 16, 32, 64, 128.").unwrap();
+    fn commands(&self) -> &'static [&'static str] {
+        &["printSCSV", "pscsv"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[(
+            "[size] [count]",
+            concat!(
+                "Print data at current location as signed comma ",
+                "seperated values, each value of size [size] bits.  ",
+                "Supported size: 8, 16, 32, 64, 128."
+            ),
+        )]
     }
 }
 
 #[cfg(test)]
 mod test_print_hex {
     use super::*;
-    use crate::writer::Writer;
+    use crate::{writer::Writer, CmdOps};
     use rair_io::*;
     use std::path::Path;
     use test_file::*;
@@ -628,16 +636,13 @@ mod test_print_hex {
              px [size]\tView data at current location in hex format.\n\
              Commands: [printBase | pb]\n\
              Usage:\n\
-             pb [base] [size]\tPrint data stream at current location in [base] format.\n\
-             Supported bases: 2, 16.\n\
+             pb [base] [size]\tPrint data stream at current location in [base] format.  Supported bases: 2, 16.\n\
              Commands: [printCSV | pcsv]\n\
              Usage:\n\
-             pcsv [size] [count]\tPrint data at current location as unsigned comma seperated values, each value of size [size] bits.\n\
-             Supported size: 8, 16, 32, 64, 128, 256, 512.\n\
+             pcsv [size] [count]\tPrint data at current location as unsigned comma seperated values, each value of size [size] bits.  Supported size: 8, 16, 32, 64, 128, 256, 512.\n\
              Commands: [printSCSV | pscsv]\n\
              Usage:\n\
-             pscsv [size] [count]\tPrint data at current location as signed comma seperated values, each value of size [size] bits.\n\
-             Supported size: 8, 16, 32, 64, 128.\n"
+             pscsv [size] [count]\tPrint data at current location as signed comma seperated values, each value of size [size] bits.  Supported size: 8, 16, 32, 64, 128.\n"
         );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }

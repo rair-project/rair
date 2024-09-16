@@ -1,7 +1,7 @@
 //! commands for opening, closing and listing files.
 
-use crate::core::Core;
-use crate::helper::{error_msg, expect, expect_range, help, is_color, str_to_num, Cmd};
+use crate::helper::{error_msg, expect, expect_range, is_color, str_to_num};
+use crate::{cmd::Cmd, core::Core};
 use rair_io::IoMode;
 use std::io::Write;
 use yansi::Paint;
@@ -11,6 +11,7 @@ pub struct ListFiles;
 
 impl ListFiles {
     pub fn new(core: &mut Core) -> Self {
+        //TODO instead of hardcoding command name use it from [`Cmd`]
         let env = core.env.clone();
         env.write()
             .add_str_with_cb(
@@ -26,6 +27,12 @@ impl ListFiles {
 }
 
 impl Cmd for ListFiles {
+    fn commands(&self) -> &'static [&'static str] {
+        &["files"]
+    }
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[("", "List all open files.")]
+    }
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if !args.is_empty() {
             expect(core, args.len() as u64, 0);
@@ -58,9 +65,6 @@ impl Cmd for ListFiles {
             writeln!(core.stdout, "\t{}", file.name()).unwrap();
         }
     }
-    fn help(&self, core: &mut Core) {
-        help(core, "files", "", vec![("", "List all open files.")]);
-    }
 }
 
 #[derive(Default)]
@@ -84,6 +88,12 @@ fn parse_perm(p: &str) -> Result<IoMode, String> {
     Ok(perm)
 }
 impl Cmd for OpenFile {
+    fn commands(&self) -> &'static [&'static str] {
+        &["o", "open"]
+    }
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[("<Perm> [URI] <Addr>", "Open given URI using given optional permission (default to readonly) at given optional address.")]
+    }
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if args.len() > 3 || args.is_empty() {
             expect_range(core, args.len() as u64, 1, 2);
@@ -130,14 +140,6 @@ impl Cmd for OpenFile {
             error_msg(core, "Failed to open file", &err_str);
         }
     }
-    fn help(&self, core: &mut Core) {
-        help(
-            core,
-            "open",
-            "o",
-            vec![("<Perm> [URI] <Addr>", "Open given URI using given optional permission (default to readonly) at given optional address.")],
-        );
-    }
 }
 
 #[derive(Default)]
@@ -150,6 +152,12 @@ impl CloseFile {
 }
 
 impl Cmd for CloseFile {
+    fn commands(&self) -> &'static [&'static str] {
+        &["close"]
+    }
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[("[hndl]", "Close file with given hndl.")]
+    }
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if args.len() != 1 {
             expect(core, args.len() as u64, 1);
@@ -168,20 +176,12 @@ impl Cmd for CloseFile {
             error_msg(core, "Failed to close file", &err_str);
         }
     }
-    fn help(&self, core: &mut Core) {
-        help(
-            core,
-            "close",
-            "",
-            vec![("[hndl]", "Close file with given hndl.")],
-        );
-    }
 }
 
 #[cfg(test)]
 mod test_files {
     use super::*;
-    use crate::writer::Writer;
+    use crate::{writer::Writer, CmdOps};
     #[test]
     fn test_docs() {
         let mut core = Core::new_no_colors();

@@ -2,7 +2,8 @@
 
 use super::history::History;
 use crate::core::Core;
-use crate::helper::{error_msg, expect, help, AddrMode, Cmd, MRc};
+use crate::helper::{error_msg, expect, AddrMode, MRc};
+use crate::Cmd;
 use yansi::Paint;
 #[derive(Default)]
 pub struct Mode {
@@ -48,23 +49,22 @@ impl Cmd for Mode {
             error_msg(core, "Invalid Mode", &msg);
         }
     }
-    fn help(&self, core: &mut Core) {
-        help(
-            core,
-            "mode",
-            "m",
-            vec![
-                ("vir", "Set view mode to virtual address space."),
-                ("phy", "Set view mode to physical address space."),
-            ],
-        );
+    fn commands(&self) -> &'static [&'static str] {
+        &["mode", "m"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[
+            ("vir", "Set view mode to virtual address space."),
+            ("phy", "Set view mode to physical address space."),
+        ]
     }
 }
 
 #[cfg(test)]
 mod test_mode {
     use super::*;
-    use crate::writer::Writer;
+    use crate::{writer::Writer, CmdOps};
     use rair_io::*;
     use std::path::Path;
     use test_file::*;

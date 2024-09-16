@@ -1,7 +1,6 @@
 //! Quit the current project.
 
-use crate::core::Core;
-use crate::helper::{help, Cmd};
+use crate::{core::Core, Cmd};
 use std::process;
 
 #[derive(Default)]
@@ -17,15 +16,19 @@ impl Cmd for Quit {
     fn run(&mut self, _core: &mut Core, _args: &[String]) {
         process::exit(0);
     }
-    fn help(&self, core: &mut Core) {
-        help(core, "quit", "q", vec![("", "Quit Current session.")]);
+    fn commands(&self) -> &'static [&'static str] {
+        &["quit", "q"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[("", "Quit Current session.")]
     }
 }
 
 #[cfg(test)]
 mod test_quit {
     use super::*;
-    use crate::writer::Writer;
+    use crate::{writer::Writer, CmdOps};
     #[test]
     fn test_quit_docs() {
         let mut core = Core::new_no_colors();

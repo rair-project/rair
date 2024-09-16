@@ -1,6 +1,6 @@
 //! Data Structure for holding rair commands.
 
-use crate::helper::{Cmd, MRc};
+use crate::{cmd::Cmd, helper::MRc};
 use alloc::collections::BTreeMap;
 use rair_trees::bktree::SpellTree; // for suffex search
 

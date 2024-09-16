@@ -1,7 +1,7 @@
 //! commands for mapping/unmapping memory regions and listing mapped regions as well.
 
-use crate::core::Core;
-use crate::helper::{error_msg, expect, help, is_color, str_to_num, Cmd};
+use crate::helper::{error_msg, expect, is_color, str_to_num};
+use crate::{cmd::Cmd, core::Core};
 use std::io::Write;
 use yansi::Paint;
 
@@ -49,16 +49,15 @@ impl Cmd for Map {
             error_msg(core, "Failed to map memory", &e.to_string());
         }
     }
-    fn help(&self, core: &mut Core) {
-        help(
-            core,
-            "map",
-            "",
-            vec![(
-                "[phy] [vir] [size]",
-                "Map region from physical address space to virtual address space.",
-            )],
-        );
+    fn commands(&self) -> &'static [&'static str] {
+        &["map"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[(
+            "[phy] [vir] [size]",
+            "Map region from physical address space to virtual address space.",
+        )]
     }
 }
 
@@ -93,13 +92,12 @@ impl Cmd for UnMap {
             error_msg(core, "Failed to unmap memory", &e.to_string());
         }
     }
-    fn help(&self, core: &mut Core) {
-        help(
-            core,
-            "unmap",
-            "um",
-            vec![("[vir] [size]", "Unmap a previosly mapped memory region.")],
-        );
+    fn commands(&self) -> &'static [&'static str] {
+        &["unmap", "um"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[("[vir] [size]", "Unmap a previosly mapped memory region.")]
     }
 }
 
@@ -150,14 +148,17 @@ impl Cmd for ListMap {
             .unwrap();
         }
     }
-    fn help(&self, core: &mut Core) {
-        help(core, "maps", "", vec![("", "List all memory maps.")]);
+    fn commands(&self) -> &'static [&'static str] {
+        &["maps"]
+    }
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[("", "List all memory maps.")]
     }
 }
 #[cfg(test)]
 mod test_mapping {
     use super::*;
-    use crate::writer::Writer;
+    use crate::{writer::Writer, CmdOps};
     use rair_io::*;
     use std::path::Path;
     use test_file::*;

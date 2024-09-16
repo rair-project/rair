@@ -1,7 +1,8 @@
 //! commands for handling environment variables.
 
 use crate::core::Core;
-use crate::helper::{error_msg, expect, expect_range, help, is_color, str_to_num, Cmd};
+use crate::helper::{error_msg, expect, expect_range, is_color, str_to_num};
+use crate::Cmd;
 use rair_env::EnvData;
 use std::io::Write;
 use yansi::Paint;
@@ -129,17 +130,16 @@ impl Cmd for Environment {
             }
         }
     }
-    fn help(&self, core: &mut Core) {
-        help(
-            core,
-            "environment",
-            "e",
-            vec![
-                ("", "List all environment variables."),
-                ("[var]", "Display the value of [var] environment variables."),
-                ("[var]=[value]", "Set [var] to be [value]"),
-            ],
-        );
+    fn commands(&self) -> &'static [&'static str] {
+        &["environment", "e"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[
+            ("", "List all environment variables."),
+            ("[var]", "Display the value of [var] environment variables."),
+            ("[var]=[value]", "Set [var] to be [value]"),
+        ]
     }
 }
 
@@ -164,13 +164,11 @@ impl Cmd for EnvironmentReset {
             error_msg(core, "Failed to reset variable.", &e.to_string());
         }
     }
-    fn help(&self, core: &mut Core) {
-        help(
-            core,
-            "environmentReset",
-            "er",
-            vec![("[var]", "Reset [var] environment variable.")],
-        );
+    fn commands(&self) -> &'static [&'static str] {
+        &["environmentReset", "er"]
+    }
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[("[var]", "Reset [var] environment variable.")]
     }
 }
 
@@ -210,13 +208,11 @@ impl Cmd for EnvironmentHelp {
             error_msg(core, "Failed to display help.", "Variable Not found");
         }
     }
-    fn help(&self, core: &mut Core) {
-        help(
-            core,
-            "environmentHelp",
-            "eh",
-            vec![("[var]", "Print help for [var] environment variable.")],
-        );
+    fn commands(&self) -> &'static [&'static str] {
+        &["environmentHelp", "eh"]
+    }
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[("[var]", "Print help for [var] environment variable.")]
     }
 }
 
@@ -225,7 +221,7 @@ mod test_env {
     extern crate alloc;
 
     use super::*;
-    use crate::writer::*;
+    use crate::{writer::*, CmdOps};
     use alloc::sync::Arc;
     use rair_env::Environment as Env;
     #[test]

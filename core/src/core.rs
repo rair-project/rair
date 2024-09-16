@@ -1,7 +1,8 @@
 //! Linking all rair parts together into 1 module.
 
+use crate::cmd::{Cmd, CmdOps};
 use crate::commands::Commands;
-use crate::helper::{error_msg, AddrMode, Cmd, MRc};
+use crate::helper::{error_msg, AddrMode, MRc};
 use crate::io::register_io;
 use crate::loc::register_loc;
 use crate::utils::register_utils;
@@ -187,7 +188,8 @@ impl Core {
         let cmds_ref = cmds.lock();
         let cmd = cmds_ref.find(command);
         if let Some(cmd) = cmd {
-            cmd.as_ref().lock().help(self);
+            let cmd = cmd.as_ref().lock();
+            cmd.help(self);
         } else {
             drop(cmds_ref);
             self.command_not_found(command);

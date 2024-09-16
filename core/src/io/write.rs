@@ -1,7 +1,8 @@
 //! commands handling data writing to files.
 
 use crate::core::Core;
-use crate::helper::{error_msg, expect, help, str_to_num, AddrMode, Cmd};
+use crate::helper::{error_msg, expect, str_to_num, AddrMode};
+use crate::Cmd;
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -50,16 +51,15 @@ impl Cmd for WriteHex {
             error_msg(core, "Read Failed", &e.to_string());
         }
     }
-    fn help(&self, core: &mut Core) {
-        help(
-            core,
-            "writetHex",
-            "wx",
-            vec![(
-                "[hexpairs]",
-                "write given hexpairs data into the current address.",
-            )],
-        );
+    fn commands(&self) -> &'static [&'static str] {
+        &["writetHex", "wx"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[(
+            "[hexpairs]",
+            "write given hexpairs data into the current address.",
+        )]
     }
 }
 
@@ -109,16 +109,16 @@ impl Cmd for WriteToFile {
             error_msg(core, "Failed to write data to file", &err_str);
         }
     }
-    fn help(&self, core: &mut Core) {
-        help(
-            core,
-            "writeToFile",
-            "wtf",
-            vec![(
-                "[size] [filepath]",
-                "write data of size [size] at current location to file identified by [filepath].",
-            )],
-        );
+
+    fn commands(&self) -> &'static [&'static str] {
+        &["writeToFile", "wtf"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[(
+            "[size] [filepath]",
+            "write data of size [size] at current location to file identified by [filepath].",
+        )]
     }
 }
 
@@ -126,7 +126,7 @@ impl Cmd for WriteToFile {
 
 mod test_write {
     use super::*;
-    use crate::writer::Writer;
+    use crate::{writer::Writer, CmdOps};
     use rair_io::*;
     use std::fs;
     #[test]

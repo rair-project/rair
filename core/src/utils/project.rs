@@ -1,7 +1,8 @@
 //! Commands to save/load projects.
 
 use crate::core::Core;
-use crate::helper::{error_msg, expect, help, Cmd};
+use crate::helper::{error_msg, expect};
+use crate::Cmd;
 use core::mem;
 use flate2::write::{ZlibDecoder, ZlibEncoder};
 use flate2::Compression;
@@ -17,6 +18,7 @@ impl Save {
         Self
     }
 }
+
 impl Cmd for Save {
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if args.len() != 1 {
@@ -38,14 +40,11 @@ impl Cmd for Save {
             error_msg(core, "Failed to save project", &e.to_string());
         }
     }
-
-    fn help(&self, core: &mut Core) {
-        help(
-            core,
-            "save",
-            "",
-            vec![("[file_path]", "Save project into given path.")],
-        );
+    fn commands(&self) -> &'static [&'static str] {
+        &["save"]
+    }
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[("[file_path]", "Save project into given path.")]
     }
 }
 
@@ -88,13 +87,12 @@ impl Cmd for Load {
         core2.set_commands(core.commands());
         *core = core2;
     }
-    fn help(&self, core: &mut Core) {
-        help(
-            core,
-            "load",
-            "",
-            vec![("[file_path]", "load project from given path.")],
-        );
+    fn commands(&self) -> &'static [&'static str] {
+        &["load"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[("[file_path]", "load project from given path.")]
     }
 }
 
@@ -102,7 +100,7 @@ impl Cmd for Load {
 
 mod test_project {
     use super::*;
-    use crate::writer::*;
+    use crate::{writer::*, CmdOps};
     use rair_io::*;
     use std::fs;
     #[test]

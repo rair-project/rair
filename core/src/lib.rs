@@ -1,6 +1,7 @@
 //! rair core library
 extern crate alloc;
 
+mod cmd;
 mod commands;
 mod core;
 mod helper;
@@ -9,6 +10,7 @@ mod loc;
 mod utils;
 mod writer;
 
+pub use self::cmd::*;
 pub use self::commands::*;
 pub use self::core::*;
 pub use self::helper::*;

@@ -2,7 +2,8 @@
 
 use super::history::History;
 use crate::core::Core;
-use crate::helper::{error_msg, expect, help, str_to_num, Cmd, MRc};
+use crate::helper::{error_msg, expect, str_to_num, MRc};
+use crate::Cmd;
 
 #[derive(Default)]
 pub struct Seek {
@@ -77,19 +78,19 @@ impl Cmd for Seek {
             }
         }
     }
-    fn help(&self, core: &mut Core) {
-        help(
-            core,
-            "seek",
-            "s",
-            vec![
-                ("+", "\tRedo Seek."),
-                ("-", "\tUndo Seek."),
-                ("+[offset]", "Increase current loc by offset."),
-                ("-[offset]", "Decrease current loc by offset."),
-                ("[offset]", "Set current location to offset."),
-            ],
-        );
+
+    fn commands(&self) -> &'static [&'static str] {
+        &["seek", "s"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[
+            ("+", "\tRedo Seek."),
+            ("-", "\tUndo Seek."),
+            ("+[offset]", "Increase current loc by offset."),
+            ("-[offset]", "Decrease current loc by offset."),
+            ("[offset]", "Set current location to offset."),
+        ]
     }
 }
 
@@ -97,7 +98,7 @@ impl Cmd for Seek {
 
 mod test_seek {
     use super::*;
-    use crate::{writer::Writer, AddrMode};
+    use crate::{writer::Writer, AddrMode, CmdOps};
     #[test]
     fn test_docs() {
         let mut core = Core::new_no_colors();
