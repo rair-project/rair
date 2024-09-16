@@ -89,41 +89,11 @@ pub fn panic_msg(core: &mut Core, title: &str, msg: &str) -> ! {
     exit(-1);
 }
 
-pub fn help(core: &mut Core, long: &str, short: &str, usage: Vec<(&str, &str)>) {
-    let (r1, g1, b1) = core.env.read().get_color("color.6").unwrap();
-    let (r2, g2, b2) = core.env.read().get_color("color.7").unwrap();
-    let used = if short.is_empty() {
-        writeln!(core.stdout, "Command: [{}]", long.rgb(r1, g1, b1)).unwrap();
-        long
-    } else {
-        writeln!(
-            core.stdout,
-            "Commands: [{} | {}]",
-            long.rgb(r1, g1, b1),
-            short.rgb(r1, g1, b1)
-        )
-        .unwrap();
-        short
-    };
-    writeln!(core.stdout, "Usage:").unwrap();
-    for (args, description) in usage {
-        write!(core.stdout, "{}", used.rgb(r1, g1, b1)).unwrap();
-        if !args.is_empty() {
-            write!(core.stdout, " {}", args.rgb(r2, g2, b2)).unwrap();
-        }
-        writeln!(core.stdout, "\t{description}",).unwrap();
-    }
-}
-
 pub struct CmdFunctions {
     pub run: fn(&mut Core, &[String]),
     pub help: fn(&mut Core),
 }
 
-pub trait Cmd {
-    fn run(&mut self, _: &mut Core, _: &[String]);
-    fn help(&self, _: &mut Core);
-}
 #[derive(Copy, Clone, PartialEq, Debug, Serialize, Deserialize)]
 #[non_exhaustive]
 pub enum AddrMode {
@@ -193,38 +163,6 @@ mod test_helper {
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
             "Error: Error Title\nSomething might have failed.\n"
-        );
-    }
-    #[test]
-    fn test_help_short() {
-        let mut core = Core::new_no_colors();
-        core.stdout = Writer::new_buf();
-        yansi::disable();
-        help(
-            &mut core,
-            "Test",
-            "t",
-            vec![("t1", "test 1"), ("t2", "test 2")],
-        );
-        assert_eq!(
-            core.stdout.utf8_string().unwrap(),
-            "Commands: [Test | t]\nUsage:\nt t1\ttest 1\nt t2\ttest 2\n"
-        );
-    }
-    #[test]
-    fn test_help_long() {
-        let mut core = Core::new_no_colors();
-        core.stdout = Writer::new_buf();
-        yansi::disable();
-        help(
-            &mut core,
-            "Test",
-            "",
-            vec![("t1", "test 1"), ("t2", "test 2")],
-        );
-        assert_eq!(
-            core.stdout.utf8_string().unwrap(),
-            "Command: [Test]\nUsage:\nTest t1\ttest 1\nTest t2\ttest 2\n"
         );
     }
     #[test]
