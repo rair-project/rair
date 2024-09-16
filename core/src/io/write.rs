@@ -9,12 +9,6 @@ use std::io::prelude::*;
 #[derive(Default)]
 pub struct WriteHex;
 
-impl WriteHex {
-    pub fn new() -> Self {
-        Self
-    }
-}
-
 impl Cmd for WriteHex {
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if args.len() != 1 {
@@ -65,12 +59,6 @@ impl Cmd for WriteHex {
 
 #[derive(Default)]
 pub struct WriteToFile;
-
-impl WriteToFile {
-    pub fn new() -> Self {
-        Self
-    }
-}
 
 impl Cmd for WriteToFile {
     fn run(&mut self, core: &mut Core, args: &[String]) {
@@ -134,8 +122,8 @@ mod test_write {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let wx = WriteHex::new();
-        let wtf = WriteToFile::new();
+        let wx = WriteHex;
+        let wtf = WriteToFile;
         wx.help(&mut core);
         wtf.help(&mut core);
         assert_eq!(
@@ -155,7 +143,7 @@ mod test_write {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut wx = WriteHex::new();
+        let mut wx = WriteHex;
         core.io
             .open("malloc://0x5000", IoMode::READ | IoMode::WRITE)
             .unwrap();
@@ -176,7 +164,7 @@ mod test_write {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut wtf = WriteToFile::new();
+        let mut wtf = WriteToFile;
         core.io
             .open("malloc://0x50", IoMode::READ | IoMode::WRITE)
             .unwrap();
@@ -206,7 +194,7 @@ mod test_write {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut wx = WriteHex::new();
+        let mut wx = WriteHex;
         core.io
             .open("malloc://0x50", IoMode::READ | IoMode::WRITE)
             .unwrap();
@@ -251,7 +239,7 @@ mod test_write {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut wtf = WriteToFile::new();
+        let mut wtf = WriteToFile;
         core.io
             .open("malloc://0x50", IoMode::READ | IoMode::WRITE)
             .unwrap();

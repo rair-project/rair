@@ -10,9 +10,6 @@ use yansi::Paint;
 pub struct Environment;
 
 impl Environment {
-    pub fn new() -> Self {
-        Self
-    }
     fn iterate(core: &mut Core) {
         let env = core.env.clone();
         for (k, v) in env.read().iter() {
@@ -146,12 +143,6 @@ impl Cmd for Environment {
 #[derive(Default)]
 pub struct EnvironmentReset;
 
-impl EnvironmentReset {
-    pub fn new() -> Self {
-        Self
-    }
-}
-
 impl Cmd for EnvironmentReset {
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if args.len() != 1 {
@@ -229,8 +220,8 @@ mod test_env {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let er = EnvironmentReset::new();
-        let env = Environment::new();
+        let er = EnvironmentReset;
+        let env = Environment;
         er.help(&mut core);
         env.help(&mut core);
         core.help("eh");
@@ -277,7 +268,7 @@ mod test_env {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut er = EnvironmentReset::new();
+        let mut er = EnvironmentReset;
         let env = core.env.clone();
         let (r, g, b) = env.read().get_color("color.1").unwrap();
         env.write()
@@ -294,7 +285,7 @@ mod test_env {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut er = EnvironmentReset::new();
+        let mut er = EnvironmentReset;
         er.run(&mut core, &["doest.exist".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
@@ -330,7 +321,7 @@ mod test_env {
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
 
-        let mut env = Environment::new();
+        let mut env = Environment;
         env.run(&mut core, &[]);
         let s = core.stdout.utf8_string().unwrap();
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
@@ -346,7 +337,7 @@ mod test_env {
         let mut core = get_good_core();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut env = Environment::new();
+        let mut env = Environment;
         env.run(&mut core, &["b".to_owned()]);
         env.run(&mut core, &["u".to_owned()]);
         env.run(&mut core, &["i".to_owned()]);
@@ -384,7 +375,7 @@ mod test_env {
         let mut core = get_good_core();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut env = Environment::new();
+        let mut env = Environment;
         env.run(&mut core, &["b  =".to_owned(), "true ".to_owned()]);
         env.run(&mut core, &["u".to_owned(), "= 0x5".to_owned()]);
         env.run(&mut core, &["b".to_owned()]);
@@ -398,7 +389,7 @@ mod test_env {
         let mut core = get_good_core();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut env = Environment::new();
+        let mut env = Environment;
         env.run(
             &mut core,
             &["b".to_owned(), "=".to_owned(), "true".to_owned()],
@@ -414,7 +405,7 @@ mod test_env {
         core.env.write().add_bool("b", false, "").unwrap();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut env = Environment::new();
+        let mut env = Environment;
         env.run(
             &mut core,
             &[
@@ -454,7 +445,7 @@ mod test_env {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut env = Environment::new();
+        let mut env = Environment;
         env.run(&mut core, &["b".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
@@ -480,7 +471,7 @@ mod test_env {
         env.write().add_color("c", (0xee, 0xee, 0xee), "").unwrap();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut env = Environment::new();
+        let mut env = Environment;
         env.run(&mut core, &["b=no".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
