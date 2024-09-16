@@ -18,11 +18,6 @@ fn unmap_error(core: &mut Core, name: &str, err: &str) {
     let msg = format!("Failed to parse {name}, {err}.");
     error_msg(core, "Failed to unmap memory", &msg);
 }
-impl Map {
-    pub fn new() -> Self {
-        Self
-    }
-}
 
 impl Cmd for Map {
     fn run(&mut self, core: &mut Core, args: &[String]) {
@@ -63,12 +58,6 @@ impl Cmd for Map {
 
 #[derive(Default)]
 pub struct UnMap;
-
-impl UnMap {
-    pub fn new() -> Self {
-        Self
-    }
-}
 
 impl Cmd for UnMap {
     fn run(&mut self, core: &mut Core, args: &[String]) {
@@ -167,7 +156,7 @@ mod test_mapping {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let map = Map::new();
+        let map = Map;
         map.help(&mut core);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
@@ -180,7 +169,7 @@ mod test_mapping {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let unmap = UnMap::new();
+        let unmap = UnMap;
         unmap.help(&mut core);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
@@ -204,8 +193,8 @@ mod test_mapping {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut map = Map::new();
-        let mut unmap = UnMap::new();
+        let mut map = Map;
+        let mut unmap = UnMap;
         core.io.open(&path.to_string_lossy(), IoMode::READ).unwrap();
         map.run(
             &mut core,
@@ -264,8 +253,8 @@ mod test_mapping {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut map = Map::new();
-        let mut unmap = UnMap::new();
+        let mut map = Map;
+        let mut unmap = UnMap;
         map.run(&mut core, &[]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(

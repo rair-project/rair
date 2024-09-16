@@ -10,31 +10,20 @@ use self::map::{ListMap, Map, UnMap};
 use self::print::{PrintBase, PrintCSV, PrintHex, PrintSignedCSV};
 use self::write::{WriteHex, WriteToFile};
 use crate::core::Core;
-use alloc::sync::Arc;
-use parking_lot::Mutex;
 pub fn register_io(core: &mut Core) {
-    let maps = Arc::new(Mutex::new(ListMap::new(core)));
-    let files = Arc::new(Mutex::new(ListFiles::new(core)));
-    let px = Arc::new(Mutex::new(PrintHex::new(core)));
-
-    core.add_command("map", "", Arc::new(Mutex::new(Map::new())));
-    core.add_command("maps", "", maps);
-    core.add_command("printHex", "px", px);
-    core.add_command("printBase", "pb", Arc::new(Mutex::new(PrintBase::new())));
-    core.add_command("printCSV", "pcsv", Arc::new(Mutex::new(PrintCSV::new())));
-    core.add_command(
-        "printSignedCSV",
-        "pscsv",
-        Arc::new(Mutex::new(PrintSignedCSV::new())),
-    );
-    core.add_command("unmap", "um", Arc::new(Mutex::new(UnMap::new())));
-    core.add_command("files", "", files);
-    core.add_command("open", "o", Arc::new(Mutex::new(OpenFile::new())));
-    core.add_command("close", "", Arc::new(Mutex::new(CloseFile::new())));
-    core.add_command("writeHex", "wx", Arc::new(Mutex::new(WriteHex::new())));
-    core.add_command(
-        "writeToFile",
-        "wtf",
-        Arc::new(Mutex::new(WriteToFile::new())),
-    );
+    let maps = ListMap::new(core);
+    let files = ListFiles::new(core);
+    let px = PrintHex::new(core);
+    core.add_command(Map);
+    core.add_command(maps);
+    core.add_command(px);
+    core.add_command(PrintBase);
+    core.add_command(PrintCSV);
+    core.add_command(PrintSignedCSV);
+    core.add_command(UnMap);
+    core.add_command(files);
+    core.add_command(OpenFile);
+    core.add_command(CloseFile);
+    core.add_command(WriteHex);
+    core.add_command(WriteToFile);
 }

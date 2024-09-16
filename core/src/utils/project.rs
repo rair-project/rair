@@ -13,12 +13,6 @@ use std::io::prelude::*;
 #[derive(Default)]
 pub struct Save;
 
-impl Save {
-    pub fn new() -> Self {
-        Self
-    }
-}
-
 impl Cmd for Save {
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if args.len() != 1 {
@@ -51,11 +45,6 @@ impl Cmd for Save {
 #[derive(Default)]
 pub struct Load;
 
-impl Load {
-    pub fn new() -> Self {
-        Self
-    }
-}
 impl Cmd for Load {
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if args.len() != 1 {
@@ -108,8 +97,8 @@ mod test_project {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let load = Load::new();
-        let save = Save::new();
+        let load = Load;
+        let save = Save;
         load.help(&mut core);
         save.help(&mut core);
         assert_eq!(
@@ -128,8 +117,8 @@ mod test_project {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut load = Load::new();
-        let mut save = Save::new();
+        let mut load = Load;
+        let mut save = Save;
         core.io
             .open("malloc://0x500", IoMode::READ | IoMode::WRITE)
             .unwrap();

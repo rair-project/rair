@@ -2,7 +2,7 @@
 
 use crate::cmd::{Cmd, CmdOps};
 use crate::commands::Commands;
-use crate::helper::{error_msg, AddrMode, MRc};
+use crate::helper::{error_msg, AddrMode};
 use crate::io::register_io;
 use crate::loc::register_loc;
 use crate::utils::register_utils;
@@ -123,21 +123,14 @@ impl Core {
     pub fn get_loc(&self) -> u64 {
         self.loc
     }
-
-    pub fn add_command(
-        &mut self,
-        long: &'static str,
-        short: &'static str,
-        funcs: MRc<dyn Cmd + Sync + Send>,
-    ) {
-        if !long.is_empty() && !self.commands.lock().add_command(long, funcs.clone()) {
-            let msg = format!("Command {} already existed.", long.bold().primary());
-            error_msg(self, "Cannot add this command.", &msg);
-        }
-
-        if !short.is_empty() && !self.commands.lock().add_command(short, funcs) {
-            let msg = format!("Command {} already existed.", short.bold().primary());
-            error_msg(self, "Cannot add this command.", &msg);
+    pub fn add_command<T: Cmd + Sync + Send + 'static>(&mut self, funcs: T) {
+        let cmds = funcs.commands();
+        let funcs = Arc::new(Mutex::new(funcs));
+        for cmd in cmds {
+            if !self.commands.lock().add_command(cmd, funcs.clone()) {
+                let msg = format!("Command {} already existed.", cmd.bold().primary());
+                error_msg(self, "Cannot add this command.", &msg);
+            }
         }
     }
     fn command_not_found(&mut self, command: &str) {
@@ -201,8 +194,6 @@ impl Core {
 mod test_core {
     use super::*;
     use crate::utils::Quit;
-    use alloc::sync::Arc;
-    use parking_lot::Mutex;
     fn testings_env(core: &mut Core) {
         let locked_env = core.env.clone();
         let mut env = locked_env.write();
@@ -220,26 +211,10 @@ mod test_core {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.add_command(
-            "a_non_existing_command",
-            "a",
-            Arc::new(Mutex::new(Quit::new())),
-        );
-        assert_eq!(core.stderr.utf8_string().unwrap(), "");
-        assert_eq!(core.stdout.utf8_string().unwrap(), "");
-        core.stderr = Writer::new_buf();
-        core.stdout = Writer::new_buf();
-        core.add_command("test_command", "s", Arc::new(Mutex::new(Quit::new())));
+        core.add_command(Quit);
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
-            "Error: Cannot add this command.\nCommand s already existed.\n"
-        );
-        core.stderr = Writer::new_buf();
-        core.stdout = Writer::new_buf();
-        core.add_command("seek", "test_stuff", Arc::new(Mutex::new(Quit::new())));
-        assert_eq!(
-            core.stderr.utf8_string().unwrap(),
-            "Error: Cannot add this command.\nCommand seek already existed.\n"
+            "Error: Cannot add this command.\nCommand quit already existed.\nError: Cannot add this command.\nCommand q already existed.\n"
         );
     }
     #[test]

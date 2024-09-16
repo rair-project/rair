@@ -6,12 +6,6 @@ use std::process;
 #[derive(Default)]
 pub struct Quit;
 
-impl Quit {
-    pub fn new() -> Self {
-        Self
-    }
-}
-
 impl Cmd for Quit {
     fn run(&mut self, _core: &mut Core, _args: &[String]) {
         process::exit(0);
@@ -34,7 +28,7 @@ mod test_quit {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let quit = Quit::new();
+        let quit = Quit;
         quit.help(&mut core);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),

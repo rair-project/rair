@@ -70,11 +70,6 @@ impl Cmd for ListFiles {
 #[derive(Default)]
 pub struct OpenFile;
 
-impl OpenFile {
-    pub fn new() -> Self {
-        Self
-    }
-}
 fn parse_perm(p: &str) -> Result<IoMode, String> {
     let mut perm = IoMode::default();
     for c in p.to_lowercase().chars() {
@@ -145,12 +140,6 @@ impl Cmd for OpenFile {
 #[derive(Default)]
 pub struct CloseFile;
 
-impl CloseFile {
-    pub fn new() -> Self {
-        Self
-    }
-}
-
 impl Cmd for CloseFile {
     fn commands(&self) -> &'static [&'static str] {
         &["close"]
@@ -187,8 +176,8 @@ mod test_files {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let open = OpenFile::new();
-        let close = CloseFile::new();
+        let open = OpenFile;
+        let close = CloseFile;
         core.help("files");
         open.help(&mut core);
         close.help(&mut core);
@@ -212,8 +201,8 @@ mod test_files {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut open = OpenFile::new();
-        let mut close = CloseFile::new();
+        let mut open = OpenFile;
+        let mut close = CloseFile;
         open.run(
             &mut core,
             &["b64://../testing_binaries/rio/base64/no_padding.b64".to_owned()],
@@ -264,7 +253,7 @@ mod test_files {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut open = OpenFile::new();
+        let mut open = OpenFile;
         open.run(&mut core, &["z".to_owned(), "malloc://0x50".to_owned()]);
         open.run(
             &mut core,
@@ -300,8 +289,8 @@ mod test_files {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut open = OpenFile::new();
-        let mut close = CloseFile::new();
+        let mut open = OpenFile;
+        let mut close = CloseFile;
         open.run(&mut core, &[]);
         core.run("files", &["test".to_owned()]);
         close.run(&mut core, &[]);
@@ -319,8 +308,8 @@ mod test_files {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        let mut open = OpenFile::new();
-        let mut close = CloseFile::new();
+        let mut open = OpenFile;
+        let mut close = CloseFile;
         open.run(&mut core, &["file_that_doesnt_exist".to_owned()]);
         close.run(&mut core, &["5".to_owned()]);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");

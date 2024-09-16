@@ -9,9 +9,6 @@ pub struct History {
 }
 
 impl History {
-    pub fn new() -> Self {
-        Self::default()
-    }
     pub fn backward(&mut self, core: &Core) -> Option<(AddrMode, u64)> {
         let (mode, addr) = self.back.pop()?;
         self.front.push((core.mode, core.get_loc()));
@@ -33,7 +30,7 @@ mod test_history {
     use super::*;
     #[test]
     fn test_history() {
-        let mut history = History::new();
+        let mut history = History::default();
         let mut core = Core::new_no_colors();
         assert_eq!(history.backward(&core), None);
         assert_eq!(history.backward(&core), None);
