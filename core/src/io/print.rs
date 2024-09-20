@@ -10,7 +10,17 @@ use std::io::Write;
 use yansi::Paint;
 
 #[derive(Default)]
-pub struct PrintHex;
+pub struct PrintHex {
+    // color for banner and offsets
+    banner: (u8, u8, u8),
+    // color for the ascii part that
+    // is not printable
+    na: (u8, u8, u8),
+    // character to print in case of gap
+    gap: char,
+    // character to print (with na color)
+    noprint: char,
+}
 
 fn one_byte(_: &str, value: &str, _: &Environment<Core>, _: &mut Core) -> bool {
     value.len() == 1
@@ -56,7 +66,71 @@ impl PrintHex {
             )
             .unwrap();
 
-        Self
+        Self {
+            banner: (0, 0, 0),
+            na: (0, 0, 0),
+            gap: char::default(),
+            noprint: char::default(),
+        }
+    }
+    pub fn print_banner(&self, core: &mut Core) {
+        writeln!(
+            core.stdout,
+            "{}",
+            "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF".rgb(
+                self.banner.0,
+                self.banner.1,
+                self.banner.2,
+            )
+        )
+        .unwrap();
+    }
+    pub fn get_env(&mut self, core: &mut Core) {
+        let env = core.env.read();
+        let color = env.get_str("printHex.headerColor").unwrap();
+        self.banner = env.get_color(color).unwrap();
+        let color = env.get_str("printHex.nonPrintColor").unwrap();
+        self.na = core.env.read().get_color(color).unwrap();
+        self.gap = env
+            .get_str("printHex.gapReplace")
+            .unwrap()
+            .chars()
+            .next()
+            .unwrap();
+        self.noprint = env
+            .get_str("printHex.nonPrintReplace")
+            .unwrap()
+            .chars()
+            .next()
+            .unwrap();
+    }
+    pub fn print_addr(&self, core: &mut Core, loc: u64) {
+        let loc = format!("0x{loc:08x}");
+        let (r, g, b) = self.banner;
+        let loc_colored = loc.rgb(r, g, b);
+        write!(core.stdout, "{loc_colored} ").unwrap();
+    }
+    // print hex data all while taking care of extra white space
+    pub fn print_hex(&self, data: Option<u8>, writer: &mut Writer, space_after: bool) {
+        let space = if space_after { " " } else { "" };
+        if let Some(c) = data {
+            write!(writer, "{c:02x}{space}").unwrap();
+        } else {
+            write!(writer, "{}{}{space}", self.gap, self.gap).unwrap();
+        }
+    }
+    // print ascii data while taking care of non printable characters and coloring
+    pub fn print_ascii(&self, data: Option<u8>, writer: &mut Writer) {
+        let (r, g, b) = self.na;
+        if let Some(c) = data {
+            if (0x21..=0x7E).contains(&c) {
+                write!(writer, "{}", c as char).unwrap();
+            } else {
+                write!(writer, "{}", self.noprint.rgb(r, g, b)).unwrap();
+            }
+        } else {
+            write!(writer, "{}", self.gap.rgb(r, g, b)).unwrap();
+        }
     }
 }
 
@@ -93,50 +167,16 @@ impl Cmd for PrintHex {
             Ok(d) => d,
             Err(e) => return error_msg(core, "Read Failed", &e.to_string()),
         };
-        let env = core.env.read();
-        let color = env.get_str("printHex.headerColor").unwrap();
-        let banner = env.get_color(color).unwrap();
-        let color = env.get_str("printHex.nonPrintColor").unwrap();
-        let na = core.env.read().get_color(color).unwrap();
-        let gap = env.get_str("printHex.gapReplace").unwrap();
-        let no_print = env.get_str("printHex.nonPrintReplace").unwrap();
-
-        writeln!(
-            core.stdout,
-            "{}",
-            "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF"
-                .rgb(banner.0, banner.1, banner.2,)
-        )
-        .unwrap();
+        self.get_env(core);
+        self.print_banner(core);
         for i in (0..size).step_by(16) {
-            write!(
-                core.stdout,
-                "{} ",
-                format!("0x{:08x}", loc + i).rgb(banner.0, banner.1, banner.2)
-            )
-            .unwrap();
+            self.print_addr(core, loc + i);
             let mut ascii = Writer::new_buf();
             let mut hex = Writer::new_buf();
             for j in i..cmp::min(i + 16, size) {
-                if let Some(c) = data.get(&(j + loc)) {
-                    if j % 2 == 0 {
-                        write!(hex, "{c:02x}").unwrap();
-                    } else {
-                        write!(hex, "{c:02x} ").unwrap();
-                    }
-                    if *c >= 0x21 && *c <= 0x7E {
-                        write!(ascii, "{}", *c as char).unwrap();
-                    } else {
-                        write!(ascii, "{}", no_print.rgb(na.0, na.1, na.2)).unwrap();
-                    }
-                } else {
-                    if j % 2 == 0 {
-                        write!(hex, "{gap}{gap}").unwrap();
-                    } else {
-                        write!(hex, "{gap}{gap} ").unwrap();
-                    }
-                    write!(ascii, "{}", gap.rgb(na.0, na.1, na.2)).unwrap();
-                }
+                let byte = data.get(&(j + loc)).copied();
+                self.print_hex(byte, &mut hex, j % 2 != 0);
+                self.print_ascii(byte, &mut ascii);
             }
             writeln!(
                 core.stdout,
