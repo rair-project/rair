@@ -5,6 +5,7 @@ use crate::commands::Commands;
 use crate::helper::{error_msg, AddrMode};
 use crate::io::register_io;
 use crate::loc::register_loc;
+use crate::register_diff;
 use crate::utils::register_utils;
 use crate::writer::Writer;
 use alloc::{collections::BTreeMap, sync::Arc};
@@ -60,6 +61,7 @@ impl Core {
         register_io(self);
         register_loc(self);
         register_utils(self);
+        register_diff(self);
     }
     /// Returns list of all available commands in [Core].
     pub fn commands(&mut self) -> Arc<Mutex<Commands>> {
