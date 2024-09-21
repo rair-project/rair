@@ -1,7 +1,7 @@
 //! commands handling data writing to files.
 
 use crate::core::Core;
-use crate::helper::{error_msg, expect, str_to_num, AddrMode};
+use crate::helper::{error_msg, expect, str_to_num};
 use crate::Cmd;
 use std::fs::File;
 use std::io::prelude::*;
@@ -37,11 +37,7 @@ impl Cmd for WriteHex {
             data.push(byte);
         }
         let loc = core.get_loc();
-        let error = match core.mode {
-            AddrMode::Phy => core.io.pwrite(loc, &data),
-            AddrMode::Vir => core.io.vwrite(loc, &data),
-        };
-        if let Err(e) = error {
+        if let Err(e) = core.write(loc, &data) {
             error_msg(core, "Read Failed", &e.to_string());
         }
     }
@@ -76,11 +72,7 @@ impl Cmd for WriteToFile {
         };
         let loc = core.get_loc();
         let mut data = vec![0; size];
-        let error = match core.mode {
-            AddrMode::Phy => core.io.pread(loc, &mut data),
-            AddrMode::Vir => core.io.vread(loc, &mut data),
-        };
-        if let Err(e) = error {
+        if let Err(e) = core.read(loc, &mut data) {
             error_msg(core, "Failed to read data", &e.to_string());
             return;
         }
@@ -114,7 +106,7 @@ impl Cmd for WriteToFile {
 
 mod test_write {
     use super::*;
-    use crate::{writer::Writer, CmdOps};
+    use crate::{writer::Writer, AddrMode, CmdOps};
     use rair_io::*;
     use std::fs;
     #[test]

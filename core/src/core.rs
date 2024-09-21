@@ -7,11 +7,11 @@ use crate::io::register_io;
 use crate::loc::register_loc;
 use crate::utils::register_utils;
 use crate::writer::Writer;
-use alloc::sync::Arc;
+use alloc::{collections::BTreeMap, sync::Arc};
 use core::mem;
 use parking_lot::{Mutex, RwLock};
 use rair_env::Environment;
-use rair_io::RIO;
+use rair_io::{IoError, RIO};
 use serde::{Deserialize, Serialize};
 use std::io;
 use std::io::Write;
@@ -192,6 +192,24 @@ impl Core {
         } else {
             drop(cmds_ref);
             self.command_not_found(command);
+        }
+    }
+    pub fn read_sparce(&mut self, loc: u64, size: u64) -> Result<BTreeMap<u64, u8>, IoError> {
+        match self.mode {
+            AddrMode::Phy => self.io.pread_sparce(loc, size),
+            AddrMode::Vir => self.io.vread_sparce(loc, size),
+        }
+    }
+    pub fn read(&mut self, loc: u64, buf: &mut [u8]) -> Result<(), IoError> {
+        match self.mode {
+            AddrMode::Phy => self.io.pread(loc, buf),
+            AddrMode::Vir => self.io.vread(loc, buf),
+        }
+    }
+    pub fn write(&mut self, loc: u64, buf: &[u8]) -> Result<(), IoError> {
+        match self.mode {
+            AddrMode::Phy => self.io.pwrite(loc, buf),
+            AddrMode::Vir => self.io.vwrite(loc, buf),
         }
     }
 }

@@ -1,7 +1,7 @@
 //! commands handling raw data printing.
 
 use crate::core::Core;
-use crate::helper::{error_msg, expect, is_color, str_to_num, AddrMode};
+use crate::helper::{error_msg, expect, is_color, str_to_num};
 use crate::writer::Writer;
 use crate::Cmd;
 use core::{cmp, fmt::Write as _};
@@ -159,11 +159,7 @@ impl Cmd for PrintHex {
             return;
         }
         let loc = core.get_loc();
-        let data_or_no_data = match core.mode {
-            AddrMode::Phy => core.io.pread_sparce(loc, size),
-            AddrMode::Vir => core.io.vread_sparce(loc, size),
-        };
-        let data = match data_or_no_data {
+        let data = match core.read_sparce(loc, size) {
             Ok(d) => d,
             Err(e) => return error_msg(core, "Read Failed", &e.to_string()),
         };
@@ -233,11 +229,7 @@ impl Cmd for PrintBase {
             return;
         }
         let loc = core.get_loc();
-        let error = match core.mode {
-            AddrMode::Phy => core.io.pread(loc, &mut data),
-            AddrMode::Vir => core.io.vread(loc, &mut data),
-        };
-        if let Err(e) = error {
+        if let Err(e) = core.read(loc, &mut data) {
             error_msg(core, "Read Failed", &e.to_string());
             return;
         }
@@ -431,11 +423,7 @@ impl Cmd for PrintCSV {
         let mut data = vec![0; size];
 
         let loc = core.get_loc();
-        let error = match core.mode {
-            AddrMode::Phy => core.io.pread(loc, &mut data),
-            AddrMode::Vir => core.io.vread(loc, &mut data),
-        };
-        if let Err(e) = error {
+        if let Err(e) = core.read(loc, &mut data) {
             error_msg(core, "Read Failed", &e.to_string());
             return;
         }
@@ -598,11 +586,7 @@ impl Cmd for PrintSignedCSV {
         let mut data = vec![0; size];
 
         let loc = core.get_loc();
-        let error = match core.mode {
-            AddrMode::Phy => core.io.pread(loc, &mut data),
-            AddrMode::Vir => core.io.vread(loc, &mut data),
-        };
-        if let Err(e) = error {
+        if let Err(e) = core.read(loc, &mut data) {
             error_msg(core, "Read Failed", &e.to_string());
             return;
         }
@@ -635,7 +619,7 @@ impl Cmd for PrintSignedCSV {
 #[cfg(test)]
 mod test_print_hex {
     use super::*;
-    use crate::{writer::Writer, CmdOps};
+    use crate::{writer::Writer, AddrMode, CmdOps};
     use rair_io::*;
     use std::path::Path;
     use test_file::*;
