@@ -46,7 +46,10 @@ impl<T> Environment<T> {
         }
         true
     }
-
+    #[must_use]
+    pub fn contains(&self, key: &str) -> bool {
+        self.data.contains_key(key)
+    }
     pub fn add_str_with_cb(
         &mut self,
         key: &str,
@@ -55,7 +58,7 @@ impl<T> Environment<T> {
         data: &mut T,
         cb: StrFn<T>,
     ) -> Result<(), EnvErr> {
-        if self.data.contains_key(key) {
+        if self.contains(key) {
             return Err(EnvErr::AlreadyExist);
         }
         let meta = EnvStr {
@@ -73,7 +76,7 @@ impl<T> Environment<T> {
     }
 
     pub fn add_str(&mut self, key: &str, val: &str, help: &str) -> Result<(), EnvErr> {
-        if self.data.contains_key(key) {
+        if self.contains(key) {
             return Err(EnvErr::AlreadyExist);
         }
         let meta = EnvStr {
@@ -140,7 +143,7 @@ impl<T> Environment<T> {
         data: &mut T,
         cb: U64Fn<T>,
     ) -> Result<(), EnvErr> {
-        if self.data.contains_key(key) {
+        if self.contains(key) {
             return Err(EnvErr::AlreadyExist);
         }
         let meta = EnvU64 {
@@ -158,7 +161,7 @@ impl<T> Environment<T> {
     }
 
     pub fn add_u64(&mut self, key: &str, val: u64, help: &str) -> Result<(), EnvErr> {
-        if self.data.contains_key(key) {
+        if self.contains(key) {
             return Err(EnvErr::AlreadyExist);
         }
         let meta = EnvU64 {
@@ -225,7 +228,7 @@ impl<T> Environment<T> {
         data: &mut T,
         cb: I64Fn<T>,
     ) -> Result<(), EnvErr> {
-        if self.data.contains_key(key) {
+        if self.contains(key) {
             return Err(EnvErr::AlreadyExist);
         }
         let meta = EnvI64 {
@@ -243,7 +246,7 @@ impl<T> Environment<T> {
     }
 
     pub fn add_i64(&mut self, key: &str, val: i64, help: &str) -> Result<(), EnvErr> {
-        if self.data.contains_key(key) {
+        if self.contains(key) {
             return Err(EnvErr::AlreadyExist);
         }
         let meta = EnvI64 {
@@ -310,7 +313,7 @@ impl<T> Environment<T> {
         data: &mut T,
         cb: BoolFn<T>,
     ) -> Result<(), EnvErr> {
-        if self.data.contains_key(key) {
+        if self.contains(key) {
             return Err(EnvErr::AlreadyExist);
         }
         let meta = EnvBool {
@@ -328,7 +331,7 @@ impl<T> Environment<T> {
     }
 
     pub fn add_bool(&mut self, key: &str, val: bool, help: &str) -> Result<(), EnvErr> {
-        if self.data.contains_key(key) {
+        if self.contains(key) {
             return Err(EnvErr::AlreadyExist);
         }
         let meta = EnvBool {
@@ -395,7 +398,7 @@ impl<T> Environment<T> {
         data: &mut T,
         cb: ColorFn<T>,
     ) -> Result<(), EnvErr> {
-        if self.data.contains_key(key) {
+        if self.contains(key) {
             return Err(EnvErr::AlreadyExist);
         }
         let meta = EnvColor {
@@ -413,7 +416,7 @@ impl<T> Environment<T> {
     }
 
     pub fn add_color(&mut self, key: &str, val: (u8, u8, u8), help: &str) -> Result<(), EnvErr> {
-        if self.data.contains_key(key) {
+        if self.contains(key) {
             return Err(EnvErr::AlreadyExist);
         }
         let meta = EnvColor {
