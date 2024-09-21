@@ -9,7 +9,7 @@ mod io;
 mod loc;
 mod utils;
 mod writer;
-
+mod hex;
 pub use self::cmd::*;
 pub use self::commands::*;
 pub use self::core::*;
