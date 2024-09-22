@@ -4,8 +4,8 @@
 |      |    Badge     |
 |------|--------------|
 |**License**|[![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)|
-|**Travis CI**|  [![Build Status](https://travis-ci.org/Rair-Project/rair-core.svg?branch=master)](https://travis-ci.org/Rair-Project/rair-core)|
-|**Code Coverage**|[![codecov](https://codecov.io/gh/Rair-Project/rair-core/branch/master/graph/badge.svg)](https://codecov.io/gh/Rair-Project/rair-core)|
+|**Github Actions**|  ![CI](https://github.com/rair-project/rair/actions/workflows/ci.yml/badge.svg?branch=main)|
+|**Code Coverage**|[![codecov](https://codecov.io/gh/rair-project/rair/graph/badge.svg?token=Ljsi4Wny3V)](https://codecov.io/gh/rair-project/rair)|
 |**API**| [![API](https://img.shields.io/badge/api-master-purple.svg)](https://rair-project.github.io/rair-core/)|
 
 Rair is a work in progress rewrite of radare2 in rust with these goals:
@@ -17,3 +17,4 @@ Rair is a work in progress rewrite of radare2 in rust with these goals:
 - Extremely stable and well documented API.
 - Focusing on correctiness more than focusing on features.
 - Avoid legacy systems compatiability.
+
