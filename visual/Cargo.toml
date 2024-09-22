@@ -1,0 +1,13 @@
+[package]
+name = "rair-visual"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cli-clipboard = { workspace = true}
+parking_lot = {workspace = true}
+rair-core ={workspace = true}
+rair-eval = {workspace = true}
+rair-env = {workspace = true}
+rair-io = {workspace = true}
+ratatui = {workspace = true}

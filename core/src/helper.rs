@@ -95,7 +95,6 @@ pub struct CmdFunctions {
 }
 
 #[derive(Copy, Clone, PartialEq, Debug, Serialize, Deserialize)]
-#[non_exhaustive]
 pub enum AddrMode {
     Vir,
     Phy,

@@ -23,6 +23,7 @@ rair-core = {workspace = true}
 rair-eval = {workspace = true}
 rair-io = {workspace = true}
 rair-trees = {workspace = true}
+rair-visual = {workspace = true}
 rustyline = {workspace = true}
 rustyline-derive = {workspace = true}
 yansi = {workspace = true}

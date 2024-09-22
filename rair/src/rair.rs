@@ -11,10 +11,12 @@ use cli::Args;
 use core::mem;
 use init::init_editor_from_core;
 use rair_core::{panic_msg, Core, Writer};
+use rair_visual::register_commands;
 use rpel::prompt_read_parse_evaluate_loop;
 
 fn main() {
     let mut core = Core::new();
+    register_commands(&mut core);
     let editor = init_editor_from_core(&mut core);
     let args = Args::parse().unwrap_or_else(|e| panic_msg(&mut core, &e, ""));
     match args {
