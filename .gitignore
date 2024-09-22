@@ -11,3 +11,4 @@ target
 tarpaulin-report.html
 *.xml
 testing_binaries/
+*.patch
