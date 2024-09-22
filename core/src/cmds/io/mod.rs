@@ -1,15 +1,16 @@
 //! commands handling IO.
 
 mod files;
-mod map;
+mod mapping;
 mod print;
 mod write;
 
 use self::files::{CloseFile, ListFiles, OpenFile};
-use self::map::{ListMap, Map, UnMap};
+use self::mapping::{ListMap, Map, UnMap};
 use self::print::{PrintBase, PrintCSV, PrintHex, PrintSignedCSV};
 use self::write::{WriteHex, WriteToFile};
 use crate::core::Core;
+
 pub fn register_io(core: &mut Core) {
     let maps = ListMap::new(core);
     let files = ListFiles::new(core);

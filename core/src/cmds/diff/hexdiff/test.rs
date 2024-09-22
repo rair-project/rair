@@ -1,9 +1,9 @@
 use std::path::Path;
 
+use super::HexDiff;
+use crate::{CmdOps, Core, Writer};
 use rair_io::IoMode;
 use test_file::{operate_on_file, DATA};
-
-use crate::{diff::hexdiff::HexDiff, CmdOps, Core, Writer};
 
 #[test]
 fn test_help() {

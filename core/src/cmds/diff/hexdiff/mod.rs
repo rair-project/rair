@@ -13,6 +13,10 @@ impl HexDiff {
         }
     }
     fn parse_args(core: &mut Core, args: &[String]) -> Option<(u64, u64, u64)> {
+        if !(2..4).contains(&args.len()) {
+            expect_range(core, args.len() as u64, 2, 3);
+            return None;
+        }
         let args: Vec<_> = args.iter().map(|s| str_to_num(s)).collect();
         if args.len() == 2 {
             let addr1 = core.get_loc();
@@ -102,10 +106,6 @@ impl Cmd for HexDiff {
     }
 
     fn run(&mut self, core: &mut Core, args: &[String]) {
-        if !(2..4).contains(&args.len()) {
-            expect_range(core, args.len() as u64, 2, 3);
-            return;
-        }
         let Some((addr1, addr2, size)) = Self::parse_args(core, args) else {
             return;
         };

@@ -1,12 +1,8 @@
 //! Linking all rair parts together into 1 module.
 
-use crate::cmd::{Cmd, CmdOps};
+use crate::cmds::{load_commands, Cmd, CmdOps};
 use crate::commands::Commands;
 use crate::helper::{error_msg, AddrMode};
-use crate::io::register_io;
-use crate::loc::register_loc;
-use crate::register_diff;
-use crate::utils::register_utils;
 use crate::writer::Writer;
 use alloc::{collections::BTreeMap, sync::Arc};
 use core::mem;
@@ -58,10 +54,7 @@ fn set_global_color(_: &str, value: bool, _: &Environment<Core>, _: &mut Core) -
 }
 impl Core {
     pub(crate) fn load_commands(&mut self) {
-        register_io(self);
-        register_loc(self);
-        register_utils(self);
-        register_diff(self);
+        load_commands(self);
     }
     /// Returns list of all available commands in [Core].
     pub fn commands(&mut self) -> Arc<Mutex<Commands>> {
@@ -219,7 +212,22 @@ impl Core {
 #[cfg(test)]
 mod test_core {
     use super::*;
-    use crate::utils::Quit;
+    #[derive(Default)]
+    pub struct Quit2;
+
+    impl Cmd for Quit2 {
+        fn run(&mut self, _core: &mut Core, _args: &[String]) {
+            todo!()
+        }
+        fn commands(&self) -> &'static [&'static str] {
+            &["quit", "q"]
+        }
+
+        fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+            todo!()
+        }
+    }
+
     fn testings_env(core: &mut Core) {
         let locked_env = core.env.clone();
         let mut env = locked_env.write();
@@ -237,7 +245,7 @@ mod test_core {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
-        core.add_command(Quit);
+        core.add_command(Quit2);
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
             "Error: Cannot add this command.\nCommand quit already existed.\nError: Cannot add this command.\nCommand q already existed.\n"

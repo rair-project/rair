@@ -2,7 +2,7 @@
 
 use std::collections::HashSet;
 
-use crate::{cmd::Cmd, helper::MRc};
+use crate::{cmds::Cmd, helper::MRc};
 use alloc::collections::BTreeMap;
 use rair_trees::bktree::SpellTree; // for suffex search
 
@@ -64,15 +64,31 @@ impl Commands {
 #[cfg(test)]
 mod commands_test {
     use super::Commands;
-    use crate::utils::Quit;
+    use crate::{Cmd, Core};
     use alloc::sync::Arc;
     use parking_lot::Mutex;
+
+    #[derive(Default)]
+    pub struct Foo;
+
+    impl Cmd for Foo {
+        fn run(&mut self, _core: &mut Core, _args: &[String]) {
+            todo!()
+        }
+        fn commands(&self) -> &'static [&'static str] {
+            &["foo", "f"]
+        }
+
+        fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+            todo!()
+        }
+    }
 
     #[test]
     fn test_iter() {
         let mut cmds = Commands::default();
-        cmds.add_command("q", Arc::new(Mutex::new(Quit)));
-        cmds.add_command("quit", Arc::new(Mutex::new(Quit)));
+        cmds.add_command("f", Arc::new(Mutex::new(Foo)));
+        cmds.add_command("foo", Arc::new(Mutex::new(Foo)));
         assert_eq!(cmds.iter().count(), 1);
     }
 }
