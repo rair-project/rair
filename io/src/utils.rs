@@ -26,6 +26,22 @@ impl fmt::Display for IoMode {
     }
 }
 
+impl TryFrom<&str> for IoMode {
+    type Error = String;
+    fn try_from(p: &str) -> Result<Self, Self::Error> {
+        let mut perm = IoMode::default();
+        for c in p.to_lowercase().chars() {
+            match c {
+                'r' => perm |= IoMode::READ,
+                'w' => perm |= IoMode::WRITE,
+                'c' => perm |= IoMode::COW,
+                _ => return Err(format!("Unknown Permission: `{c}`")),
+            }
+        }
+        Ok(perm)
+    }
+}
+
 /// Errors resultion from operations on [RIO]
 #[derive(Debug)]
 #[non_exhaustive]
