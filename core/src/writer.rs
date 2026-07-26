@@ -1,4 +1,4 @@
-//! Abstract implementation for `Io::Write` stream
+//! Abstract implementation for `Io::Write` stream.
 
 use std::io;
 use std::io::Write;
@@ -9,22 +9,22 @@ use std::io::Write;
 #[non_exhaustive]
 pub enum Writer {
     #[doc(hidden)]
-    Write(Box<dyn Write + Sync + Send>),
-    #[doc(hidden)]
     Bytes(Vec<u8>),
+    #[doc(hidden)]
+    Write(Box<dyn Write + Sync + Send>),
 }
 
 impl Write for Writer {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        match self {
-            Writer::Write(writer) => writer.write(buf),
-            Writer::Bytes(bytes) => bytes.write(buf),
-        }
-    }
     fn flush(&mut self) -> io::Result<()> {
         match self {
             Writer::Write(writer) => writer.flush(),
             Writer::Bytes(bytes) => bytes.flush(),
+        }
+    }
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        match self {
+            Writer::Write(writer) => writer.write(buf),
+            Writer::Bytes(bytes) => bytes.write(buf),
         }
     }
 }
@@ -34,46 +34,10 @@ impl Default for Writer {
     }
 }
 impl Writer {
-    /// Creates a new [Writer] backed by object that implements [Write].
-    #[must_use]
-    pub fn new_write(out: Box<dyn Write + Sync + Send>) -> Self {
-        Writer::Write(out)
-    }
-
-    /// Returns a new buffer based [Writer].
-    #[must_use]
-    pub fn new_buf() -> Self {
-        Writer::Bytes(Vec::new())
-    }
     /// This function consumes the [Writer] object, it returns the
     /// data stored there if the object is buffer based.
     #[must_use]
     pub fn bytes(self) -> Option<Vec<u8>> {
-        if let Writer::Bytes(b) = self {
-            Some(b)
-        } else {
-            None
-        }
-    }
-    /// This function consumes the [Writer] object, it returns UTF-8
-    /// String representation of the data stored there if it is buffer.
-    /// based and the buffer holds UTF-8 data.
-    #[must_use]
-    pub fn utf8_string(self) -> Option<String> {
-        if let Writer::Bytes(b) = self {
-            if let Ok(s) = String::from_utf8(b) {
-                Some(s)
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    }
-    /// This function returns a reference to the data stored
-    /// in respective [Writer] if the object is buffer based.
-    #[must_use]
-    pub fn bytes_ref(&self) -> Option<&Vec<u8>> {
         if let Writer::Bytes(b) = self {
             Some(b)
         } else {
@@ -91,13 +55,49 @@ impl Writer {
             None
         }
     }
+    /// This function returns a reference to the data stored
+    /// in respective [Writer] if the object is buffer based.
+    #[must_use]
+    pub fn bytes_ref(&self) -> Option<&Vec<u8>> {
+        if let Writer::Bytes(b) = self {
+            Some(b)
+        } else {
+            None
+        }
+    }
+
+    /// Returns a new buffer based [Writer].
+    #[must_use]
+    pub fn new_buf() -> Self {
+        Writer::Bytes(Vec::new())
+    }
+    /// Creates a new [Writer] backed by object that implements [Write].
+    #[must_use]
+    pub fn new_write(out: Box<dyn Write + Sync + Send>) -> Self {
+        Writer::Write(out)
+    }
+    /// This function consumes the [Writer] object, it returns UTF-8
+    /// String representation of the data stored there if it is buffer.
+    /// based and the buffer holds UTF-8 data.
+    #[must_use]
+    pub fn utf8_string(self) -> Option<String> {
+        if let Writer::Bytes(b) = self {
+            String::from_utf8(b).ok()
+        } else {
+            None
+        }
+    }
 }
 
 #[cfg(test)]
+#[expect(
+    clippy::non_ascii_literal,
+    reason = "tests exercise UTF-8 buffering with a multi-byte heart character"
+)]
 mod writer_test {
     use super::*;
     #[test]
-    fn test_writer_buffer() {
+    fn writer_buffer() {
         let mut w = Writer::new_buf();
         let s = "Testing write buffer with utf8 heart ♥";
         let v = s.as_bytes();
@@ -111,7 +111,7 @@ mod writer_test {
     }
 
     #[test]
-    fn test_writer_io() {
+    fn writer_io() {
         let mut w = Writer::new_write(Box::new(io::stdout()));
         assert_eq!(w.bytes_ref(), None);
         assert_eq!(w.bytes_mut(), None);

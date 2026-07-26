@@ -11,19 +11,19 @@ use rustyline::highlight::Highlighter;
 use rustyline::hint::{Hinter, HistoryHinter};
 use rustyline::Context;
 use rustyline_derive::{Helper, Validator};
-use yansi::Paint;
+use yansi::Paint as _;
 
 #[derive(Helper, Validator)]
 pub struct LineFormatter {
-    hinter: HistoryHinter,
     commands: Arc<Mutex<Commands>>,
+    hinter: HistoryHinter,
 }
 
 impl LineFormatter {
     pub fn new(commands: Arc<Mutex<Commands>>) -> Self {
         LineFormatter {
-            hinter: HistoryHinter {},
             commands,
+            hinter: HistoryHinter {},
         }
     }
     fn tree_complete(&self, tree: ParseTree) -> (usize, Vec<Pair>) {
@@ -32,7 +32,8 @@ impl LineFormatter {
             // all the commands sharing same prefix ending with the help token
             ParseTree::Help(help) => {
                 let mut ret = Vec::new();
-                for suggestion in self.commands.lock().prefix(&help.command) {
+                let commands = self.commands.lock();
+                for suggestion in commands.prefix(&help.command) {
                     let display = (*suggestion).to_owned();
                     let mut replacement = (*suggestion).to_owned();
                     replacement.push('?');
@@ -50,7 +51,8 @@ impl LineFormatter {
                     return (0, Vec::new());
                 }
                 let mut ret = Vec::new();
-                for suggestion in self.commands.lock().prefix(&cmd.command) {
+                let commands = self.commands.lock();
+                for suggestion in commands.prefix(&cmd.command) {
                     let display = (*suggestion).to_owned();
                     let replacement = (*suggestion).to_owned();
                     ret.push(Pair {
@@ -60,8 +62,7 @@ impl LineFormatter {
                 }
                 (0, ret)
             }
-            ParseTree::Comment | ParseTree::NewLine => (0, Vec::new()),
-            ParseTree::HelpAll => unreachable!(),
+            ParseTree::Comment | ParseTree::HelpAll | ParseTree::NewLine => (0, Vec::new()),
         }
     }
 }
@@ -90,7 +91,10 @@ impl Completer for LineFormatter {
             p += 1;
         }
         // next we parse the line
-        let t = ParseTree::construct(&line[0..p]);
+        let Some(prefix) = line.get(0..p) else {
+            return Ok((0, Vec::new()));
+        };
+        let t = ParseTree::construct(prefix);
         match t {
             Err(_) => Ok((0, Vec::new())),
             Ok(tree) => Ok(self.tree_complete(tree)),

@@ -8,10 +8,10 @@ use core::cmp;
 use std::io;
 use std::path::Path;
 const METADATA: RIOPluginMetadata = RIOPluginMetadata {
-    name: "Base64",
-    desc: "This plugin is used to open base64 encoded files.",
     author: "Oddcoder",
+    desc: "This plugin is used to open base64 encoded files.",
     license: "LGPL",
+    name: "Base64",
     version: "0.0.1",
 };
 struct Base64Internal {
@@ -21,6 +21,19 @@ struct Base64Internal {
 impl Base64Internal {
     fn len(&self) -> u64 {
         self.len
+    }
+    fn read_aligned_blocks(&mut self, raddr: usize, buffer: &mut [u8]) -> Result<(), IoError> {
+        if buffer.is_empty() {
+            return Ok(());
+        }
+        let b64size = buffer.len() / 3 * 4;
+        let b64addr = raddr / 3 * 4;
+        let mut b64data = vec![0; b64size];
+        self.file.read(b64addr, &mut b64data)?;
+        if BASE64_STANDARD.decode_slice(b64data, buffer).is_err() {
+            return Err(IoError::Custom("Corrupted base64 data".to_owned()));
+        }
+        Ok(())
     }
     fn read_first_unaligned_block<'a>(
         &mut self,
@@ -82,17 +95,15 @@ impl Base64Internal {
         let (raddr, buffer) = self.read_last_unaligned_block(raddr, buffer)?;
         Ok((raddr, buffer))
     }
-    fn read_aligned_blocks(&mut self, raddr: usize, buffer: &mut [u8]) -> Result<(), IoError> {
+    fn write_aligned_blocks(&mut self, raddr: usize, buffer: &[u8]) -> Result<(), IoError> {
         if buffer.is_empty() {
             return Ok(());
         }
         let b64size = buffer.len() / 3 * 4;
         let b64addr = raddr / 3 * 4;
         let mut b64data = vec![0; b64size];
-        self.file.read(b64addr, &mut b64data)?;
-        if BASE64_STANDARD.decode_slice(b64data, buffer).is_err() {
-            return Err(IoError::Custom("Corrupted base64 data".to_owned()));
-        }
+        BASE64_STANDARD.encode_slice(buffer, &mut b64data).unwrap();
+        self.file.write(b64addr, &b64data)?;
         Ok(())
     }
     fn write_first_unaligned_block<'a>(
@@ -164,17 +175,6 @@ impl Base64Internal {
         let (raddr, buffer) = self.write_last_unaligned_block(raddr, buffer)?;
         Ok((raddr, buffer))
     }
-    fn write_aligned_blocks(&mut self, raddr: usize, buffer: &[u8]) -> Result<(), IoError> {
-        if buffer.is_empty() {
-            return Ok(());
-        }
-        let b64size = buffer.len() / 3 * 4;
-        let b64addr = raddr / 3 * 4;
-        let mut b64data = vec![0; b64size];
-        BASE64_STANDARD.encode_slice(buffer, &mut b64data).unwrap();
-        self.file.write(b64addr, &b64data)?;
-        Ok(())
-    }
 }
 
 impl RIOPluginOperations for Base64Internal {
@@ -208,22 +208,31 @@ struct Base64Plugin {
 }
 
 impl Base64Plugin {
-    fn uri_to_path(uri: &str) -> &Path {
-        let path = uri.trim_start_matches("b64://");
-        Path::new(path)
-    }
     fn new() -> Base64Plugin {
         Base64Plugin {
             defaultplugin: defaultplugin::plugin(),
         }
     }
+    fn uri_to_path(uri: &str) -> &Path {
+        let path = uri.trim_start_matches("b64://");
+        Path::new(path)
+    }
 }
 
 impl RIOPlugin for Base64Plugin {
+    fn accept_uri(&self, uri: &str) -> bool {
+        let split: Vec<&str> = uri.split("://").collect();
+        split.len() == 2 && split[0] == "b64"
+    }
+
     fn get_metadata(&self) -> &'static RIOPluginMetadata {
         &METADATA
     }
 
+    #[expect(
+        clippy::naive_bytecount,
+        reason = "counting at most 2 padding bytes; a bytecount dependency is not warranted"
+    )]
     fn open(&mut self, uri: &str, flags: IoMode) -> Result<RIOPluginDesc, IoError> {
         let mut def_desc = self
             .defaultplugin
@@ -235,26 +244,22 @@ impl RIOPlugin for Base64Plugin {
             .is_err()
         {
             return Err(IoError::Custom("Corrupted base64 data".to_owned()));
-        };
+        }
         let padding_size = paddings.iter().filter(|&n| *n == b'=').count();
         let internal = Base64Internal {
             file: def_desc.plugin_operations,
             // each 1, 2, or 3 bytes are mapped to 4 bytes
             len: def_desc.size / 4 * 3 - padding_size as u64,
         };
+        let size = internal.len();
         let desc = RIOPluginDesc {
             name: uri.to_owned(),
             perm: flags,
-            raddr: 0,
-            size: internal.len(),
             plugin_operations: Box::new(internal),
+            raddr: 0,
+            size,
         };
         Ok(desc)
-    }
-
-    fn accept_uri(&self, uri: &str) -> bool {
-        let split: Vec<&str> = uri.split("://").collect();
-        split.len() == 2 && split[0] == "b64"
     }
 }
 
@@ -268,7 +273,7 @@ mod test_base64 {
     use test_file::*;
 
     #[test]
-    fn test_nopad_read() {
+    fn nopad_read() {
         let mut p = plugin();
         let mut file = p
             .open(
@@ -292,7 +297,7 @@ mod test_base64 {
     }
 
     #[test]
-    fn test_one_pad_read() {
+    fn one_pad_read() {
         let mut p = plugin();
         let mut file = p
             .open(
@@ -320,7 +325,7 @@ mod test_base64 {
     }
 
     #[test]
-    fn test_two_pad_read() {
+    fn two_pad_read() {
         let mut p = plugin();
         let mut file = p
             .open(
@@ -363,7 +368,7 @@ mod test_base64 {
         );
     }
     #[test]
-    fn test_nopad_write() {
+    fn nopad_write() {
         operate_on_copy(
             &nopad_write_cb,
             "../testing_binaries/rio/base64/no_padding.b64",
@@ -394,7 +399,7 @@ mod test_base64 {
     }
 
     #[test]
-    fn test_one_pad_write() {
+    fn one_pad_write() {
         operate_on_copy(
             &one_pad_write_cb,
             "../testing_binaries/rio/base64/one_pad.b64",
@@ -423,7 +428,7 @@ mod test_base64 {
         );
     }
     #[test]
-    fn test_two_pad_write() {
+    fn two_pad_write() {
         operate_on_copy(
             &two_pad_write_cb,
             "../testing_binaries/rio/base64/two_pad.b64",

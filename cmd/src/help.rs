@@ -4,16 +4,21 @@ use crate::grammar::Rule;
 use pest::iterators::Pair;
 
 #[derive(Default, Debug, PartialEq, Eq)]
+#[expect(clippy::exhaustive_structs, reason = "parser AST node; closed set")]
 pub struct HelpCmd {
     pub command: String,
 }
 
 impl HelpCmd {
     pub(crate) fn parse_help(root: Pair<Rule>) -> Self {
-        assert_eq!(root.as_rule(), Rule::HelpLine);
-        return Self {
+        debug_assert_eq!(
+            root.as_rule(),
+            Rule::HelpLine,
+            "parse_help must be called with a HelpLine pair"
+        );
+        Self {
             command: root.into_inner().next().unwrap().as_str().to_owned(),
-        };
+        }
     }
 }
 
@@ -21,9 +26,9 @@ impl HelpCmd {
 mod test_help_cmd {
     use super::*;
     use crate::grammar::CliParser;
-    use pest::Parser;
+    use pest::Parser as _;
     #[test]
-    fn test_help_no_space() {
+    fn help_no_space() {
         let root = CliParser::parse(Rule::HelpLine, "aa?")
             .unwrap()
             .next()
@@ -37,7 +42,7 @@ mod test_help_cmd {
         );
     }
     #[test]
-    fn test_help_space() {
+    fn help_space() {
         let root = CliParser::parse(Rule::HelpLine, "aa          ?")
             .unwrap()
             .next()

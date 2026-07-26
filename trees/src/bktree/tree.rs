@@ -16,30 +16,14 @@ struct BKTreeNode<K, V>
 where
     K: Distance,
 {
+    children: HashMap<u64, BKTreeNode<K, V>>,
     key: K,
     value: V,
-    children: HashMap<u64, BKTreeNode<K, V>>,
 }
 impl<K, V> BKTreeNode<K, V>
 where
     K: Distance,
 {
-    fn new(key: K, value: V) -> Self {
-        BKTreeNode {
-            key,
-            value,
-            children: HashMap::new(),
-        }
-    }
-    fn insert(&mut self, key: K, value: V) {
-        let distance = self.key.distance(&key);
-        if let Some(child) = self.children.get_mut(&distance) {
-            child.insert(key, value);
-        } else {
-            self.children.insert(distance, BKTreeNode::new(key, value));
-        }
-    }
-
     fn find(&self, key: &K, tolerance: u64) -> (Vec<&V>, Vec<&K>) {
         let (mut exact, mut close) = (Vec::new(), Vec::new());
         let current_distance = self.key.distance(key);
@@ -47,6 +31,10 @@ where
             exact.push(&self.value);
         } else if current_distance <= tolerance {
             close.push(&self.key);
+        } else {
+            // The current key is farther than the tolerance allows, so it is
+            // neither an exact nor an approximate match; children within the
+            // distance window are still visited below.
         }
         for i in
             current_distance.saturating_sub(tolerance)..=current_distance.saturating_add(tolerance)
@@ -60,12 +48,27 @@ where
 
         (exact, close)
     }
+    fn insert(&mut self, key: K, value: V) {
+        let distance = self.key.distance(&key);
+        if let Some(child) = self.children.get_mut(&distance) {
+            child.insert(key, value);
+        } else {
+            self.children.insert(distance, BKTreeNode::new(key, value));
+        }
+    }
+    fn new(key: K, value: V) -> Self {
+        BKTreeNode {
+            children: HashMap::new(),
+            key,
+            value,
+        }
+    }
 }
 /// This trait used by [`BKTree`] to tell how close are 2 objects when fuzzy searching.
 /// In case of strings, the distance function could be something like Levenshtein distance,
 /// Damerau–Levenshtein distance, Optimal string alignment distance or anything similar.
 pub trait Distance {
-    /// Calculate the distance between two nodes in the [`BKTree`]
+    /// Calculate the distance between two nodes in the [`BKTree`].
     fn distance(&self, other: &Self) -> u64;
 }
 
@@ -73,21 +76,6 @@ impl<K, V> BKTree<K, V>
 where
     K: Distance,
 {
-    /// Returns a new BK-Tree
-    #[must_use]
-    pub fn new() -> BKTree<K, V> {
-        BKTree { root: None }
-    }
-
-    /// Inserts a new (*key*, *value*) pair into the KB-Tree
-    pub fn insert(&mut self, key: K, value: V) {
-        if let Some(root) = &mut self.root {
-            root.insert(key, value);
-        } else {
-            self.root = Some(BKTreeNode::new(key, value));
-        }
-    }
-
     /// Search for the closest Item to *key* with a *tolerance* factor.
     /// The return value is tuple of 2 vectors, the first of exact matches
     /// and the second is are approximate matches.
@@ -101,7 +89,46 @@ where
             (Vec::new(), Vec::new())
         }
     }
+
+    /// Inserts a new (*key*, *value*) pair into the KB-Tree.
+    pub fn insert(&mut self, key: K, value: V) {
+        if let Some(root) = &mut self.root {
+            root.insert(key, value);
+        } else {
+            self.root = Some(BKTreeNode::new(key, value));
+        }
+    }
+
+    /// Returns a new BK-Tree.
+    #[must_use]
+    pub fn new() -> BKTree<K, V> {
+        BKTree { root: None }
+    }
 }
+
+impl Distance for String {
+    fn distance(&self, other: &Self) -> u64 {
+        osa_distance(self, other)
+    }
+}
+
+/// A `BKTree` with string based Key and distance trait optimized for
+/// capturing spelling and typing mistakes.
+///
+/// # Example
+/// ```
+/// use rair_trees::bktree::SpellTree;
+/// let mut tree :SpellTree<&str> = SpellTree::new();
+/// tree.insert("hello".to_string(), &"hello");
+/// tree.insert("hell".to_string(), "&hell");
+/// tree.insert("help".to_string(), &"help");
+/// tree.insert("boy".to_string(), &"boy");
+/// tree.insert("interaction".to_string(), &"interaction");
+/// tree.insert("mistake".to_string(), &"mistake");
+/// let (exact, approx) = tree.find(&"hello".to_string(), 1);
+/// //assert_eq!(exact[0], "hello");
+/// ```
+pub type SpellTree<V> = BKTree<String, V>;
 
 fn osa_distance(str1: &str, str2: &str) -> u64 {
     // Optimal string alignment distance
@@ -135,35 +162,11 @@ fn osa_distance(str1: &str, str2: &str) -> u64 {
     d[a.len()][b.len()]
 }
 
-impl Distance for String {
-    fn distance(&self, other: &Self) -> u64 {
-        osa_distance(self, other)
-    }
-}
-
-/// A `BKTree` with string based Key and distance trait optimized for
-/// capturing spelling and typing mistakes.
-///
-/// # Example
-/// ```
-/// use rair_trees::bktree::SpellTree;
-/// let mut tree :SpellTree<&str> = SpellTree::new();
-/// tree.insert("hello".to_string(), &"hello");
-/// tree.insert("hell".to_string(), "&hell");
-/// tree.insert("help".to_string(), &"help");
-/// tree.insert("boy".to_string(), &"boy");
-/// tree.insert("interaction".to_string(), &"interaction");
-/// tree.insert("mistake".to_string(), &"mistake");
-/// let (exact, approx) = tree.find(&"hello".to_string(), 1);
-/// //assert_eq!(exact[0], "hello");
-/// ```
-pub type SpellTree<V> = BKTree<String, V>;
-
 #[cfg(test)]
 mod bktree_tests {
     use super::*;
     #[test]
-    fn test_dl_distance() {
+    fn dl_distance() {
         let s = [
             ("hello world", "hello world", 0),
             ("hello world", "hello world ", 1),
@@ -174,7 +177,7 @@ mod bktree_tests {
         }
     }
     #[test]
-    fn test_spell_tree_one_level() {
+    fn spell_tree_one_level() {
         let mut tree: SpellTree<&str> = SpellTree::new();
         let words = [
             "hello",

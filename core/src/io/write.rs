@@ -10,12 +10,22 @@ use std::io::prelude::*;
 pub struct WriteHex;
 
 impl Cmd for WriteHex {
+    fn commands(&self) -> &'static [&'static str] {
+        &["writetHex", "wx"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[(
+            "[hexpairs]",
+            "write given hexpairs data into the current address.",
+        )]
+    }
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if args.len() != 1 {
             expect(core, args.len() as u64, 1);
             return;
         }
-        if args[0].len() % 2 != 0 {
+        if !args[0].len().is_multiple_of(2) {
             error_msg(
                 core,
                 "Failed to parse data",
@@ -41,22 +51,22 @@ impl Cmd for WriteHex {
             error_msg(core, "Read Failed", &e.to_string());
         }
     }
-    fn commands(&self) -> &'static [&'static str] {
-        &["writetHex", "wx"]
-    }
-
-    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
-        &[(
-            "[hexpairs]",
-            "write given hexpairs data into the current address.",
-        )]
-    }
 }
 
 #[derive(Default)]
 pub struct WriteToFile;
 
 impl Cmd for WriteToFile {
+    fn commands(&self) -> &'static [&'static str] {
+        &["writeToFile", "wtf"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[(
+            "[size] [filepath]",
+            "write data of size [size] at current location to file identified by [filepath].",
+        )]
+    }
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if args.len() != 2 {
             expect(core, args.len() as u64, 2);
@@ -89,28 +99,16 @@ impl Cmd for WriteToFile {
             error_msg(core, "Failed to write data to file", &err_str);
         }
     }
-
-    fn commands(&self) -> &'static [&'static str] {
-        &["writeToFile", "wtf"]
-    }
-
-    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
-        &[(
-            "[size] [filepath]",
-            "write data of size [size] at current location to file identified by [filepath].",
-        )]
-    }
 }
 
 #[cfg(test)]
-
 mod test_write {
     use super::*;
-    use crate::{writer::Writer, AddrMode, CmdOps};
+    use crate::{writer::Writer, AddrMode, CmdOps as _};
     use rair_io::*;
     use std::fs;
     #[test]
-    fn test_help() {
+    fn help() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -131,7 +129,7 @@ mod test_write {
     }
 
     #[test]
-    fn test_wx() {
+    fn wx() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -152,7 +150,7 @@ mod test_write {
     }
 
     #[test]
-    fn test_wtf() {
+    fn wtf() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -182,7 +180,7 @@ mod test_write {
     }
 
     #[test]
-    fn test_wx_error() {
+    fn wx_error() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -227,7 +225,7 @@ mod test_write {
     }
 
     #[test]
-    fn test_wtf_error() {
+    fn wtf_error() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();

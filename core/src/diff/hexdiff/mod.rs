@@ -1,12 +1,32 @@
 use crate::{error_msg, expect_range, hex::HexWithoutEnv, str_to_num, Cmd, Core, Writer};
 use core::cmp::min;
-use std::io::Write;
+use std::io::Write as _;
 
 pub struct HexDiff {
     inner: HexWithoutEnv,
 }
 
 impl HexDiff {
+    pub fn ascii_space(counter: usize) -> String {
+        let mut s = String::new();
+        for _ in counter..16 {
+            s.push(' ');
+        }
+        s
+    }
+
+    //print enough spaces to padd
+    pub fn hex_space(counter: usize) -> String {
+        let mut s = " ".to_owned();
+        for i in counter..16 {
+            s.push_str("  ");
+            if i % 2 != 0 {
+                s.push(' ');
+            }
+        }
+        s
+    }
+
     pub fn new(core: &mut Core) -> Self {
         Self {
             inner: HexWithoutEnv::new(core),
@@ -60,26 +80,6 @@ impl HexDiff {
             };
             Some((addr1, addr2, size))
         }
-    }
-
-    //print enough spaces to padd
-    pub fn hex_space(counter: usize) -> String {
-        let mut s = " ".to_owned();
-        for i in counter..16 {
-            s.push_str("  ");
-            if i % 2 != 0 {
-                s.push(' ');
-            }
-        }
-        s
-    }
-
-    pub fn ascii_space(counter: usize) -> String {
-        let mut s = String::new();
-        for _ in counter..16 {
-            s.push(' ');
-        }
-        s
     }
 }
 

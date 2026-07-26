@@ -8,17 +8,14 @@ fn project_dir() -> ProjectDirs {
 }
 
 pub fn hist_file() -> PathBuf {
-    let mut history = project_dir().data_dir().to_owned();
-    history.push("history");
-    history
+    project_dir().data_dir().join("history")
 }
 
 #[cfg(test)]
-
 mod test_files {
     use super::*;
     #[test]
-    fn test_history() {
+    fn history() {
         let hist = hist_file();
         assert!(hist.ends_with("history"));
     }

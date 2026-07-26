@@ -6,21 +6,21 @@ use super::tree::IST;
 use crate::rbtree::TreeIterator;
 use alloc::vec::IntoIter;
 
-/// Iterator for [IST]
+/// Iterator for [IST].
 pub struct ISTIterator<K: Ord + Copy, V> {
-    tree_iter: TreeIterator<Interval<K>, AugData<K>, Vec<V>>,
-    lo: Option<K>,
-    hi: Option<K>,
     current_iter: IntoIter<V>,
+    hi: Option<K>,
+    lo: Option<K>,
+    tree_iter: TreeIterator<Interval<K>, AugData<K>, Vec<V>>,
 }
 
 impl<K: Ord + Copy, V> ISTIterator<K, V> {
     pub(crate) fn new(root: IST<K, V>) -> ISTIterator<K, V> {
         ISTIterator {
-            tree_iter: root.root.into_iter(),
-            lo: None,
-            hi: None,
             current_iter: Vec::new().into_iter(),
+            hi: None,
+            lo: None,
+            tree_iter: root.root.into_iter(),
         }
     }
 }

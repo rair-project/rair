@@ -10,15 +10,26 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Default, Serialize, Deserialize)]
 pub(crate) struct RIODescQuery {
-    hndl_to_descs: Vec<Option<RIODesc>>, // key = hndl, value = RIODesc Should it exist
-    paddr_to_hndls: IST<u64, u64>,       // key = closed range, value = hndl
-    next_hndl: u64,                      // nxt handle to be used
     free_hndls: BinaryHeap<Reverse<u64>>, // list of free handles
+    hndl_to_descs: Vec<Option<RIODesc>>,  // key = hndl, value = RIODesc Should it exist
+    next_hndl: u64,                       // nxt handle to be used
+    paddr_to_hndls: IST<u64, u64>,        // key = closed range, value = hndl
 }
 
 impl RIODescQuery {
-    pub(crate) fn new() -> RIODescQuery {
-        Self::default()
+    pub(crate) fn close(&mut self, hndl: u64) -> Result<RIODesc, IoError> {
+        let desc = self.deregister_hndl(hndl)?;
+        self.paddr_to_hndls
+            .delete_envelop(desc.paddr, desc.paddr + desc.size - 1);
+        Ok(desc)
+    }
+    fn deregister_hndl(&mut self, hndl: u64) -> Result<RIODesc, IoError> {
+        if hndl >= self.hndl_to_descs.len() as u64 || self.hndl_to_descs[hndl as usize].is_none() {
+            return Err(IoError::HndlNotFoundError);
+        }
+        let ret = Option::take(&mut self.hndl_to_descs[hndl as usize]).unwrap();
+        self.free_hndls.push(Reverse(hndl));
+        Ok(ret)
     }
     // under the assumption that we will always have a free handle! I mean who can open 2^64 files!
     fn get_new_hndl(&mut self) -> u64 {
@@ -31,96 +42,6 @@ impl RIODescQuery {
         }
         result
     }
-    fn register_handle(
-        &mut self,
-        plugin: &mut dyn RIOPlugin,
-        uri: &str,
-        flags: IoMode,
-    ) -> Result<u64, IoError> {
-        let mut desc = RIODesc::open(plugin, uri, flags)?;
-        let hndl = self.get_new_hndl();
-        desc.hndl = hndl;
-        if hndl < self.hndl_to_descs.len() as u64 {
-            self.hndl_to_descs[hndl as usize] = Some(desc);
-        } else {
-            self.hndl_to_descs.push(Some(desc));
-        }
-        Ok(hndl)
-    }
-    fn deregister_hndl(&mut self, hndl: u64) -> Result<RIODesc, IoError> {
-        if hndl >= self.hndl_to_descs.len() as u64 || self.hndl_to_descs[hndl as usize].is_none() {
-            return Err(IoError::HndlNotFoundError);
-        }
-        let ret = Option::take(&mut self.hndl_to_descs[hndl as usize]).unwrap();
-        self.free_hndls.push(Reverse(hndl));
-        Ok(ret)
-    }
-    pub(crate) fn close(&mut self, hndl: u64) -> Result<RIODesc, IoError> {
-        let desc = self.deregister_hndl(hndl)?;
-        self.paddr_to_hndls
-            .delete_envelop(desc.paddr, desc.paddr + desc.size - 1);
-        Ok(desc)
-    }
-    pub(crate) fn register_open(
-        &mut self,
-        plugin: &mut dyn RIOPlugin,
-        uri: &str,
-        flags: IoMode,
-    ) -> Result<u64, IoError> {
-        let hndl = self.register_handle(plugin, uri, flags)?;
-        let mut lo = 0;
-        let size = self.hndl_to_descs[hndl as usize].as_ref().unwrap().size;
-        loop {
-            let overlaps = self.paddr_to_hndls.overlap(lo, lo + size - 1);
-            if overlaps.is_empty() {
-                break;
-            }
-            let last_hndl = *overlaps[overlaps.len() - 1];
-            let last = self.hndl_to_descs[last_hndl as usize].as_ref().unwrap();
-            lo = last.paddr + last.size;
-        }
-        self.hndl_to_descs[hndl as usize].as_mut().unwrap().paddr = lo;
-        self.paddr_to_hndls.insert(lo, lo + size - 1, hndl);
-        Ok(hndl)
-    }
-
-    pub(crate) fn register_open_default(
-        &mut self,
-        plugin: &mut dyn RIOPlugin,
-        uri: &str,
-        flags: IoMode,
-    ) -> Result<u64, IoError> {
-        let hndl = self.register_handle(plugin, uri, flags)?;
-        let desc = self.hndl_to_desc(hndl).unwrap();
-        let lo = desc.raddr();
-        let hi = lo + desc.size - 1;
-        if !self.paddr_to_hndls.overlap(lo, hi).is_empty() {
-            self.deregister_hndl(hndl).unwrap();
-            return Err(IoError::AddressesOverlapError);
-        }
-        self.hndl_to_mut_desc(hndl).unwrap().paddr = lo;
-        self.paddr_to_hndls.insert(lo, hi, hndl);
-        Ok(hndl)
-    }
-
-    pub(crate) fn register_open_at(
-        &mut self,
-        plugin: &mut dyn RIOPlugin,
-        uri: &str,
-        flags: IoMode,
-        at: u64,
-    ) -> Result<u64, IoError> {
-        let hndl = self.register_handle(plugin, uri, flags)?;
-        let lo = at;
-        let hi = at + self.hndl_to_descs[hndl as usize].as_ref().unwrap().size - 1;
-        if !self.paddr_to_hndls.overlap(lo, hi).is_empty() {
-            self.deregister_hndl(hndl).unwrap();
-            return Err(IoError::AddressesOverlapError);
-        }
-        self.hndl_to_descs[hndl as usize].as_mut().unwrap().paddr = lo;
-        self.paddr_to_hndls.insert(lo, hi, hndl);
-        Ok(hndl)
-    }
     pub(crate) fn hndl_to_desc(&self, hndl: u64) -> Option<&RIODesc> {
         if hndl >= self.hndl_to_descs.len() as u64 {
             return None;
@@ -132,6 +53,9 @@ impl RIODescQuery {
             return None;
         }
         self.hndl_to_descs[hndl as usize].as_mut()
+    }
+    pub(crate) fn new() -> RIODescQuery {
+        Self::default()
     }
     // Returns Option<Vec<hndl, start, size>>
     pub(crate) fn paddr_range_to_hndl(
@@ -193,19 +117,95 @@ impl RIODescQuery {
         }
         ranged_hndl
     }
+    fn register_handle(
+        &mut self,
+        plugin: &mut dyn RIOPlugin,
+        uri: &str,
+        flags: IoMode,
+    ) -> Result<u64, IoError> {
+        let mut desc = RIODesc::open(plugin, uri, flags)?;
+        let hndl = self.get_new_hndl();
+        desc.hndl = hndl;
+        if hndl < self.hndl_to_descs.len() as u64 {
+            self.hndl_to_descs[hndl as usize] = Some(desc);
+        } else {
+            self.hndl_to_descs.push(Some(desc));
+        }
+        Ok(hndl)
+    }
+    pub(crate) fn register_open(
+        &mut self,
+        plugin: &mut dyn RIOPlugin,
+        uri: &str,
+        flags: IoMode,
+    ) -> Result<u64, IoError> {
+        let hndl = self.register_handle(plugin, uri, flags)?;
+        let mut lo = 0;
+        let size = self.hndl_to_descs[hndl as usize].as_ref().unwrap().size;
+        loop {
+            let overlaps = self.paddr_to_hndls.overlap(lo, lo + size - 1);
+            if overlaps.is_empty() {
+                break;
+            }
+            let last_hndl = *overlaps[overlaps.len() - 1];
+            let last = self.hndl_to_descs[last_hndl as usize].as_ref().unwrap();
+            lo = last.paddr + last.size;
+        }
+        self.hndl_to_descs[hndl as usize].as_mut().unwrap().paddr = lo;
+        self.paddr_to_hndls.insert(lo, lo + size - 1, hndl);
+        Ok(hndl)
+    }
+
+    pub(crate) fn register_open_at(
+        &mut self,
+        plugin: &mut dyn RIOPlugin,
+        uri: &str,
+        flags: IoMode,
+        at: u64,
+    ) -> Result<u64, IoError> {
+        let hndl = self.register_handle(plugin, uri, flags)?;
+        let lo = at;
+        let hi = at + self.hndl_to_descs[hndl as usize].as_ref().unwrap().size - 1;
+        if !self.paddr_to_hndls.overlap(lo, hi).is_empty() {
+            self.deregister_hndl(hndl).unwrap();
+            return Err(IoError::AddressesOverlapError);
+        }
+        self.hndl_to_descs[hndl as usize].as_mut().unwrap().paddr = lo;
+        self.paddr_to_hndls.insert(lo, hi, hndl);
+        Ok(hndl)
+    }
+
+    pub(crate) fn register_open_default(
+        &mut self,
+        plugin: &mut dyn RIOPlugin,
+        uri: &str,
+        flags: IoMode,
+    ) -> Result<u64, IoError> {
+        let hndl = self.register_handle(plugin, uri, flags)?;
+        let desc = self.hndl_to_desc(hndl).unwrap();
+        let lo = desc.raddr();
+        let hi = lo + desc.size - 1;
+        if !self.paddr_to_hndls.overlap(lo, hi).is_empty() {
+            self.deregister_hndl(hndl).unwrap();
+            return Err(IoError::AddressesOverlapError);
+        }
+        self.hndl_to_mut_desc(hndl).unwrap().paddr = lo;
+        self.paddr_to_hndls.insert(lo, hi, hndl);
+        Ok(hndl)
+    }
 }
 
 impl<'a> IntoIterator for &'a RIODescQuery {
-    type Item = &'a RIODesc;
     type IntoIter = Box<dyn Iterator<Item = &'a RIODesc> + 'a>;
+    type Item = &'a RIODesc;
     fn into_iter(self) -> Box<dyn Iterator<Item = &'a RIODesc> + 'a> {
         Box::new(self.hndl_to_descs.iter().filter_map(|desc| desc.as_ref()))
     }
 }
 
 impl<'a> IntoIterator for &'a mut RIODescQuery {
-    type Item = &'a mut RIODesc;
     type IntoIter = Box<dyn Iterator<Item = &'a mut RIODesc> + 'a>;
+    type Item = &'a mut RIODesc;
     fn into_iter(self) -> Box<dyn Iterator<Item = &'a mut RIODesc> + 'a> {
         Box::new(
             self.hndl_to_descs
@@ -277,7 +277,7 @@ mod desc_query_tests {
         assert_eq!(descs.free_hndls.len(), 3);
     }
     #[test]
-    fn test_open_close() {
+    fn open_close() {
         operate_on_files(&test_open_close_cb, &[DATA, DATA, DATA]);
     }
     fn test_open_at_cb(path: &[&Path]) {
@@ -337,7 +337,7 @@ mod desc_query_tests {
         assert_eq!(descs.hndl_to_desc(2).as_ref().unwrap().paddr, 0);
     }
     #[test]
-    fn test_open_at() {
+    fn open_at() {
         operate_on_files(&test_open_at_cb, &[DATA, DATA, DATA]);
     }
 
@@ -369,7 +369,7 @@ mod desc_query_tests {
         assert_eq!(e, IoError::HndlNotFoundError);
     }
     #[test]
-    fn test_failing_open() {
+    fn failing_open() {
         operate_on_files(&test_failing_open_cb, &[DATA, DATA]);
     }
 
@@ -409,7 +409,7 @@ mod desc_query_tests {
     }
 
     #[test]
-    fn test_lookups() {
+    fn lookups() {
         operate_on_files(&test_lookups_cb, &[DATA, DATA, DATA]);
     }
 
@@ -458,7 +458,7 @@ mod desc_query_tests {
     }
 
     #[test]
-    fn test_paddr_range_to_hndl() {
+    fn paddr_range_to_hndl() {
         operate_on_files(&paddr_range_to_hndl_cb, &[DATA, DATA, DATA, DATA]);
     }
 
@@ -479,7 +479,7 @@ mod desc_query_tests {
         }
     }
     #[test]
-    fn test_iter() {
+    fn iter() {
         operate_on_files(&iter_cb, &[DATA, DATA, DATA, DATA]);
     }
     fn paddr_sparce_range_to_hndl_cb(paths: &[&Path]) {
@@ -509,7 +509,7 @@ mod desc_query_tests {
     }
 
     #[test]
-    fn test_paddr_sparce_range_to_hndl() {
+    fn paddr_sparce_range_to_hndl() {
         operate_on_files(&paddr_sparce_range_to_hndl_cb, &[DATA, DATA, DATA, DATA]);
     }
 }

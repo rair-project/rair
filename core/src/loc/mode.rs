@@ -4,7 +4,7 @@ use super::history::History;
 use crate::core::Core;
 use crate::helper::{error_msg, expect, AddrMode, MRc};
 use crate::Cmd;
-use yansi::Paint;
+use yansi::Paint as _;
 #[derive(Default)]
 pub struct Mode {
     history: MRc<History>,
@@ -17,6 +17,16 @@ impl Mode {
 }
 
 impl Cmd for Mode {
+    fn commands(&self) -> &'static [&'static str] {
+        &["mode", "m"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[
+            ("vir", "Set view mode to virtual address space."),
+            ("phy", "Set view mode to physical address space."),
+        ]
+    }
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if args.len() != 1 {
             expect(core, args.len() as u64, 1);
@@ -49,28 +59,18 @@ impl Cmd for Mode {
             error_msg(core, "Invalid Mode", &msg);
         }
     }
-    fn commands(&self) -> &'static [&'static str] {
-        &["mode", "m"]
-    }
-
-    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
-        &[
-            ("vir", "Set view mode to virtual address space."),
-            ("phy", "Set view mode to physical address space."),
-        ]
-    }
 }
 
 #[cfg(test)]
 mod test_mode {
     use super::*;
-    use crate::{writer::Writer, CmdOps};
+    use crate::{writer::Writer, CmdOps as _};
     use rair_io::*;
     use std::path::Path;
     use test_file::*;
 
     #[test]
-    fn test_docs() {
+    fn docs() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -110,12 +110,12 @@ mod test_mode {
         assert_eq!(core.mode, AddrMode::Phy);
     }
     #[test]
-    fn test_mode() {
+    fn mode() {
         operate_on_file(&test_mode_cb, DATA);
     }
 
     #[test]
-    fn test_mode_errors() {
+    fn mode_errors() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();

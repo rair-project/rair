@@ -19,7 +19,7 @@ pub type LeftRightDataTuple<'a, K, A, V> =
 /// This trait is mainly meant to be only implemented for [`RBTree`]
 /// before using the tree.
 pub trait Augment<T: Copy> {
-    /// Recalculate the agumented data in the current node
+    /// Recalculate the agumented data in the current node.
     fn sync_custom_aug(&mut self) {}
 }
 
@@ -42,17 +42,6 @@ impl<K: Ord + Copy, A: Copy, V> RBTree<K, A, V>
 where
     RBTree<K, A, V>: Augment<A>,
 {
-    // Implementing wrapper for Option functionality
-    #[inline]
-    pub(super) fn take(&mut self) -> RBTree<K, A, V> {
-        RBTree(self.0.take())
-    }
-    /// Return True if the current node is not null node.
-    #[must_use]
-    pub fn is_node(&self) -> bool {
-        self.0.is_some()
-    }
-
     #[inline]
     pub(super) fn as_mut(&mut self) -> Option<&mut Node<K, A, V>> {
         self.0.as_deref_mut()
@@ -63,211 +52,12 @@ where
         self.0.as_deref()
     }
 
-    #[inline]
-    pub(super) fn unwrap(self) -> Node<K, A, V> {
-        *self.0.unwrap()
-    }
-
-    #[inline]
-    pub(super) fn is_red(&self) -> bool {
-        self.is_node() && self.as_ref().unwrap().is_red()
-    }
-
-    /// Returns copy of key of the current Tree node
-    /// # Panics
-    /// panics if current subtree is not a *node*
-    #[must_use]
-    pub fn key(&self) -> K {
-        self.as_ref().unwrap().key
-    }
-
-    /// Changes the *`aug_data`* stored in the current Tree node.
-    /// # Panics
-    /// panics if current subtree is not a *node*.
-    pub fn set_aug_data(&mut self, aug_data: A) {
-        self.as_mut().unwrap().aug_data = aug_data;
-    }
-
     /// Returns *`aug_data`* stored in the current Tree node.
     /// # Panics
-    /// panics if current subtree is not a *node*
+    /// panics if current subtree is not a *node.*
     #[must_use]
     pub fn aug_data(&self) -> A {
         self.as_ref().unwrap().aug_data
-    }
-
-    /// Changes the *data* stored in the current Tree node.
-    /// # Panics
-    /// panics if current subtree is not a *node*.
-    pub fn set_data(&mut self, data: V) {
-        self.as_mut().unwrap().data = data;
-    }
-
-    /// Returns data stored in the current Tree node.
-    /// # Panics
-    /// panics if current subtree is not a *node*
-    #[must_use]
-    pub fn data(self) -> V {
-        self.unwrap().data
-    }
-    /// Returns a tuple of tree elements: a mutable reference to left node,
-    /// mutable right node and mutable referent to the value stored
-    /// inside the current node. The reason such functionality might be
-    /// desired, is when user wants to keep mutual reference of at
-    /// least any 2 of either left node, right node or data.
-    /// [`left_mut()`](struct.RBTree.html#method.left_mut),
-    /// [`right_mut()`](struct.RBTree.html#method.right_mut)
-    /// and [`data_mut()`](struct.RBTree.html#method.data_mut) will not
-    /// work because rust does not support partial
-    /// borrowing [yet](https://github.com/rust-lang/rfcs/issues/1215).
-    pub fn mut_me(&mut self) -> LeftRightDataTuple<'_, K, A, V> {
-        let node = self.as_mut().unwrap();
-        (&mut node.left, &mut node.right, &mut node.data)
-    }
-    /// Returns non-mutable reference to data stored in the current Tree node
-    /// # Panics
-    /// panics if current subtree is not a *node*
-    #[must_use]
-    pub fn data_ref(&self) -> &V {
-        &self.as_ref().unwrap().data
-    }
-
-    /// Returns mutable reference to data stored in the current Tree node
-    /// # Panics
-    /// panics if current subtree is not a *node*
-    pub fn data_mut(&mut self) -> &mut V {
-        &mut self.as_mut().unwrap().data
-    }
-
-    /// Set the left subtree of the current Node.
-    /// # Panics
-    /// panics if current subtree is not a *node*.
-    pub fn set_left(&mut self, subtree: RBTree<K, A, V>) {
-        self.as_mut().unwrap().left = subtree;
-    }
-
-    /// Returns the left subtree after ripping it from the current node.
-    /// # Panics
-    /// panics if current subtree is not a *node*
-    #[must_use]
-    pub fn left(&mut self) -> RBTree<K, A, V> {
-        self.as_mut().unwrap().left.take()
-    }
-
-    /// Returns a non-mutable reference to left subtree.
-    /// # Panics
-    /// panics if current subtree is not a *node*
-    #[must_use]
-    pub fn left_ref(&self) -> &RBTree<K, A, V> {
-        &self.as_ref().unwrap().left
-    }
-
-    /// Returns a mutable reference to left subtree.
-    /// # Panics
-    /// panics if current subtree is not a *node*
-    pub fn left_mut(&mut self) -> &mut RBTree<K, A, V> {
-        &mut self.as_mut().unwrap().left
-    }
-
-    /// Set the right subtree of the current Node.
-    /// # Panics
-    /// panics if current subtree is not a *node*.
-    pub fn set_right(&mut self, subtree: RBTree<K, A, V>) {
-        self.as_mut().unwrap().right = subtree;
-    }
-
-    /// Returns the right subtree after ripping it from the current node.
-    /// # Panics
-    /// panics if current subtree is not a *node*
-    #[must_use]
-    pub fn right(&mut self) -> RBTree<K, A, V> {
-        self.as_mut().unwrap().right.take()
-    }
-
-    /// Returns a non-mutable reference to right subtree.
-    /// # Panics
-    /// panics if current subtree is not a *node*
-    #[must_use]
-    pub fn right_ref(&self) -> &RBTree<K, A, V> {
-        &self.as_ref().unwrap().right
-    }
-
-    /// Returns a mutable reference to right subtree.
-    /// # Panics
-    /// panics if current subtree is not a *node*
-    pub fn right_mut(&mut self) -> &mut RBTree<K, A, V> {
-        &mut self.as_mut().unwrap().right
-    }
-
-    /// Returns new Red Black Tree
-    /// # Example
-    /// ```
-    /// use rair_trees::rbtree::*;
-    /// #[derive(Copy, Clone)]
-    /// struct PlaceHolder;
-    /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
-    /// type Tree = RBTree<u64, PlaceHolder,  &'static str>;
-    /// let my_tree = Tree::new();
-    /// ```
-    #[must_use]
-    pub fn new() -> RBTree<K, A, V> {
-        RBTree(None)
-    }
-
-    /// Returns the number of elements in the tree
-    /// # Example
-    /// ```
-    /// use rair_trees::rbtree::*;
-    /// #[derive(Copy, Clone)]
-    /// struct PlaceHolder;
-    /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
-    /// type Tree = RBTree<u64, PlaceHolder,  &'static str>;
-    /// let mut rbtree = Tree::new();
-    /// assert_eq!(rbtree.size(), 0);
-    /// rbtree.insert(0, PlaceHolder, "Zero");
-    /// assert_eq!(rbtree.size(), 1);
-    /// rbtree.insert(1, PlaceHolder, "One");
-    /// assert_eq!(rbtree.size(), 2);
-    /// rbtree.insert(2, PlaceHolder, "Two");
-    /// assert_eq!(rbtree.size(), 3);
-    /// ```
-    #[must_use]
-    pub fn size(&self) -> u64 {
-        if let Some(node) = &self.0 {
-            node.size()
-        } else {
-            0
-        }
-    }
-
-    /// 0 will be returned in case of empty tree. If tree has nodes, then *`get_level`*
-    /// returns 1 + the number of connections between root and the farthest node from it.
-    /// # Example
-    /// ```
-    /// use rair_trees::rbtree::*;
-    /// #[derive(Copy, Clone)]
-    /// struct PlaceHolder;
-    /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
-    /// type Tree = RBTree<u64, PlaceHolder,  &'static str>;
-    /// let mut rbtree = Tree::new();
-    /// assert_eq!(rbtree.get_level(), 0);
-    /// for i in 0..1024 {
-    ///     rbtree.insert(i, PlaceHolder, "Random Value");
-    /// }
-    /// assert!(rbtree.get_level() >= 10 && rbtree.get_level() <= 20);
-    /// ```
-    #[must_use]
-    pub fn get_level(&self) -> u64 {
-        if let Some(node) = self.as_ref() {
-            node.get_level()
-        } else {
-            0
-        }
-    }
-
-    pub(crate) fn sync_aug(&mut self) {
-        self.as_mut().unwrap().sync_builtin_aug();
-        self.sync_custom_aug();
     }
 
     fn balance(mut self) -> Self {
@@ -284,25 +74,67 @@ where
         self
     }
 
-    fn insert_not_root(mut self, key: K, aug_data: A, data: V) -> RBTree<K, A, V> {
-        if !self.is_node() {
-            return Node::new(key, aug_data, data).into();
-        }
-        match key.cmp(&self.key()) {
-            Ordering::Equal => self.set_data(data),
-            Ordering::Greater => {
-                let right = self.right();
-                self.set_right(right.insert_not_root(key, aug_data, data));
-            }
-            Ordering::Less => {
-                let left = self.left();
-                self.set_left(left.insert_not_root(key, aug_data, data));
-            }
-        }
-        self = self.balance();
-        self
+    /// Returns data stored in the current Tree node.
+    /// # Panics
+    /// panics if current subtree is not a *node.*
+    #[must_use]
+    pub fn data(self) -> V {
+        self.unwrap().data
     }
+
+    /// Returns mutable reference to data stored in the current Tree node.
+    /// # Panics
+    /// panics if current subtree is not a *node.*
+    pub fn data_mut(&mut self) -> &mut V {
+        &mut self.as_mut().unwrap().data
+    }
+
+    /// Returns non-mutable reference to data stored in the current Tree node.
+    /// # Panics
+    /// panics if current subtree is not a *node.*
+    #[must_use]
+    pub fn data_ref(&self) -> &V {
+        &self.as_ref().unwrap().data
+    }
+
+    /// Deletes tree node represented by *key*. The return
+    /// value is data stored there.
+    ///
+    /// # Panics
+    /// Panics if the tree is empty (has no root node).
+    ///
+    /// # Example
+    /// ```
+    /// use rair_trees::rbtree::*;
+    /// #[derive(Copy, Clone)]
+    /// struct PlaceHolder;
+    /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
+    /// type Tree = RBTree<u64, PlaceHolder,  &'static str>;
+    /// let mut rbtree = Tree::new();
+    /// rbtree.insert(10, PlaceHolder, "First Insertion");
+    /// rbtree.insert(15, PlaceHolder, "Second Insertion");
+    /// assert_eq!(rbtree.delete(10).unwrap(), "First Insertion");
+    /// assert_eq!(rbtree.delete(15).unwrap(), "Second Insertion");
+    /// ```
+    pub fn delete(&mut self, key: K) -> Option<V> {
+        if !self.left_ref().is_red() && !self.right_ref().is_red() {
+            self.as_mut().unwrap().color = Color::Red;
+        }
+        let (tree, result) = self.take().delete_random_node(key);
+        *self = tree;
+        if self.is_node() {
+            self.as_mut().unwrap().color = Color::Black;
+        }
+        result
+    }
+
     /// Deletes the minimum value in the tree and returns the data stored in that node.
+    ///
+    /// # Panics
+    /// Calling this on an empty tree simply returns [`None`]; all internal
+    /// unwraps are guarded by node-existence checks, so this only panics if
+    /// the tree's internal red-black invariants are violated (considered a
+    /// bug).
     ///
     /// # Example
     /// ```
@@ -335,9 +167,112 @@ where
         result.1
     }
 
+    fn delete_min_not_root(mut self) -> (Self, Option<V>) {
+        if !self.left_ref().is_node() {
+            return (self.left(), Some(self.data()));
+        }
+
+        if !self.left_ref().is_red() && !self.left_ref().left_ref().is_red() {
+            self = self.unwrap().move_red_left().into();
+        }
+        let (new_left, deleted_value) = self.left().delete_min_not_root();
+        self.set_left(new_left);
+        self = self.balance();
+        (self, deleted_value)
+    }
+
+    fn delete_random_node(mut self, key: K) -> (RBTree<K, A, V>, Option<V>) {
+        if !self.is_node() {
+            return (self, None);
+        }
+        let mut result;
+        if key < self.key() {
+            if !self.left_ref().is_red()
+                && self.left_ref().is_node()
+                && !self.left_ref().left_ref().is_red()
+            {
+                self = self.unwrap().move_red_left().into();
+            }
+            result = self.left().delete_random_node(key);
+            self.set_left(result.0);
+            result.0 = self;
+        } else {
+            if self.left_ref().is_red() {
+                self = self.unwrap().rotate_right().into();
+            }
+            if key == self.key() && !self.right_ref().is_node() {
+                return (RBTree::new(), Some(self.data()));
+            }
+            // do we really need self.right().is_node()
+            if !self.right_ref().is_red()
+                && self.right_ref().is_node()
+                && !self.right_ref().left_ref().is_red()
+            {
+                self = self.unwrap().move_red_right().into();
+            }
+            if self.key() == key {
+                let mut right = self.right();
+                let x = right.node_min().as_mut().unwrap();
+                self.as_mut().unwrap().key = x.key;
+                self.as_mut().unwrap().aug_data = x.aug_data;
+                mem::swap(&mut self.as_mut().unwrap().data, &mut x.data);
+                result = right.delete_min_not_root();
+                self.set_right(result.0);
+                result.0 = self;
+            } else {
+                result = self.right().delete_random_node(key);
+                self.set_right(result.0);
+                result.0 = self;
+            }
+        }
+        result.0 = result.0.balance();
+        result
+    }
+
+    /// Force recalculating all agumented data from node matching *key* up to the root node.
+    pub fn force_sync_aug(&mut self, key: K) {
+        if !self.is_node() {
+            return;
+        }
+        match key.cmp(&self.key()) {
+            Ordering::Greater => self.right_mut().force_sync_aug(key),
+            Ordering::Less => self.left_mut().force_sync_aug(key),
+            Ordering::Equal => (),
+        }
+        self.sync_aug();
+    }
+
+    /// 0 will be returned in case of empty tree. If tree has nodes, then *`get_level`*
+    /// returns 1 + the number of connections between root and the farthest node from it.
+    /// # Example
+    /// ```
+    /// use rair_trees::rbtree::*;
+    /// #[derive(Copy, Clone)]
+    /// struct PlaceHolder;
+    /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
+    /// type Tree = RBTree<u64, PlaceHolder,  &'static str>;
+    /// let mut rbtree = Tree::new();
+    /// assert_eq!(rbtree.get_level(), 0);
+    /// for i in 0..1024 {
+    ///     rbtree.insert(i, PlaceHolder, "Random Value");
+    /// }
+    /// assert!(rbtree.get_level() >= 10 && rbtree.get_level() <= 20);
+    /// ```
+    #[must_use]
+    pub fn get_level(&self) -> u64 {
+        if let Some(node) = self.as_ref() {
+            node.get_level()
+        } else {
+            0
+        }
+    }
+
     /// Inserts *data* associated with *key* into tree. *insert* does not support
     /// duplicated key. In case of inserting into an already existing key, the old
     /// *data* will silently be repalced by the new *data*.
+    /// # Panics
+    /// Insertion always produces a root node, so the internal unwrap of the
+    /// root only panics if that invariant is broken (considered a bug).
     /// # Example
     /// ```
     /// use rair_trees::rbtree::*;
@@ -357,18 +292,136 @@ where
         *self = self.take().insert_not_root(key, aug_data, data);
         self.as_mut().unwrap().color = Color::Black;
     }
-    /// Force recalculating all agumented data from node matching *key* up to the root node.
-    pub fn force_sync_aug(&mut self, key: K) {
+
+    fn insert_not_root(mut self, key: K, aug_data: A, data: V) -> RBTree<K, A, V> {
         if !self.is_node() {
-            return;
+            return Node::new(key, aug_data, data).into();
         }
         match key.cmp(&self.key()) {
-            Ordering::Greater => self.right_mut().force_sync_aug(key),
-            Ordering::Less => self.left_mut().force_sync_aug(key),
-            Ordering::Equal => (),
+            Ordering::Equal => self.set_data(data),
+            Ordering::Greater => {
+                let right = self.right();
+                self.set_right(right.insert_not_root(key, aug_data, data));
+            }
+            Ordering::Less => {
+                let left = self.left();
+                self.set_left(left.insert_not_root(key, aug_data, data));
+            }
         }
-        self.sync_aug();
+        self = self.balance();
+        self
     }
+
+    /// Return True if the current node is not null node.
+    #[must_use]
+    pub fn is_node(&self) -> bool {
+        self.0.is_some()
+    }
+
+    #[inline]
+    pub(super) fn is_red(&self) -> bool {
+        self.is_node() && self.as_ref().unwrap().is_red()
+    }
+
+    #[must_use]
+    pub fn iter(&self) -> TreeRefIterator<'_, K, A, V> {
+        <&Self as IntoIterator>::into_iter(self)
+    }
+
+    /// Returns copy of key of the current Tree node.
+    /// # Panics
+    /// panics if current subtree is not a *node.*
+    #[must_use]
+    pub fn key(&self) -> K {
+        self.as_ref().unwrap().key
+    }
+
+    /// Returns the left subtree after ripping it from the current node.
+    /// # Panics
+    /// panics if current subtree is not a *node.*
+    #[must_use]
+    pub fn left(&mut self) -> RBTree<K, A, V> {
+        self.as_mut().unwrap().left.take()
+    }
+
+    /// Returns a mutable reference to left subtree.
+    /// # Panics
+    /// panics if current subtree is not a *node.*
+    pub fn left_mut(&mut self) -> &mut RBTree<K, A, V> {
+        &mut self.as_mut().unwrap().left
+    }
+
+    /// Returns a non-mutable reference to left subtree.
+    /// # Panics
+    /// panics if current subtree is not a *node.*
+    #[must_use]
+    pub fn left_ref(&self) -> &RBTree<K, A, V> {
+        &self.as_ref().unwrap().left
+    }
+
+    /// Returns a tuple of tree elements: a mutable reference to left node,
+    /// mutable right node and mutable referent to the value stored
+    /// inside the current node. The reason such functionality might be
+    /// desired, is when user wants to keep mutual reference of at
+    /// least any 2 of either left node, right node or data.
+    /// [`left_mut()`](struct.RBTree.html#method.left_mut),
+    /// [`right_mut()`](struct.RBTree.html#method.right_mut)
+    /// and [`data_mut()`](struct.RBTree.html#method.data_mut) will not
+    /// work because rust does not support partial
+    /// borrowing [yet](https://github.com/rust-lang/rfcs/issues/1215).
+    /// # Panics
+    /// panics if current subtree is not a *node* (i.e. the tree is empty).
+    pub fn mut_me(&mut self) -> LeftRightDataTuple<'_, K, A, V> {
+        let node = self.as_mut().unwrap();
+        (&mut node.left, &mut node.right, &mut node.data)
+    }
+
+    /// Returns new Red Black Tree.
+    /// # Example
+    /// ```
+    /// use rair_trees::rbtree::*;
+    /// #[derive(Copy, Clone)]
+    /// struct PlaceHolder;
+    /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
+    /// type Tree = RBTree<u64, PlaceHolder,  &'static str>;
+    /// let my_tree = Tree::new();
+    /// ```
+    #[must_use]
+    pub fn new() -> RBTree<K, A, V> {
+        RBTree(None)
+    }
+
+    fn node_min(&mut self) -> &mut RBTree<K, A, V> {
+        if self.left_ref().is_node() {
+            self.left_mut().node_min()
+        } else {
+            self
+        }
+    }
+
+    /// Returns the right subtree after ripping it from the current node.
+    /// # Panics
+    /// panics if current subtree is not a *node.*
+    #[must_use]
+    pub fn right(&mut self) -> RBTree<K, A, V> {
+        self.as_mut().unwrap().right.take()
+    }
+
+    /// Returns a mutable reference to right subtree.
+    /// # Panics
+    /// panics if current subtree is not a *node.*
+    pub fn right_mut(&mut self) -> &mut RBTree<K, A, V> {
+        &mut self.as_mut().unwrap().right
+    }
+
+    /// Returns a non-mutable reference to right subtree.
+    /// # Panics
+    /// panics if current subtree is not a *node.*
+    #[must_use]
+    pub fn right_ref(&self) -> &RBTree<K, A, V> {
+        &self.as_ref().unwrap().right
+    }
+
     /// Returns a non mutable references of the data stored at *key*
     /// #example
     /// ```
@@ -421,56 +474,36 @@ where
         }
         None
     }
-    fn delete_random_node(mut self, key: K) -> (RBTree<K, A, V>, Option<V>) {
-        if !self.is_node() {
-            return (self, None);
-        }
-        let mut result;
-        if key < self.key() {
-            if !self.left_ref().is_red()
-                && self.left_ref().is_node()
-                && !self.left_ref().left_ref().is_red()
-            {
-                self = self.unwrap().move_red_left().into();
-            }
-            result = self.left().delete_random_node(key);
-            self.set_left(result.0);
-            result.0 = self;
-        } else {
-            if self.left_ref().is_red() {
-                self = self.unwrap().rotate_right().into();
-            }
-            if key == self.key() && !self.right_ref().is_node() {
-                return (RBTree::new(), Some(self.data()));
-            }
-            // do we really need self.right().is_node()
-            if !self.right_ref().is_red()
-                && self.right_ref().is_node()
-                && !self.right_ref().left_ref().is_red()
-            {
-                self = self.unwrap().move_red_right().into();
-            }
-            if self.key() == key {
-                let mut right = self.right();
-                let x = right.node_min().as_mut().unwrap();
-                self.as_mut().unwrap().key = x.key;
-                self.as_mut().unwrap().aug_data = x.aug_data;
-                mem::swap(&mut self.as_mut().unwrap().data, &mut x.data);
-                result = right.delete_min_not_root();
-                self.set_right(result.0);
-                result.0 = self;
-            } else {
-                result = self.right().delete_random_node(key);
-                self.set_right(result.0);
-                result.0 = self;
-            }
-        }
-        result.0 = result.0.balance();
-        result
+
+    /// Changes the *`aug_data`* stored in the current Tree node.
+    /// # Panics
+    /// panics if current subtree is not a *node*.
+    pub fn set_aug_data(&mut self, aug_data: A) {
+        self.as_mut().unwrap().aug_data = aug_data;
     }
-    /// Deletes tree node represented by *key*. The return
-    /// value is data stored there.
-    ///
+
+    /// Changes the *data* stored in the current Tree node.
+    /// # Panics
+    /// panics if current subtree is not a *node*.
+    pub fn set_data(&mut self, data: V) {
+        self.as_mut().unwrap().data = data;
+    }
+
+    /// Set the left subtree of the current Node.
+    /// # Panics
+    /// panics if current subtree is not a *node*.
+    pub fn set_left(&mut self, subtree: RBTree<K, A, V>) {
+        self.as_mut().unwrap().left = subtree;
+    }
+
+    /// Set the right subtree of the current Node.
+    /// # Panics
+    /// panics if current subtree is not a *node*.
+    pub fn set_right(&mut self, subtree: RBTree<K, A, V>) {
+        self.as_mut().unwrap().right = subtree;
+    }
+
+    /// Returns the number of elements in the tree.
     /// # Example
     /// ```
     /// use rair_trees::rbtree::*;
@@ -479,46 +512,37 @@ where
     /// impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, &'static str> {}
     /// type Tree = RBTree<u64, PlaceHolder,  &'static str>;
     /// let mut rbtree = Tree::new();
-    /// rbtree.insert(10, PlaceHolder, "First Insertion");
-    /// rbtree.insert(15, PlaceHolder, "Second Insertion");
-    /// assert_eq!(rbtree.delete(10).unwrap(), "First Insertion");
-    /// assert_eq!(rbtree.delete(15).unwrap(), "Second Insertion");
+    /// assert_eq!(rbtree.size(), 0);
+    /// rbtree.insert(0, PlaceHolder, "Zero");
+    /// assert_eq!(rbtree.size(), 1);
+    /// rbtree.insert(1, PlaceHolder, "One");
+    /// assert_eq!(rbtree.size(), 2);
+    /// rbtree.insert(2, PlaceHolder, "Two");
+    /// assert_eq!(rbtree.size(), 3);
     /// ```
-
-    pub fn delete(&mut self, key: K) -> Option<V> {
-        if !self.left_ref().is_red() && !self.right_ref().is_red() {
-            self.as_mut().unwrap().color = Color::Red;
-        }
-        let (tree, result) = self.take().delete_random_node(key);
-        *self = tree;
-        if self.is_node() {
-            self.as_mut().unwrap().color = Color::Black;
-        }
-        result
-    }
-    fn node_min(&mut self) -> &mut RBTree<K, A, V> {
-        if self.left_ref().is_node() {
-            self.left_mut().node_min()
-        } else {
-            self
-        }
-    }
-    fn delete_min_not_root(mut self) -> (Self, Option<V>) {
-        if !self.left_ref().is_node() {
-            return (self.left(), Some(self.data()));
-        }
-
-        if !self.left_ref().is_red() && !self.left_ref().left_ref().is_red() {
-            self = self.unwrap().move_red_left().into();
-        }
-        let (new_left, deleted_value) = self.left().delete_min_not_root();
-        self.set_left(new_left);
-        self = self.balance();
-        (self, deleted_value)
-    }
     #[must_use]
-    pub fn iter(&self) -> TreeRefIterator<'_, K, A, V> {
-        <&Self as IntoIterator>::into_iter(self)
+    pub fn size(&self) -> u64 {
+        if let Some(node) = &self.0 {
+            node.size()
+        } else {
+            0
+        }
+    }
+
+    pub(crate) fn sync_aug(&mut self) {
+        self.as_mut().unwrap().sync_builtin_aug();
+        self.sync_custom_aug();
+    }
+
+    // Implementing wrapper for Option functionality
+    #[inline]
+    pub(super) fn take(&mut self) -> RBTree<K, A, V> {
+        RBTree(self.0.take())
+    }
+
+    #[inline]
+    pub(super) fn unwrap(self) -> Node<K, A, V> {
+        *self.0.unwrap()
     }
 }
 
@@ -526,8 +550,8 @@ impl<K: Ord + Copy, A: Copy, V> IntoIterator for RBTree<K, A, V>
 where
     RBTree<K, A, V>: Augment<A>,
 {
-    type Item = (K, A, V);
     type IntoIter = TreeIterator<K, A, V>;
+    type Item = (K, A, V);
     fn into_iter(self) -> TreeIterator<K, A, V> {
         TreeIterator::new(self)
     }
@@ -537,8 +561,8 @@ impl<'a, K: Ord + Copy, A: Copy, V> IntoIterator for &'a RBTree<K, A, V>
 where
     RBTree<K, A, V>: Augment<A>,
 {
-    type Item = (K, A, &'a V);
     type IntoIter = TreeRefIterator<'a, K, A, V>;
+    type Item = (K, A, &'a V);
     fn into_iter(self) -> TreeRefIterator<'a, K, A, V> {
         TreeRefIterator::new(self)
     }
@@ -583,7 +607,7 @@ mod rbtree_tests {
         assert_eq!(blackvec[0], blackvec[blackvec.len() - 1]);
     }
     #[test]
-    fn test_insert() {
+    fn insert() {
         let mut rbtree = RBTree::new();
         assert_eq!(rbtree.get_level(), 0);
         for i in 0..1024 {
@@ -600,7 +624,7 @@ mod rbtree_tests {
     }
 
     #[test]
-    fn test_search() {
+    fn search() {
         let mut rbtree = RBTree::new();
         assert_eq!(rbtree.get_level(), 0);
         for i in 0..1024 {
@@ -612,7 +636,7 @@ mod rbtree_tests {
         assert_eq!(rbtree.search(1024), None);
     }
     #[test]
-    fn test_delete() {
+    fn delete() {
         let mut rbtree = RBTree::new();
         for i in 0..10 {
             rbtree.insert(i, PlaceHolder, i);
@@ -642,7 +666,7 @@ mod rbtree_tests {
     }
 
     #[test]
-    fn test_delete_min() {
+    fn delete_min() {
         let mut rbtree = RBTree::new();
         assert_eq!(rbtree.delete_min(), None);
         for i in 0..2000 {
@@ -655,7 +679,7 @@ mod rbtree_tests {
     }
 
     #[test]
-    fn test_iter() {
+    fn iter() {
         let mut rbtree = RBTree::new();
         for i in 0..2000 {
             rbtree.insert(i, PlaceHolder, i);
@@ -666,7 +690,7 @@ mod rbtree_tests {
         }
     }
     #[test]
-    fn test_iter_ref() {
+    fn iter_ref() {
         let mut rbtree = RBTree::new();
         for i in 0..2000 {
             rbtree.insert(i, PlaceHolder, i);
@@ -678,7 +702,7 @@ mod rbtree_tests {
     }
 
     #[test]
-    fn test_iter_empty() {
+    fn iter_empty() {
         // I am fully aware that the assers will never be evaluated.
         // The point here is that at some point in time, iterating over
         // empty tree, triggered a bug that crashed.
@@ -689,7 +713,7 @@ mod rbtree_tests {
         }
     }
     #[test]
-    fn test_iter_ref_empty() {
+    fn iter_ref_empty() {
         // I am fully aware that the assers will never be evaluated.
         // The point here is that at some point in time, iterating over
         // empty tree, triggered a bug that crashed.

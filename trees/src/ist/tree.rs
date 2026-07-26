@@ -1,12 +1,12 @@
 //! Augmented Interval Search Tree
 //! The plan is to make it self balancing tree
 //! implemented using  left-leaning red-black tree:
-//! <https://www.cs.princeton.edu>/~rs/talks/LLRB/LLRB.pdf
+//! <https://www.cs.princeton.edu>/~rs/talks/LLRB/LLRB.pdf.
 //!
 use super::interval::Interval;
 use super::iter::ISTIterator;
 use super::iter_ref::ISTRefIterator;
-use super::rb_helpers::{AugData, ISTHelpers};
+use super::rb_helpers::{AugData, ISTHelpers as _};
 use crate::rbtree::{Augment, RBTree};
 
 /// Interval Query data type based on augmented binary search tree,
@@ -42,90 +42,6 @@ impl<K: Ord + Copy, V> Augment<AugData<K>> for RBTree<Interval<K>, AugData<K>, V
     }
 }
 impl<K: Ord + Copy, V> IST<K, V> {
-    /// Returns new Interval Search Tree
-    /// # Example
-    /// ```
-    /// use rair_trees::ist::IST;
-    /// let mut ist: IST<u64, &'static str> = IST::new();
-    /// ```
-    #[must_use]
-    pub fn new() -> IST<K, V> {
-        IST {
-            root: RBTree::new(),
-        }
-    }
-
-    /// Returns the number of elements in the IST
-    /// # Example
-    /// ```
-    /// use rair_trees::ist::IST;
-    /// let mut ist: IST<u64, &'static str> = IST::new();
-    /// assert_eq!(ist.size(), 0);
-    /// ist.insert(0, 5, &"[0, 5]");
-    /// assert_eq!(ist.size(), 1);
-    /// ist.insert(30, 34, &"[30, 34]");
-    /// assert_eq!(ist.size(), 2);
-    /// ist.insert(4, 11, &"[4, 11]");
-    ///assert_eq!(ist.size(), 3);
-    /// ```
-    #[must_use]
-    pub fn size(&self) -> u64 {
-        if !self.root.is_node() {
-            return 0;
-        }
-        self.root.aug_data().size
-    }
-
-    /// 0 will be returned in case of empty *IST*. If *IST* has nodes, then *`get_level`*
-    /// returns 1 + the number of connections between root and the farthest node from it.
-    /// # Example
-    /// ```
-    /// use rair_trees::ist::IST;
-    /// let mut ist: IST<u64, &'static str> = IST::new();
-    /// assert_eq!(ist.get_level(), 0);
-    /// ist.insert(4, 11, &"[4, 11]");
-    /// assert_eq!(ist.get_level(), 1);
-    /// ist.insert(30, 34, &"[30, 34]");
-    /// assert_eq!(ist.get_level(), 2);
-    /// ist.insert(0, 5, &"[0, 5]");
-    /// assert_eq!(ist.get_level(), 2);
-    /// ist.insert(0, 3, &"[0, 3]");
-    /// assert_eq!(ist.get_level(), 3);
-    /// ```
-    #[must_use]
-    pub fn get_level(&self) -> u64 {
-        self.root.get_level()
-    }
-
-    /// Inserts an *element* into closed interval *[ lo, hi ]*. Insertion guarantess
-    /// <math xmlns="http://www.w3.org/1998/Math/MathML"><mrow><mi>&#x1D4AA;</mi>
-    /// <mrow><mo form="prefix">(</mo><mi>log</mi><mi>n</mi><mo form="postfix">)
-    /// </mo></mrow></mrow></math>
-    /// time. Insertion supports inserting multiple time into the same interval,
-    ///  and keeps track of all inserted data.
-    /// # Panics
-    /// Panics if *lo* > *hi*
-    /// # Example
-    /// ```
-    /// use rair_trees::ist::IST;
-    /// let mut ist = IST::new();
-    /// ist.insert(0,10, "First Insertion");
-    ///assert_eq!(ist.at(0), [&"First Insertion"]);
-    /// assert_eq!(ist.at(2), [&"First Insertion"]);
-    /// assert_eq!(ist.at(10), [&"First Insertion"]);
-    /// ```
-    pub fn insert(&mut self, lo: K, hi: K, data: V) {
-        assert!(lo <= hi);
-        let interval = Interval::new(lo, hi);
-        let aug_data = AugData::new(interval, 1);
-        if let Some(data_vec) = self.root.search_mut(interval) {
-            data_vec.push(data);
-            self.root.force_sync_aug(interval);
-        } else {
-            self.root.insert(interval, aug_data, vec![data]);
-        }
-    }
-
     /// Returns a vector of non mutable references of all values belogning to intervals
     /// that cover *point*. The vector is ordered based on intervals' total order.
     ///
@@ -172,181 +88,6 @@ impl<K: Ord + Copy, V> IST<K, V> {
         self.root.generic_search_mut(point_int, &recurse, &accept)
     }
 
-    /// Returns a vector of non mutable references of all values that belongs to intervals
-    /// that envelop the interval specified by *[ lo, hi ]*. The vector is ordered based
-    /// on intervals' total order.
-    ///
-    /// An interval *[ A, B ]* is said to be envloping interval
-    /// *[ lo, hi ]* IFF *lo ≥ A* and *lo ≤ B* and *hi ≥ A* and *hi ≤ B*.
-    /// # Panics
-    /// Panics if *lo* > *hi*
-    /// # Example
-    /// ```
-    /// use rair_trees::ist::IST;
-    /// let mut ist = IST::new();
-    /// ist.insert(0,10, "First Insertion");
-    /// ist.insert(5, 20, "Second Insertion");
-    /// assert_eq!(ist.envelop(8, 12), [&"Second Insertion"]);
-    /// assert_eq!(ist.envelop(5, 10), [&"First Insertion", &"Second Insertion"]);
-    /// assert_eq!(ist.envelop(0, 3), [&"First Insertion"]);
-    /// let empty_vector :Vec<&&str> = Vec::new();
-    /// assert_eq!(ist.envelop(0, 30), empty_vector);
-    /// ```
-    pub fn envelop(&self, lo: K, hi: K) -> Vec<&V> {
-        assert!(lo <= hi);
-        if !self.root.is_node() {
-            return Vec::new();
-        }
-        let int = Interval::new(lo, hi);
-        let accept = |big: &Interval<K>, small: &Interval<K>| big.envelop(small);
-        let recruse = |big: &AugData<K>, small: &Interval<K>| big.interval.envelop(small);
-        self.root.generic_search(int, &recruse, &accept)
-    }
-
-    /// Returns a vector of mutable references of all values that belongs to intervals
-    /// that envelop the interval specified by *[ lo, hi ]*. The vector is ordered based
-    /// on intervals' total order.
-    ///
-    /// An interval *[ A, B ]* is said to be envloping interval
-    /// *[ lo, hi ]* IFF *lo ≥ A* and *lo ≤ B* and *hi ≥ A* and *hi ≤ B*.
-    /// # Panics
-    /// Panics if *lo* > *hi*
-    /// # Example
-    /// ```
-    /// use rair_trees::ist::IST;
-    /// let mut ist = IST::new();
-    /// ist.insert(0,10, String::from("First Insertion"));
-    /// ist.envelop_mut(7, 10)[0].push_str(" Modified");
-    /// assert_eq!(ist.envelop(2, 4), [&"First Insertion Modified"]);
-    /// ```
-    pub fn envelop_mut(&mut self, lo: K, hi: K) -> Vec<&mut V> {
-        assert!(lo <= hi);
-        if !self.root.is_node() {
-            return Vec::new();
-        }
-        let int = Interval::new(lo, hi);
-        let accept = |big: &Interval<K>, small: &Interval<K>| big.envelop(small);
-        let recurse = |big: &AugData<K>, small: &Interval<K>| big.interval.envelop(small);
-        self.root.generic_search_mut(int, &recurse, &accept)
-    }
-
-    /// Returns a vector of non mutable references of all values that belongs to intervals
-    /// that is enveloped interval specified by *[ lo, hi ]*. The vector is ordered based
-    /// on intervals' total order.
-    ///
-    /// An interval *[ A, B ]* is said to be envloped by interval
-    /// *[ lo, hi ]* IFF *lo ≤ A* and *lo ≤ B* and *hi ≥ A* and *hi ≥ B*.
-    /// # Panics
-    /// Panics if *lo* > *hi*
-    /// # Example
-    /// ```
-    /// use rair_trees::ist::IST;
-    /// let mut ist = IST::new();
-    /// ist.insert(5,10, "First Insertion");
-    /// ist.insert(15, 20, "Second Insertion");
-    /// assert_eq!(ist.inverse_envelop(0, 12), [&"First Insertion"]);
-    /// assert_eq!(ist.inverse_envelop(0, 20), [&"First Insertion", &"Second Insertion"]);
-    /// assert_eq!(ist.inverse_envelop(12, 21), [&"Second Insertion"]);
-    /// let empty_vector :Vec<&&str> = Vec::new();
-    /// assert_eq!(ist.envelop(0, 7), empty_vector);
-    /// ```
-    pub fn inverse_envelop(&self, lo: K, hi: K) -> Vec<&V> {
-        assert!(lo <= hi);
-        if !self.root.is_node() {
-            return Vec::new();
-        }
-        let int = Interval::new(lo, hi);
-        let accept = |small: &Interval<K>, big: &Interval<K>| big.envelop(small);
-        // There might be a better heurestic to tell if I should recurse left or right
-        let recurse = |aug_data: &AugData<K>, int: &Interval<K>| aug_data.interval.overlap(int);
-        self.root.generic_search(int, &recurse, &accept)
-    }
-
-    /// Returns a vector of non mutable references of all values that belongs to intervals
-    /// that is enveloped interval specified by *[ lo, hi ]*. The vector is ordered based
-    /// on intervals' total order.
-    ///
-    /// An interval *[ A, B ]* is said to be envloped by interval
-    /// *[ lo, hi ]* IFF *lo ≤ A* and *lo ≤ B* and *hi ≥ A* and *hi ≥ B*.
-    /// # Panics
-    /// Panics if *lo* > *hi*
-    /// # Example
-    /// ```
-    /// use rair_trees::ist::IST;
-    /// let mut ist = IST::new();
-    /// ist.insert(2,10, String::from("First Insertion"));
-    /// ist.inverse_envelop_mut(0, 20)[0].push_str(" Modified");
-    /// assert_eq!(ist.envelop(3, 5), [&"First Insertion Modified"]);
-    /// ```
-    pub fn inverse_envelop_mut(&mut self, lo: K, hi: K) -> Vec<&mut V> {
-        assert!(lo <= hi);
-        if !self.root.is_node() {
-            return Vec::new();
-        }
-        let int = Interval::new(lo, hi);
-        let accept = |small: &Interval<K>, big: &Interval<K>| big.envelop(small);
-        // There might be a better heurestic to tell if I should recurse left or right
-        let recurse = |aug_data: &AugData<K>, int: &Interval<K>| aug_data.interval.overlap(int);
-        self.root.generic_search_mut(int, &recurse, &accept)
-    }
-
-    /// Returns a vector of non mutable references of all values that belongs to intervals
-    /// that overlap with the interval specified by *[ lo, hi ]*. The vector is ordered based
-    /// on intervals' total order.
-    ///
-    /// Two interval *[ A, B ]*, *[ lo, hi ]* are said to be overlapping IFF
-    /// *max(A, lo) ≤ min(B, hi)*.
-    /// # Panics
-    /// Panics if *lo* > *hi*
-    /// # Example
-    /// ```
-    /// use rair_trees::ist::IST;
-    /// let mut ist = IST::new();
-    /// ist.insert(0,20, "First Insertion");
-    /// ist.insert(60, 80, "Second Insertion");
-    /// assert_eq!(ist.overlap(40, 70), [&"Second Insertion"]);
-    /// assert_eq!(ist.overlap(10, 40), [&"First Insertion"]);
-    /// assert_eq!(ist.overlap(10, 100), [&"First Insertion", &"Second Insertion"]);
-    /// let empty_vector :Vec<&&str> = Vec::new();
-    /// assert_eq!(ist.envelop(30, 40), empty_vector);
-    /// ```
-    pub fn overlap(&self, lo: K, hi: K) -> Vec<&V> {
-        assert!(lo <= hi);
-        if !self.root.is_node() {
-            return Vec::new();
-        }
-        let int = Interval::new(lo, hi);
-        let accept = |int1: &Interval<K>, int2: &Interval<K>| int1.overlap(int2);
-        let recurse = |aug_data: &AugData<K>, int: &Interval<K>| aug_data.interval.overlap(int);
-        self.root.generic_search(int, &recurse, &accept)
-    }
-    /// Returns a vector of mutable references of all values that belongs to intervals that
-    /// overlap with the interval specified by *[ lo, hi ]*. The vector is ordered based on
-    /// intervals' total order.
-    ///
-    /// Two interval *[ A, B ]*, *[ lo, hi ]* are said to be overlapping IFF
-    /// *max(A, lo) ≤ min(B, hi)*.
-    /// # Panics
-    /// Panics if *lo* > *hi*
-    /// # Example
-    /// ```
-    /// use rair_trees::ist::IST;
-    /// let mut ist = IST::new();
-    /// ist.insert(10, 20, String::from("First Insertion"));
-    /// ist.overlap_mut(7, 13)[0].push_str(" Modified");
-    /// assert_eq!(ist.overlap(18, 25), [&"First Insertion Modified"]);
-    /// ```
-    pub fn overlap_mut(&mut self, lo: K, hi: K) -> Vec<&mut V> {
-        assert!(lo <= hi);
-        if !self.root.is_node() {
-            return Vec::new();
-        }
-        let int = Interval::new(lo, hi);
-        let accept = |int1: &Interval<K>, int2: &Interval<K>| int1.overlap(int2);
-        let recurse = |aug_data: &AugData<K>, int: &Interval<K>| aug_data.interval.overlap(int);
-        self.root.generic_search_mut(int, &recurse, &accept)
-    }
-
     /// Deletes all Intervals that that cover *point*. The returned
     /// data is a vector of data stored inside the deleted intervals.
     ///
@@ -378,7 +119,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// *[ lo, hi ]* IFF *lo ≥ A* and *lo ≤ B* and *hi ≥ A* and *hi ≤ B*.
     ///
     /// # Panics
-    /// Panics if *lo* > *hi*
+    /// Panics if *lo* > *hi.*
     ///
     /// # Example
     ///
@@ -393,7 +134,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// assert_eq!(ist.envelop(20, 25), empty_vec);
     /// ```
     pub fn delete_envelop(&mut self, lo: K, hi: K) -> Vec<V> {
-        assert!(lo <= hi);
+        assert!(lo <= hi, "invalid interval: lo must be <= hi");
         if !self.root.is_node() {
             return Vec::new();
         }
@@ -409,7 +150,7 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// Two interval *[ A, B ]*, *[ lo, hi ]* are said to be overlapping IFF
     /// *max(A, lo) ≤ min(B, hi)*.
     /// # Panics
-    /// Panics if *lo* > *hi*
+    /// Panics if *lo* > *hi.*
     ///
     /// # Example
     /// ```
@@ -423,9 +164,8 @@ impl<K: Ord + Copy, V> IST<K, V> {
     /// let empty_vec: Vec<&&'static str> = Vec::new();
     /// assert_eq!(ist.envelop(20, 25), empty_vec);
     /// ```
-
     pub fn delete_overlap(&mut self, lo: K, hi: K) -> Vec<V> {
-        assert!(lo <= hi);
+        assert!(lo <= hi, "invalid interval: lo must be <= hi");
         if !self.root.is_node() {
             return Vec::new();
         }
@@ -435,23 +175,284 @@ impl<K: Ord + Copy, V> IST<K, V> {
 
         self.root.generic_delete(int, &recurse, &accept)
     }
+
+    /// Returns a vector of non mutable references of all values that belongs to intervals
+    /// that envelop the interval specified by *[ lo, hi ]*. The vector is ordered based
+    /// on intervals' total order.
+    ///
+    /// An interval *[ A, B ]* is said to be envloping interval
+    /// *[ lo, hi ]* IFF *lo ≥ A* and *lo ≤ B* and *hi ≥ A* and *hi ≤ B*.
+    /// # Panics
+    /// Panics if *lo* > *hi.*
+    /// # Example
+    /// ```
+    /// use rair_trees::ist::IST;
+    /// let mut ist = IST::new();
+    /// ist.insert(0,10, "First Insertion");
+    /// ist.insert(5, 20, "Second Insertion");
+    /// assert_eq!(ist.envelop(8, 12), [&"Second Insertion"]);
+    /// assert_eq!(ist.envelop(5, 10), [&"First Insertion", &"Second Insertion"]);
+    /// assert_eq!(ist.envelop(0, 3), [&"First Insertion"]);
+    /// let empty_vector :Vec<&&str> = Vec::new();
+    /// assert_eq!(ist.envelop(0, 30), empty_vector);
+    /// ```
+    pub fn envelop(&self, lo: K, hi: K) -> Vec<&V> {
+        assert!(lo <= hi, "invalid interval: lo must be <= hi");
+        if !self.root.is_node() {
+            return Vec::new();
+        }
+        let int = Interval::new(lo, hi);
+        let accept = |big: &Interval<K>, small: &Interval<K>| big.envelop(small);
+        let recruse = |big: &AugData<K>, small: &Interval<K>| big.interval.envelop(small);
+        self.root.generic_search(int, &recruse, &accept)
+    }
+
+    /// Returns a vector of mutable references of all values that belongs to intervals
+    /// that envelop the interval specified by *[ lo, hi ]*. The vector is ordered based
+    /// on intervals' total order.
+    ///
+    /// An interval *[ A, B ]* is said to be envloping interval
+    /// *[ lo, hi ]* IFF *lo ≥ A* and *lo ≤ B* and *hi ≥ A* and *hi ≤ B*.
+    /// # Panics
+    /// Panics if *lo* > *hi.*
+    /// # Example
+    /// ```
+    /// use rair_trees::ist::IST;
+    /// let mut ist = IST::new();
+    /// ist.insert(0,10, String::from("First Insertion"));
+    /// ist.envelop_mut(7, 10)[0].push_str(" Modified");
+    /// assert_eq!(ist.envelop(2, 4), [&"First Insertion Modified"]);
+    /// ```
+    pub fn envelop_mut(&mut self, lo: K, hi: K) -> Vec<&mut V> {
+        assert!(lo <= hi, "invalid interval: lo must be <= hi");
+        if !self.root.is_node() {
+            return Vec::new();
+        }
+        let int = Interval::new(lo, hi);
+        let accept = |big: &Interval<K>, small: &Interval<K>| big.envelop(small);
+        let recurse = |big: &AugData<K>, small: &Interval<K>| big.interval.envelop(small);
+        self.root.generic_search_mut(int, &recurse, &accept)
+    }
+
+    /// 0 will be returned in case of empty *IST*. If *IST* has nodes, then *`get_level`*
+    /// returns 1 + the number of connections between root and the farthest node from it.
+    /// # Example
+    /// ```
+    /// use rair_trees::ist::IST;
+    /// let mut ist: IST<u64, &'static str> = IST::new();
+    /// assert_eq!(ist.get_level(), 0);
+    /// ist.insert(4, 11, &"[4, 11]");
+    /// assert_eq!(ist.get_level(), 1);
+    /// ist.insert(30, 34, &"[30, 34]");
+    /// assert_eq!(ist.get_level(), 2);
+    /// ist.insert(0, 5, &"[0, 5]");
+    /// assert_eq!(ist.get_level(), 2);
+    /// ist.insert(0, 3, &"[0, 3]");
+    /// assert_eq!(ist.get_level(), 3);
+    /// ```
+    #[must_use]
+    pub fn get_level(&self) -> u64 {
+        self.root.get_level()
+    }
+
+    /// Inserts an *element* into closed interval *[ lo, hi ]*. Insertion guarantess
+    /// <math xmlns="http://www.w3.org/1998/Math/MathML"><mrow><mi>&#x1D4AA;</mi>
+    /// <mrow><mo form="prefix">(</mo><mi>log</mi><mi>n</mi><mo form="postfix">)
+    /// </mo></mrow></mrow></math>
+    /// time. Insertion supports inserting multiple time into the same interval,
+    ///  and keeps track of all inserted data.
+    /// # Panics
+    /// Panics if *lo* > *hi.*
+    /// # Example
+    /// ```
+    /// use rair_trees::ist::IST;
+    /// let mut ist = IST::new();
+    /// ist.insert(0,10, "First Insertion");
+    ///assert_eq!(ist.at(0), [&"First Insertion"]);
+    /// assert_eq!(ist.at(2), [&"First Insertion"]);
+    /// assert_eq!(ist.at(10), [&"First Insertion"]);
+    /// ```
+    pub fn insert(&mut self, lo: K, hi: K, data: V) {
+        assert!(lo <= hi, "invalid interval: lo must be <= hi");
+        let interval = Interval::new(lo, hi);
+        let aug_data = AugData::new(interval, 1);
+        if let Some(data_vec) = self.root.search_mut(interval) {
+            data_vec.push(data);
+            self.root.force_sync_aug(interval);
+        } else {
+            self.root.insert(interval, aug_data, vec![data]);
+        }
+    }
+
+    /// Returns a vector of non mutable references of all values that belongs to intervals
+    /// that is enveloped interval specified by *[ lo, hi ]*. The vector is ordered based
+    /// on intervals' total order.
+    ///
+    /// An interval *[ A, B ]* is said to be envloped by interval
+    /// *[ lo, hi ]* IFF *lo ≤ A* and *lo ≤ B* and *hi ≥ A* and *hi ≥ B*.
+    /// # Panics
+    /// Panics if *lo* > *hi.*
+    /// # Example
+    /// ```
+    /// use rair_trees::ist::IST;
+    /// let mut ist = IST::new();
+    /// ist.insert(5,10, "First Insertion");
+    /// ist.insert(15, 20, "Second Insertion");
+    /// assert_eq!(ist.inverse_envelop(0, 12), [&"First Insertion"]);
+    /// assert_eq!(ist.inverse_envelop(0, 20), [&"First Insertion", &"Second Insertion"]);
+    /// assert_eq!(ist.inverse_envelop(12, 21), [&"Second Insertion"]);
+    /// let empty_vector :Vec<&&str> = Vec::new();
+    /// assert_eq!(ist.envelop(0, 7), empty_vector);
+    /// ```
+    pub fn inverse_envelop(&self, lo: K, hi: K) -> Vec<&V> {
+        assert!(lo <= hi, "invalid interval: lo must be <= hi");
+        if !self.root.is_node() {
+            return Vec::new();
+        }
+        let int = Interval::new(lo, hi);
+        let accept = |small: &Interval<K>, big: &Interval<K>| big.envelop(small);
+        // There might be a better heurestic to tell if I should recurse left or right
+        let recurse = |aug_data: &AugData<K>, int: &Interval<K>| aug_data.interval.overlap(int);
+        self.root.generic_search(int, &recurse, &accept)
+    }
+
+    /// Returns a vector of non mutable references of all values that belongs to intervals
+    /// that is enveloped interval specified by *[ lo, hi ]*. The vector is ordered based
+    /// on intervals' total order.
+    ///
+    /// An interval *[ A, B ]* is said to be envloped by interval
+    /// *[ lo, hi ]* IFF *lo ≤ A* and *lo ≤ B* and *hi ≥ A* and *hi ≥ B*.
+    /// # Panics
+    /// Panics if *lo* > *hi.*
+    /// # Example
+    /// ```
+    /// use rair_trees::ist::IST;
+    /// let mut ist = IST::new();
+    /// ist.insert(2,10, String::from("First Insertion"));
+    /// ist.inverse_envelop_mut(0, 20)[0].push_str(" Modified");
+    /// assert_eq!(ist.envelop(3, 5), [&"First Insertion Modified"]);
+    /// ```
+    pub fn inverse_envelop_mut(&mut self, lo: K, hi: K) -> Vec<&mut V> {
+        assert!(lo <= hi, "invalid interval: lo must be <= hi");
+        if !self.root.is_node() {
+            return Vec::new();
+        }
+        let int = Interval::new(lo, hi);
+        let accept = |small: &Interval<K>, big: &Interval<K>| big.envelop(small);
+        // There might be a better heurestic to tell if I should recurse left or right
+        let recurse = |aug_data: &AugData<K>, int: &Interval<K>| aug_data.interval.overlap(int);
+        self.root.generic_search_mut(int, &recurse, &accept)
+    }
+
     #[must_use]
     pub fn iter(&self) -> ISTRefIterator<'_, K, V> {
         <&Self as IntoIterator>::into_iter(self)
     }
+
+    /// Returns new Interval Search Tree.
+    /// # Example
+    /// ```
+    /// use rair_trees::ist::IST;
+    /// let mut ist: IST<u64, &'static str> = IST::new();
+    /// ```
+    #[must_use]
+    pub fn new() -> IST<K, V> {
+        IST {
+            root: RBTree::new(),
+        }
+    }
+
+    /// Returns a vector of non mutable references of all values that belongs to intervals
+    /// that overlap with the interval specified by *[ lo, hi ]*. The vector is ordered based
+    /// on intervals' total order.
+    ///
+    /// Two interval *[ A, B ]*, *[ lo, hi ]* are said to be overlapping IFF
+    /// *max(A, lo) ≤ min(B, hi)*.
+    /// # Panics
+    /// Panics if *lo* > *hi.*
+    /// # Example
+    /// ```
+    /// use rair_trees::ist::IST;
+    /// let mut ist = IST::new();
+    /// ist.insert(0,20, "First Insertion");
+    /// ist.insert(60, 80, "Second Insertion");
+    /// assert_eq!(ist.overlap(40, 70), [&"Second Insertion"]);
+    /// assert_eq!(ist.overlap(10, 40), [&"First Insertion"]);
+    /// assert_eq!(ist.overlap(10, 100), [&"First Insertion", &"Second Insertion"]);
+    /// let empty_vector :Vec<&&str> = Vec::new();
+    /// assert_eq!(ist.envelop(30, 40), empty_vector);
+    /// ```
+    pub fn overlap(&self, lo: K, hi: K) -> Vec<&V> {
+        assert!(lo <= hi, "invalid interval: lo must be <= hi");
+        if !self.root.is_node() {
+            return Vec::new();
+        }
+        let int = Interval::new(lo, hi);
+        let accept = |int1: &Interval<K>, int2: &Interval<K>| int1.overlap(int2);
+        let recurse = |aug_data: &AugData<K>, int: &Interval<K>| aug_data.interval.overlap(int);
+        self.root.generic_search(int, &recurse, &accept)
+    }
+
+    /// Returns a vector of mutable references of all values that belongs to intervals that
+    /// overlap with the interval specified by *[ lo, hi ]*. The vector is ordered based on
+    /// intervals' total order.
+    ///
+    /// Two interval *[ A, B ]*, *[ lo, hi ]* are said to be overlapping IFF
+    /// *max(A, lo) ≤ min(B, hi)*.
+    /// # Panics
+    /// Panics if *lo* > *hi.*
+    /// # Example
+    /// ```
+    /// use rair_trees::ist::IST;
+    /// let mut ist = IST::new();
+    /// ist.insert(10, 20, String::from("First Insertion"));
+    /// ist.overlap_mut(7, 13)[0].push_str(" Modified");
+    /// assert_eq!(ist.overlap(18, 25), [&"First Insertion Modified"]);
+    /// ```
+    pub fn overlap_mut(&mut self, lo: K, hi: K) -> Vec<&mut V> {
+        assert!(lo <= hi, "invalid interval: lo must be <= hi");
+        if !self.root.is_node() {
+            return Vec::new();
+        }
+        let int = Interval::new(lo, hi);
+        let accept = |int1: &Interval<K>, int2: &Interval<K>| int1.overlap(int2);
+        let recurse = |aug_data: &AugData<K>, int: &Interval<K>| aug_data.interval.overlap(int);
+        self.root.generic_search_mut(int, &recurse, &accept)
+    }
+
+    /// Returns the number of elements in the IST.
+    /// # Example
+    /// ```
+    /// use rair_trees::ist::IST;
+    /// let mut ist: IST<u64, &'static str> = IST::new();
+    /// assert_eq!(ist.size(), 0);
+    /// ist.insert(0, 5, &"[0, 5]");
+    /// assert_eq!(ist.size(), 1);
+    /// ist.insert(30, 34, &"[30, 34]");
+    /// assert_eq!(ist.size(), 2);
+    /// ist.insert(4, 11, &"[4, 11]");
+    ///assert_eq!(ist.size(), 3);
+    /// ```
+    #[must_use]
+    pub fn size(&self) -> u64 {
+        if !self.root.is_node() {
+            return 0;
+        }
+        self.root.aug_data().size
+    }
 }
 
 impl<K: Ord + Copy, V> IntoIterator for IST<K, V> {
-    type Item = (K, K, V);
     type IntoIter = ISTIterator<K, V>;
+    type Item = (K, K, V);
     fn into_iter(self) -> ISTIterator<K, V> {
         ISTIterator::new(self)
     }
 }
 
 impl<'a, K: Ord + Copy, V> IntoIterator for &'a IST<K, V> {
-    type Item = (K, K, &'a V);
     type IntoIter = ISTRefIterator<'a, K, V>;
+    type Item = (K, K, &'a V);
     fn into_iter(self) -> ISTRefIterator<'a, K, V> {
         ISTRefIterator::new(self)
     }
@@ -478,7 +479,7 @@ mod ist_tests {
         assert_eq!(ist.delete_at(10), empty_vec2);
     }
     #[test]
-    fn test_empty_tree() {
+    fn empty_tree() {
         let mut ist = IST::new();
         test_emptiness(&mut ist);
     }
@@ -515,7 +516,7 @@ mod ist_tests {
     }
 
     #[test]
-    fn test_1_node_tree() {
+    fn one_node_tree() {
         let empty_vec: Vec<&&'static str> = Vec::new();
         let mut ist = IST::new();
         ist.insert(10, 30, "[10, 30]");
@@ -540,7 +541,7 @@ mod ist_tests {
     }
 
     #[test]
-    fn test_insert() {
+    fn insert() {
         let mut ist = IST::new();
         ist.insert(25i32, 30i32, "[25, 30]");
         assert_eq!(ist.get_level(), 1);
@@ -556,13 +557,13 @@ mod ist_tests {
         assert_eq!(ist.size(), 4);
     }
     #[test]
-    fn test_n_nodes_size() {
+    fn n_nodes_size() {
         let ist = get_a_good_tree();
         assert_eq!(ist.size(), 9);
         assert_eq!(ist.get_level(), 4);
     }
     #[test]
-    fn test_n_nodes_at() {
+    fn n_nodes_at() {
         let mut ist = get_a_good_tree();
         let empty_vec: Vec<&&'static str> = Vec::new();
 
@@ -575,7 +576,7 @@ mod ist_tests {
         assert_eq!(ist.at_mut(5), empty_vec);
     }
     #[test]
-    fn test_n_nodes_envelop() {
+    fn n_nodes_envelop() {
         let mut ist = get_a_good_tree();
         let empty_vec: Vec<&&'static str> = Vec::new();
 
@@ -594,7 +595,7 @@ mod ist_tests {
         assert_eq!(ist.envelop_mut(4, 9), empty_vec);
     }
     #[test]
-    fn test_n_nodes_inverse_envelop() {
+    fn n_nodes_inverse_envelop() {
         let mut ist = get_a_good_tree();
         let empty_vec: Vec<&&'static str> = Vec::new();
 
@@ -605,7 +606,7 @@ mod ist_tests {
         assert_eq!(ist.inverse_envelop_mut(81, 93), empty_vec);
     }
     #[test]
-    fn test_n_nodes_overlap() {
+    fn n_nodes_overlap() {
         let mut ist = get_a_good_tree();
         let empty_vec: Vec<&&'static str> = Vec::new();
 
@@ -635,7 +636,8 @@ mod ist_tests {
     }
 
     #[test]
-    fn test_n_nodes_delete_envelop() {
+    #[expect(clippy::cognitive_complexity, reason = "long test function")]
+    fn n_nodes_delete_envelop() {
         let mut ist = get_a_good_tree();
         let empty_vec: Vec<&&'static str> = Vec::new();
         assert_eq!(ist.delete_envelop(80, 200), ["[66, 200]"]);
@@ -677,26 +679,26 @@ mod ist_tests {
         assert_eq!(ist.envelop(30, 40), [&"[30, 40]"]);
     }
     #[test]
-    fn test_n_nodes_delete_at() {
+    fn n_nodes_delete_at() {
         let mut ist = get_a_good_tree();
         assert_eq!(ist.delete_at(150), ["[66, 200]"]);
         assert_eq!(ist.size(), 8);
     }
     #[test]
-    fn test_n_nodes_delete_overlap() {
+    fn n_nodes_delete_overlap() {
         let mut ist = get_a_good_tree();
         assert_eq!(ist.delete_overlap(150, 210), ["[66, 200]"]);
         assert_eq!(ist.size(), 8);
     }
     #[test]
-    fn test_dictionary_size() {
+    fn dictionary_size() {
         // FIX #31
         let mut ist = get_a_good_tree();
         ist.insert(50, 60, "Attempt2");
         assert_eq!(ist.size(), 10);
     }
     #[test]
-    fn test_iter() {
+    fn iter() {
         let mut ist = get_a_good_tree();
         ist.insert(50, 60, "Attempt2");
         let mut iter = ist.into_iter();
@@ -715,7 +717,7 @@ mod ist_tests {
     }
 
     #[test]
-    fn test_iter_ref() {
+    fn iter_ref() {
         let mut ist = get_a_good_tree();
         ist.insert(50, 60, "Attempt2");
         let mut iter = (&ist).into_iter();

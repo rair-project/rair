@@ -1,4 +1,4 @@
-//! module for working with hex data
+//! module for working with hex data.
 
 mod helper;
 mod hex_env;

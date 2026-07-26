@@ -2,9 +2,10 @@
 
 use crate::helper::{error_msg, expect, expect_range, is_color, str_to_num};
 use crate::{cmd::Cmd, core::Core};
+use alloc::sync::Arc;
 use rair_io::IoMode;
-use std::io::Write;
-use yansi::Paint;
+use std::io::Write as _;
+use yansi::Paint as _;
 
 #[derive(Default)]
 pub struct ListFiles;
@@ -12,7 +13,7 @@ pub struct ListFiles;
 impl ListFiles {
     pub fn new(core: &mut Core) -> Self {
         //TODO instead of hardcoding command name use it from [`Cmd`]
-        let env = core.env.clone();
+        let env = Arc::clone(&core.env);
         env.write()
             .add_str_with_cb(
                 "files.headerColor",
@@ -70,18 +71,6 @@ impl Cmd for ListFiles {
 #[derive(Default)]
 pub struct OpenFile;
 
-fn parse_perm(p: &str) -> Result<IoMode, String> {
-    let mut perm = IoMode::default();
-    for c in p.to_lowercase().chars() {
-        match c {
-            'r' => perm |= IoMode::READ,
-            'w' => perm |= IoMode::WRITE,
-            'c' => perm |= IoMode::COW,
-            _ => return Err(format!("Unknown Permission: `{c}`")),
-        }
-    }
-    Ok(perm)
-}
 impl Cmd for OpenFile {
     fn commands(&self) -> &'static [&'static str] {
         &["o", "open"]
@@ -167,12 +156,25 @@ impl Cmd for CloseFile {
     }
 }
 
+fn parse_perm(p: &str) -> Result<IoMode, String> {
+    let mut perm = IoMode::default();
+    for c in p.to_lowercase().chars() {
+        match c {
+            'r' => perm |= IoMode::READ,
+            'w' => perm |= IoMode::WRITE,
+            'c' => perm |= IoMode::COW,
+            _ => return Err(format!("Unknown Permission: `{c}`")),
+        }
+    }
+    Ok(perm)
+}
+
 #[cfg(test)]
 mod test_files {
     use super::*;
-    use crate::{writer::Writer, CmdOps};
+    use crate::{writer::Writer, CmdOps as _};
     #[test]
-    fn test_docs() {
+    fn docs() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -197,7 +199,7 @@ mod test_files {
     }
 
     #[test]
-    fn test_open_close_files() {
+    fn open_close_files() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -249,7 +251,7 @@ mod test_files {
     }
 
     #[test]
-    fn test_failing_parsing() {
+    fn failing_parsing() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -285,7 +287,7 @@ mod test_files {
     }
 
     #[test]
-    fn test_arguments_count() {
+    fn arguments_count() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -304,7 +306,7 @@ mod test_files {
     }
 
     #[test]
-    fn test_failed_open_close() {
+    fn failed_open_close() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();

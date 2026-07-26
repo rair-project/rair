@@ -6,13 +6,17 @@ use super::metadata::{
 };
 use core::mem;
 use std::collections::HashMap;
+#[expect(
+    clippy::exhaustive_enums,
+    reason = "environment value kinds are a closed set"
+)]
 #[derive(PartialEq, Debug)]
 pub enum EnvData<'a> {
-    Str(&'a str),
-    U64(u64),
-    I64(i64),
     Bool(bool),
     Color(u8, u8, u8),
+    I64(i64),
+    Str(&'a str),
+    U64(u64),
 }
 impl<'a, T> From<&'a EnvMetaData<T>> for EnvData<'a> {
     fn from(meta: &'a EnvMetaData<T>) -> Self {
@@ -31,280 +35,39 @@ pub struct Environment<T> {
 }
 
 impl<T> Environment<T> {
-    #[must_use]
-    pub fn new() -> Self {
-        Environment {
-            data: HashMap::new(),
-        }
-    }
-    // All exec_*_cb function are guaranteed to be running on the correct type
-    fn exec_str_cb(&self, key: &str, data: &mut T) -> bool {
-        let meta = self.data[key].as_str().unwrap();
-        let val = &meta.data;
-        if let Some(cb) = meta.cb {
-            return cb(key, val, self, data);
-        }
-        true
-    }
-    #[must_use]
-    pub fn contains(&self, key: &str) -> bool {
-        self.data.contains_key(key)
-    }
-    pub fn add_str_with_cb(
-        &mut self,
-        key: &str,
-        val: &str,
-        help: &str,
-        data: &mut T,
-        cb: StrFn<T>,
-    ) -> Result<(), EnvErr> {
+    /// Registers a new boolean environment variable named `key` with default
+    /// value `val` and description `help`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EnvErr::AlreadyExist`] if `key` is already registered.
+    pub fn add_bool(&mut self, key: &str, val: bool, help: &str) -> Result<(), EnvErr> {
         if self.contains(key) {
             return Err(EnvErr::AlreadyExist);
         }
-        let meta = EnvStr {
-            data: val.to_owned(),
-            default: val.to_owned(),
-            help: help.to_owned(),
-            cb: Some(cb),
-        };
-        self.data.insert(key.to_owned(), EnvMetaData::Str(meta));
-        if !self.exec_str_cb(key, data) {
-            self.data.remove(key).unwrap();
-            return Err(EnvErr::CbFailed);
-        }
-        Ok(())
-    }
-
-    pub fn add_str(&mut self, key: &str, val: &str, help: &str) -> Result<(), EnvErr> {
-        if self.contains(key) {
-            return Err(EnvErr::AlreadyExist);
-        }
-        let meta = EnvStr {
-            data: val.to_owned(),
-            default: val.to_owned(),
-            help: help.to_owned(),
+        let meta = EnvBool {
             cb: None,
-        };
-        self.data.insert(key.to_owned(), EnvMetaData::Str(meta));
-        Ok(())
-    }
-
-    pub fn get_str(&self, key: &str) -> Result<&str, EnvErr> {
-        let Some(meta) = self.data.get(key) else {
-            return Err(EnvErr::NotFound);
-        };
-        match meta.as_str() {
-            Some(s) => Ok(&s.data),
-            None => Err(EnvErr::DifferentType),
-        }
-    }
-
-    pub fn set_str(&mut self, key: &str, value: &str, data: &mut T) -> Result<(), EnvErr> {
-        let Some(meta) = self.data.get_mut(key) else {
-            return Err(EnvErr::NotFound);
-        };
-        let mut tmp = value.to_owned();
-        if let Some(s) = meta.mut_str() {
-            mem::swap(&mut tmp, &mut s.data);
-            if !self.exec_str_cb(key, data) {
-                //restore old data
-                let meta = self.data.get_mut(key).unwrap();
-                let s = meta.mut_str().unwrap();
-                mem::swap(&mut s.data, &mut tmp);
-                return Err(EnvErr::CbFailed);
-            }
-            Ok(())
-        } else {
-            Err(EnvErr::DifferentType)
-        }
-    }
-
-    #[must_use]
-    pub fn is_str(&self, key: &str) -> bool {
-        let Some(meta) = self.data.get(key) else {
-            return false;
-        };
-        meta.as_str().is_some()
-    }
-
-    fn exec_u64_cb(&self, key: &str, data: &mut T) -> bool {
-        let meta = self.data[key].as_u64().unwrap();
-        if let Some(cb) = meta.cb {
-            return cb(key, meta.data, self, data);
-        }
-        true
-    }
-
-    pub fn add_u64_with_cb(
-        &mut self,
-        key: &str,
-        val: u64,
-        help: &str,
-        data: &mut T,
-        cb: U64Fn<T>,
-    ) -> Result<(), EnvErr> {
-        if self.contains(key) {
-            return Err(EnvErr::AlreadyExist);
-        }
-        let meta = EnvU64 {
             data: val,
             default: val,
             help: help.to_owned(),
-            cb: Some(cb),
         };
-        self.data.insert(key.to_owned(), EnvMetaData::U64(meta));
-        if !self.exec_u64_cb(key, data) {
-            self.data.remove(key).unwrap();
-            return Err(EnvErr::CbFailed);
-        }
+        self.data.insert(key.to_owned(), EnvMetaData::Bool(meta));
         Ok(())
     }
 
-    pub fn add_u64(&mut self, key: &str, val: u64, help: &str) -> Result<(), EnvErr> {
-        if self.contains(key) {
-            return Err(EnvErr::AlreadyExist);
-        }
-        let meta = EnvU64 {
-            data: val,
-            default: val,
-            help: help.to_owned(),
-            cb: None,
-        };
-        self.data.insert(key.to_owned(), EnvMetaData::U64(meta));
-        Ok(())
-    }
-
-    pub fn get_u64(&self, key: &str) -> Result<u64, EnvErr> {
-        let Some(meta) = self.data.get(key) else {
-            return Err(EnvErr::NotFound);
-        };
-        match meta.as_u64() {
-            Some(s) => Ok(s.data),
-            None => Err(EnvErr::DifferentType),
-        }
-    }
-
-    pub fn set_u64(&mut self, key: &str, value: u64, data: &mut T) -> Result<(), EnvErr> {
-        let Some(meta) = self.data.get_mut(key) else {
-            return Err(EnvErr::NotFound);
-        };
-        let mut tmp = value;
-        if let Some(s) = meta.mut_u64() {
-            mem::swap(&mut tmp, &mut s.data);
-            if !self.exec_u64_cb(key, data) {
-                //restore old data
-                let meta = self.data.get_mut(key).unwrap();
-                let s = meta.mut_u64().unwrap();
-                mem::swap(&mut s.data, &mut tmp);
-                return Err(EnvErr::CbFailed);
-            }
-            Ok(())
-        } else {
-            Err(EnvErr::DifferentType)
-        }
-    }
-
-    #[must_use]
-    pub fn is_u64(&self, key: &str) -> bool {
-        let Some(meta) = self.data.get(key) else {
-            return false;
-        };
-        meta.as_u64().is_some()
-    }
-
-    fn exec_i64_cb(&self, key: &str, data: &mut T) -> bool {
-        let meta = self.data[key].as_i64().unwrap();
-        if let Some(cb) = meta.cb {
-            return cb(key, meta.data, self, data);
-        }
-        true
-    }
-
-    pub fn add_i64_with_cb(
-        &mut self,
-        key: &str,
-        val: i64,
-        help: &str,
-        data: &mut T,
-        cb: I64Fn<T>,
-    ) -> Result<(), EnvErr> {
-        if self.contains(key) {
-            return Err(EnvErr::AlreadyExist);
-        }
-        let meta = EnvI64 {
-            data: val,
-            default: val,
-            help: help.to_owned(),
-            cb: Some(cb),
-        };
-        self.data.insert(key.to_owned(), EnvMetaData::I64(meta));
-        if !self.exec_i64_cb(key, data) {
-            self.data.remove(key).unwrap();
-            return Err(EnvErr::CbFailed);
-        }
-        Ok(())
-    }
-
-    pub fn add_i64(&mut self, key: &str, val: i64, help: &str) -> Result<(), EnvErr> {
-        if self.contains(key) {
-            return Err(EnvErr::AlreadyExist);
-        }
-        let meta = EnvI64 {
-            data: val,
-            default: val,
-            help: help.to_owned(),
-            cb: None,
-        };
-        self.data.insert(key.to_owned(), EnvMetaData::I64(meta));
-        Ok(())
-    }
-
-    pub fn get_i64(&self, key: &str) -> Result<i64, EnvErr> {
-        let Some(meta) = self.data.get(key) else {
-            return Err(EnvErr::NotFound);
-        };
-        match meta.as_i64() {
-            Some(s) => Ok(s.data),
-            None => Err(EnvErr::DifferentType),
-        }
-    }
-
-    pub fn set_i64(&mut self, key: &str, value: i64, data: &mut T) -> Result<(), EnvErr> {
-        let Some(meta) = self.data.get_mut(key) else {
-            return Err(EnvErr::NotFound);
-        };
-        let mut tmp = value;
-        if let Some(s) = meta.mut_i64() {
-            mem::swap(&mut tmp, &mut s.data);
-            if !self.exec_i64_cb(key, data) {
-                //restore old data
-                let meta = self.data.get_mut(key).unwrap();
-                let s = meta.mut_i64().unwrap();
-                mem::swap(&mut s.data, &mut tmp);
-                return Err(EnvErr::CbFailed);
-            }
-            Ok(())
-        } else {
-            Err(EnvErr::DifferentType)
-        }
-    }
-
-    #[must_use]
-    pub fn is_i64(&self, key: &str) -> bool {
-        let Some(meta) = self.data.get(key) else {
-            return false;
-        };
-        meta.as_i64().is_some()
-    }
-
-    fn exec_bool_cb(&self, key: &str, data: &mut T) -> bool {
-        let meta = self.data[key].as_bool().unwrap();
-        if let Some(cb) = meta.cb {
-            return cb(key, meta.data, self, data);
-        }
-        true
-    }
-
+    /// Registers a new boolean environment variable named `key` with default
+    /// value `val`, description `help`, and change-callback `cb`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EnvErr::AlreadyExist`] if `key` is already registered, or
+    /// [`EnvErr::CbFailed`] if `cb` rejects the initial value `val` (in which
+    /// case the variable is not registered).
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the internal metadata storage is inconsistent
+    /// (considered a bug).
     pub fn add_bool_with_cb(
         &mut self,
         key: &str,
@@ -317,10 +80,10 @@ impl<T> Environment<T> {
             return Err(EnvErr::AlreadyExist);
         }
         let meta = EnvBool {
+            cb: Some(cb),
             data: val,
             default: val,
             help: help.to_owned(),
-            cb: Some(cb),
         };
         self.data.insert(key.to_owned(), EnvMetaData::Bool(meta));
         if !self.exec_bool_cb(key, data) {
@@ -330,66 +93,39 @@ impl<T> Environment<T> {
         Ok(())
     }
 
-    pub fn add_bool(&mut self, key: &str, val: bool, help: &str) -> Result<(), EnvErr> {
+    /// Registers a new RGB color environment variable named `key` with default
+    /// value `val` and description `help`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EnvErr::AlreadyExist`] if `key` is already registered.
+    pub fn add_color(&mut self, key: &str, val: (u8, u8, u8), help: &str) -> Result<(), EnvErr> {
         if self.contains(key) {
             return Err(EnvErr::AlreadyExist);
         }
-        let meta = EnvBool {
+        let meta = EnvColor {
+            cb: None,
             data: val,
             default: val,
             help: help.to_owned(),
-            cb: None,
         };
-        self.data.insert(key.to_owned(), EnvMetaData::Bool(meta));
+        self.data.insert(key.to_owned(), EnvMetaData::Color(meta));
         Ok(())
     }
 
-    pub fn get_bool(&self, key: &str) -> Result<bool, EnvErr> {
-        let Some(meta) = self.data.get(key) else {
-            return Err(EnvErr::NotFound);
-        };
-        match meta.as_bool() {
-            Some(s) => Ok(s.data),
-            None => Err(EnvErr::DifferentType),
-        }
-    }
-
-    pub fn set_bool(&mut self, key: &str, value: bool, data: &mut T) -> Result<(), EnvErr> {
-        let Some(meta) = self.data.get_mut(key) else {
-            return Err(EnvErr::NotFound);
-        };
-        let mut tmp = value;
-        if let Some(s) = meta.mut_bool() {
-            mem::swap(&mut tmp, &mut s.data);
-            if !self.exec_bool_cb(key, data) {
-                //restore old data
-                let meta = self.data.get_mut(key).unwrap();
-                let s = meta.mut_bool().unwrap();
-                mem::swap(&mut s.data, &mut tmp);
-                return Err(EnvErr::CbFailed);
-            }
-            Ok(())
-        } else {
-            Err(EnvErr::DifferentType)
-        }
-    }
-
-    #[must_use]
-    pub fn is_bool(&self, key: &str) -> bool {
-        let Some(meta) = self.data.get(key) else {
-            return false;
-        };
-        meta.as_bool().is_some()
-    }
-
-    fn exec_color_cb(&self, key: &str, data: &mut T) -> bool {
-        let meta = self.data[key].as_color().unwrap();
-        if let Some(cb) = meta.cb {
-            return cb(key, meta.data, self, data);
-        }
-        true
-    }
-
+    /// Registers a new RGB color environment variable named `key` with default
+    /// value `val`, description `help`, and change-callback `cb`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EnvErr::AlreadyExist`] if `key` is already registered, or
+    /// [`EnvErr::CbFailed`] if `cb` rejects the initial value `val` (in which
+    /// case the variable is not registered).
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the internal metadata storage is inconsistent
+    /// (considered a bug).
     pub fn add_color_with_cb(
         &mut self,
         key: &str,
@@ -402,10 +138,10 @@ impl<T> Environment<T> {
             return Err(EnvErr::AlreadyExist);
         }
         let meta = EnvColor {
+            cb: Some(cb),
             data: val,
             default: val,
             help: help.to_owned(),
-            cb: Some(cb),
         };
         self.data.insert(key.to_owned(), EnvMetaData::Color(meta));
         if !self.exec_color_cb(key, data) {
@@ -415,20 +151,261 @@ impl<T> Environment<T> {
         Ok(())
     }
 
-    pub fn add_color(&mut self, key: &str, val: (u8, u8, u8), help: &str) -> Result<(), EnvErr> {
+    /// Registers a new signed integer environment variable named `key` with
+    /// default value `val` and description `help`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EnvErr::AlreadyExist`] if `key` is already registered.
+    pub fn add_i64(&mut self, key: &str, val: i64, help: &str) -> Result<(), EnvErr> {
         if self.contains(key) {
             return Err(EnvErr::AlreadyExist);
         }
-        let meta = EnvColor {
+        let meta = EnvI64 {
+            cb: None,
             data: val,
             default: val,
             help: help.to_owned(),
-            cb: None,
         };
-        self.data.insert(key.to_owned(), EnvMetaData::Color(meta));
+        self.data.insert(key.to_owned(), EnvMetaData::I64(meta));
         Ok(())
     }
 
+    /// Registers a new signed integer environment variable named `key` with
+    /// default value `val`, description `help`, and change-callback `cb`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EnvErr::AlreadyExist`] if `key` is already registered, or
+    /// [`EnvErr::CbFailed`] if `cb` rejects the initial value `val` (in which
+    /// case the variable is not registered).
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the internal metadata storage is inconsistent
+    /// (considered a bug).
+    pub fn add_i64_with_cb(
+        &mut self,
+        key: &str,
+        val: i64,
+        help: &str,
+        data: &mut T,
+        cb: I64Fn<T>,
+    ) -> Result<(), EnvErr> {
+        if self.contains(key) {
+            return Err(EnvErr::AlreadyExist);
+        }
+        let meta = EnvI64 {
+            cb: Some(cb),
+            data: val,
+            default: val,
+            help: help.to_owned(),
+        };
+        self.data.insert(key.to_owned(), EnvMetaData::I64(meta));
+        if !self.exec_i64_cb(key, data) {
+            self.data.remove(key).unwrap();
+            return Err(EnvErr::CbFailed);
+        }
+        Ok(())
+    }
+
+    /// Registers a new string environment variable named `key` with default
+    /// value `val` and description `help`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EnvErr::AlreadyExist`] if `key` is already registered.
+    pub fn add_str(&mut self, key: &str, val: &str, help: &str) -> Result<(), EnvErr> {
+        if self.contains(key) {
+            return Err(EnvErr::AlreadyExist);
+        }
+        let meta = EnvStr {
+            cb: None,
+            data: val.to_owned(),
+            default: val.to_owned(),
+            help: help.to_owned(),
+        };
+        self.data.insert(key.to_owned(), EnvMetaData::Str(meta));
+        Ok(())
+    }
+
+    /// Registers a new string environment variable named `key` with default
+    /// value `val`, description `help`, and change-callback `cb`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EnvErr::AlreadyExist`] if `key` is already registered, or
+    /// [`EnvErr::CbFailed`] if `cb` rejects the initial value `val` (in which
+    /// case the variable is not registered).
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the internal metadata storage is inconsistent
+    /// (considered a bug).
+    pub fn add_str_with_cb(
+        &mut self,
+        key: &str,
+        val: &str,
+        help: &str,
+        data: &mut T,
+        cb: StrFn<T>,
+    ) -> Result<(), EnvErr> {
+        if self.contains(key) {
+            return Err(EnvErr::AlreadyExist);
+        }
+        let meta = EnvStr {
+            cb: Some(cb),
+            data: val.to_owned(),
+            default: val.to_owned(),
+            help: help.to_owned(),
+        };
+        self.data.insert(key.to_owned(), EnvMetaData::Str(meta));
+        if !self.exec_str_cb(key, data) {
+            self.data.remove(key).unwrap();
+            return Err(EnvErr::CbFailed);
+        }
+        Ok(())
+    }
+
+    /// Registers a new unsigned integer environment variable named `key` with
+    /// default value `val` and description `help`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EnvErr::AlreadyExist`] if `key` is already registered.
+    pub fn add_u64(&mut self, key: &str, val: u64, help: &str) -> Result<(), EnvErr> {
+        if self.contains(key) {
+            return Err(EnvErr::AlreadyExist);
+        }
+        let meta = EnvU64 {
+            cb: None,
+            data: val,
+            default: val,
+            help: help.to_owned(),
+        };
+        self.data.insert(key.to_owned(), EnvMetaData::U64(meta));
+        Ok(())
+    }
+
+    /// Registers a new unsigned integer environment variable named `key` with
+    /// default value `val`, description `help`, and change-callback `cb`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EnvErr::AlreadyExist`] if `key` is already registered, or
+    /// [`EnvErr::CbFailed`] if `cb` rejects the initial value `val` (in which
+    /// case the variable is not registered).
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the internal metadata storage is inconsistent
+    /// (considered a bug).
+    pub fn add_u64_with_cb(
+        &mut self,
+        key: &str,
+        val: u64,
+        help: &str,
+        data: &mut T,
+        cb: U64Fn<T>,
+    ) -> Result<(), EnvErr> {
+        if self.contains(key) {
+            return Err(EnvErr::AlreadyExist);
+        }
+        let meta = EnvU64 {
+            cb: Some(cb),
+            data: val,
+            default: val,
+            help: help.to_owned(),
+        };
+        self.data.insert(key.to_owned(), EnvMetaData::U64(meta));
+        if !self.exec_u64_cb(key, data) {
+            self.data.remove(key).unwrap();
+            return Err(EnvErr::CbFailed);
+        }
+        Ok(())
+    }
+
+    #[must_use]
+    pub fn contains(&self, key: &str) -> bool {
+        self.data.contains_key(key)
+    }
+
+    fn exec_bool_cb(&self, key: &str, data: &mut T) -> bool {
+        let meta = self.data[key].as_bool().unwrap();
+        if let Some(cb) = meta.cb {
+            return cb(key, meta.data, self, data);
+        }
+        true
+    }
+
+    fn exec_color_cb(&self, key: &str, data: &mut T) -> bool {
+        let meta = self.data[key].as_color().unwrap();
+        if let Some(cb) = meta.cb {
+            return cb(key, meta.data, self, data);
+        }
+        true
+    }
+
+    fn exec_i64_cb(&self, key: &str, data: &mut T) -> bool {
+        let meta = self.data[key].as_i64().unwrap();
+        if let Some(cb) = meta.cb {
+            return cb(key, meta.data, self, data);
+        }
+        true
+    }
+
+    // All exec_*_cb function are guaranteed to be running on the correct type
+    fn exec_str_cb(&self, key: &str, data: &mut T) -> bool {
+        let meta = self.data[key].as_str().unwrap();
+        let val = &meta.data;
+        if let Some(cb) = meta.cb {
+            return cb(key, val, self, data);
+        }
+        true
+    }
+
+    fn exec_u64_cb(&self, key: &str, data: &mut T) -> bool {
+        let meta = self.data[key].as_u64().unwrap();
+        if let Some(cb) = meta.cb {
+            return cb(key, meta.data, self, data);
+        }
+        true
+    }
+
+    #[must_use]
+    pub fn get(&self, key: &str) -> Option<EnvData<'_>> {
+        let meta = self.data.get(key)?;
+        match meta {
+            EnvMetaData::Bool(b) => Some(EnvData::Bool(b.data)),
+            EnvMetaData::I64(i) => Some(EnvData::I64(i.data)),
+            EnvMetaData::U64(u) => Some(EnvData::U64(u.data)),
+            EnvMetaData::Str(s) => Some(EnvData::Str(&s.data)),
+            EnvMetaData::Color(c) => Some(EnvData::Color(c.data.0, c.data.1, c.data.2)),
+        }
+    }
+
+    /// Returns the value of the boolean environment variable named `key`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EnvErr::NotFound`] if `key` is not registered, or
+    /// [`EnvErr::DifferentType`] if `key` holds a value of a different type.
+    pub fn get_bool(&self, key: &str) -> Result<bool, EnvErr> {
+        let Some(meta) = self.data.get(key) else {
+            return Err(EnvErr::NotFound);
+        };
+        match meta.as_bool() {
+            Some(s) => Ok(s.data),
+            None => Err(EnvErr::DifferentType),
+        }
+    }
+
+    /// Returns the value of the RGB color environment variable named `key`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EnvErr::NotFound`] if `key` is not registered, or
+    /// [`EnvErr::DifferentType`] if `key` holds a value of a different type.
     pub fn get_color(&self, key: &str) -> Result<(u8, u8, u8), EnvErr> {
         let Some(meta) = self.data.get(key) else {
             return Err(EnvErr::NotFound);
@@ -439,29 +416,74 @@ impl<T> Environment<T> {
         }
     }
 
-    pub fn set_color(
-        &mut self,
-        key: &str,
-        value: (u8, u8, u8),
-        data: &mut T,
-    ) -> Result<(), EnvErr> {
-        let Some(meta) = self.data.get_mut(key) else {
+    #[must_use]
+    pub fn get_help(&self, key: &str) -> Option<&str> {
+        let meta = self.data.get(key)?;
+        match meta {
+            EnvMetaData::Bool(b) => Some(&b.help),
+            EnvMetaData::I64(i) => Some(&i.help),
+            EnvMetaData::U64(u) => Some(&u.help),
+            EnvMetaData::Str(s) => Some(&s.help),
+            EnvMetaData::Color(c) => Some(&c.help),
+        }
+    }
+
+    /// Returns the value of the signed integer environment variable named
+    /// `key`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EnvErr::NotFound`] if `key` is not registered, or
+    /// [`EnvErr::DifferentType`] if `key` holds a value of a different type.
+    pub fn get_i64(&self, key: &str) -> Result<i64, EnvErr> {
+        let Some(meta) = self.data.get(key) else {
             return Err(EnvErr::NotFound);
         };
-        let mut tmp = value;
-        if let Some(s) = meta.mut_color() {
-            mem::swap(&mut tmp, &mut s.data);
-            if !self.exec_color_cb(key, data) {
-                //restore old data
-                let meta = self.data.get_mut(key).unwrap();
-                let s = meta.mut_color().unwrap();
-                mem::swap(&mut s.data, &mut tmp);
-                return Err(EnvErr::CbFailed);
-            }
-            Ok(())
-        } else {
-            Err(EnvErr::DifferentType)
+        match meta.as_i64() {
+            Some(s) => Ok(s.data),
+            None => Err(EnvErr::DifferentType),
         }
+    }
+
+    /// Returns the value of the string environment variable named `key`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EnvErr::NotFound`] if `key` is not registered, or
+    /// [`EnvErr::DifferentType`] if `key` holds a value of a different type.
+    pub fn get_str(&self, key: &str) -> Result<&str, EnvErr> {
+        let Some(meta) = self.data.get(key) else {
+            return Err(EnvErr::NotFound);
+        };
+        match meta.as_str() {
+            Some(s) => Ok(&s.data),
+            None => Err(EnvErr::DifferentType),
+        }
+    }
+
+    /// Returns the value of the unsigned integer environment variable named
+    /// `key`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EnvErr::NotFound`] if `key` is not registered, or
+    /// [`EnvErr::DifferentType`] if `key` holds a value of a different type.
+    pub fn get_u64(&self, key: &str) -> Result<u64, EnvErr> {
+        let Some(meta) = self.data.get(key) else {
+            return Err(EnvErr::NotFound);
+        };
+        match meta.as_u64() {
+            Some(s) => Ok(s.data),
+            None => Err(EnvErr::DifferentType),
+        }
+    }
+
+    #[must_use]
+    pub fn is_bool(&self, key: &str) -> bool {
+        let Some(meta) = self.data.get(key) else {
+            return false;
+        };
+        meta.as_bool().is_some()
     }
 
     #[must_use]
@@ -472,6 +494,53 @@ impl<T> Environment<T> {
         meta.as_color().is_some()
     }
 
+    #[must_use]
+    pub fn is_i64(&self, key: &str) -> bool {
+        let Some(meta) = self.data.get(key) else {
+            return false;
+        };
+        meta.as_i64().is_some()
+    }
+
+    #[must_use]
+    pub fn is_str(&self, key: &str) -> bool {
+        let Some(meta) = self.data.get(key) else {
+            return false;
+        };
+        meta.as_str().is_some()
+    }
+
+    #[must_use]
+    pub fn is_u64(&self, key: &str) -> bool {
+        let Some(meta) = self.data.get(key) else {
+            return false;
+        };
+        meta.as_u64().is_some()
+    }
+
+    #[must_use]
+    pub fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = (&'a str, EnvData<'a>)> + 'a> {
+        Box::new(
+            self.data
+                .iter()
+                .map(|(k, v)| (k.as_str(), EnvData::from(v))),
+        )
+    }
+
+    #[must_use]
+    pub fn new() -> Self {
+        Environment {
+            data: HashMap::new(),
+        }
+    }
+
+    /// Resets the environment variable named `key` back to its default value
+    /// and runs its registered callback (if any); the callback's verdict is
+    /// ignored.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EnvErr::NotFound`] if `key` is not registered.
     pub fn reset(&mut self, key: &str, data: &mut T) -> Result<(), EnvErr> {
         let Some(meta) = self.data.get_mut(key) else {
             return Err(EnvErr::NotFound);
@@ -500,40 +569,180 @@ impl<T> Environment<T> {
         }
         Ok(())
     }
-    #[must_use]
-    pub fn get(&self, key: &str) -> Option<EnvData<'_>> {
-        let meta = self.data.get(key)?;
-        match meta {
-            EnvMetaData::Bool(b) => Some(EnvData::Bool(b.data)),
-            EnvMetaData::I64(i) => Some(EnvData::I64(i.data)),
-            EnvMetaData::U64(u) => Some(EnvData::U64(u.data)),
-            EnvMetaData::Str(s) => Some(EnvData::Str(&s.data)),
-            EnvMetaData::Color(c) => Some(EnvData::Color(c.data.0, c.data.1, c.data.2)),
+
+    /// Sets the boolean environment variable named `key` to `value`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EnvErr::NotFound`] if `key` is not registered,
+    /// [`EnvErr::DifferentType`] if `key` does not hold a boolean, or
+    /// [`EnvErr::CbFailed`] if the registered callback rejects `value` (in
+    /// which case the old value is restored).
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the internal metadata storage is inconsistent
+    /// (considered a bug).
+    pub fn set_bool(&mut self, key: &str, value: bool, data: &mut T) -> Result<(), EnvErr> {
+        let Some(meta) = self.data.get_mut(key) else {
+            return Err(EnvErr::NotFound);
+        };
+        let mut tmp = value;
+        if let Some(s) = meta.mut_bool() {
+            mem::swap(&mut tmp, &mut s.data);
+            if !self.exec_bool_cb(key, data) {
+                //restore old data
+                let meta = self.data.get_mut(key).unwrap();
+                let s = meta.mut_bool().unwrap();
+                mem::swap(&mut s.data, &mut tmp);
+                return Err(EnvErr::CbFailed);
+            }
+            Ok(())
+        } else {
+            Err(EnvErr::DifferentType)
         }
     }
-    #[must_use]
-    pub fn get_help(&self, key: &str) -> Option<&str> {
-        let meta = self.data.get(key)?;
-        match meta {
-            EnvMetaData::Bool(b) => Some(&b.help),
-            EnvMetaData::I64(i) => Some(&i.help),
-            EnvMetaData::U64(u) => Some(&u.help),
-            EnvMetaData::Str(s) => Some(&s.help),
-            EnvMetaData::Color(c) => Some(&c.help),
+
+    /// Sets the RGB color environment variable named `key` to `value`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EnvErr::NotFound`] if `key` is not registered,
+    /// [`EnvErr::DifferentType`] if `key` does not hold a color, or
+    /// [`EnvErr::CbFailed`] if the registered callback rejects `value` (in
+    /// which case the old value is restored).
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the internal metadata storage is inconsistent
+    /// (considered a bug).
+    pub fn set_color(
+        &mut self,
+        key: &str,
+        value: (u8, u8, u8),
+        data: &mut T,
+    ) -> Result<(), EnvErr> {
+        let Some(meta) = self.data.get_mut(key) else {
+            return Err(EnvErr::NotFound);
+        };
+        let mut tmp = value;
+        if let Some(s) = meta.mut_color() {
+            mem::swap(&mut tmp, &mut s.data);
+            if !self.exec_color_cb(key, data) {
+                //restore old data
+                let meta = self.data.get_mut(key).unwrap();
+                let s = meta.mut_color().unwrap();
+                mem::swap(&mut s.data, &mut tmp);
+                return Err(EnvErr::CbFailed);
+            }
+            Ok(())
+        } else {
+            Err(EnvErr::DifferentType)
         }
     }
-    #[must_use]
-    pub fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = (&str, EnvData<'_>)> + 'a> {
-        Box::new(
-            self.data
-                .iter()
-                .map(|(k, v)| (k.as_str(), EnvData::from(v))),
-        )
+
+    /// Sets the signed integer environment variable named `key` to `value`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EnvErr::NotFound`] if `key` is not registered,
+    /// [`EnvErr::DifferentType`] if `key` does not hold a signed integer, or
+    /// [`EnvErr::CbFailed`] if the registered callback rejects `value` (in
+    /// which case the old value is restored).
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the internal metadata storage is inconsistent
+    /// (considered a bug).
+    pub fn set_i64(&mut self, key: &str, value: i64, data: &mut T) -> Result<(), EnvErr> {
+        let Some(meta) = self.data.get_mut(key) else {
+            return Err(EnvErr::NotFound);
+        };
+        let mut tmp = value;
+        if let Some(s) = meta.mut_i64() {
+            mem::swap(&mut tmp, &mut s.data);
+            if !self.exec_i64_cb(key, data) {
+                //restore old data
+                let meta = self.data.get_mut(key).unwrap();
+                let s = meta.mut_i64().unwrap();
+                mem::swap(&mut s.data, &mut tmp);
+                return Err(EnvErr::CbFailed);
+            }
+            Ok(())
+        } else {
+            Err(EnvErr::DifferentType)
+        }
+    }
+
+    /// Sets the string environment variable named `key` to `value`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EnvErr::NotFound`] if `key` is not registered,
+    /// [`EnvErr::DifferentType`] if `key` does not hold a string, or
+    /// [`EnvErr::CbFailed`] if the registered callback rejects `value` (in
+    /// which case the old value is restored).
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the internal metadata storage is inconsistent
+    /// (considered a bug).
+    pub fn set_str(&mut self, key: &str, value: &str, data: &mut T) -> Result<(), EnvErr> {
+        let Some(meta) = self.data.get_mut(key) else {
+            return Err(EnvErr::NotFound);
+        };
+        let mut tmp = value.to_owned();
+        if let Some(s) = meta.mut_str() {
+            mem::swap(&mut tmp, &mut s.data);
+            if !self.exec_str_cb(key, data) {
+                //restore old data
+                let meta = self.data.get_mut(key).unwrap();
+                let s = meta.mut_str().unwrap();
+                mem::swap(&mut s.data, &mut tmp);
+                return Err(EnvErr::CbFailed);
+            }
+            Ok(())
+        } else {
+            Err(EnvErr::DifferentType)
+        }
+    }
+
+    /// Sets the unsigned integer environment variable named `key` to `value`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EnvErr::NotFound`] if `key` is not registered,
+    /// [`EnvErr::DifferentType`] if `key` does not hold an unsigned integer,
+    /// or [`EnvErr::CbFailed`] if the registered callback rejects `value` (in
+    /// which case the old value is restored).
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the internal metadata storage is inconsistent
+    /// (considered a bug).
+    pub fn set_u64(&mut self, key: &str, value: u64, data: &mut T) -> Result<(), EnvErr> {
+        let Some(meta) = self.data.get_mut(key) else {
+            return Err(EnvErr::NotFound);
+        };
+        let mut tmp = value;
+        if let Some(s) = meta.mut_u64() {
+            mem::swap(&mut tmp, &mut s.data);
+            if !self.exec_u64_cb(key, data) {
+                //restore old data
+                let meta = self.data.get_mut(key).unwrap();
+                let s = meta.mut_u64().unwrap();
+                mem::swap(&mut s.data, &mut tmp);
+                return Err(EnvErr::CbFailed);
+            }
+            Ok(())
+        } else {
+            Err(EnvErr::DifferentType)
+        }
     }
 }
 
 impl<'a, T> IntoIterator for &'a Environment<T> {
-    type IntoIter = Box<(dyn Iterator<Item = (&'a str, EnvData<'a>)> + 'a)>;
+    type IntoIter = Box<dyn Iterator<Item = (&'a str, EnvData<'a>)> + 'a>;
     type Item = (&'a str, EnvData<'a>);
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
@@ -544,10 +753,10 @@ impl<'a, T> IntoIterator for &'a Environment<T> {
 mod test_environment {
     use super::*;
     fn even_str(_: &str, value: &str, _: &Environment<Option<()>>, _: &mut Option<()>) -> bool {
-        value.len() % 2 == 0
+        value.len().is_multiple_of(2)
     }
     fn even_u64(_: &str, value: u64, _: &Environment<Option<()>>, _: &mut Option<()>) -> bool {
-        value % 2 == 0
+        value.is_multiple_of(2)
     }
     fn negative_i64(_: &str, value: i64, _: &Environment<Option<()>>, _: &mut Option<()>) -> bool {
         value < 0
@@ -585,7 +794,7 @@ mod test_environment {
         env
     }
     #[test]
-    fn test_str() {
+    fn str() {
         let mut env = prep_env();
         let mut data = None;
         assert_eq!(
@@ -637,7 +846,7 @@ mod test_environment {
         assert_eq!(env.get_help("s1").unwrap(), "First String");
     }
     #[test]
-    fn test_u64() {
+    fn u64() {
         let mut env = prep_env();
         let mut data = None;
         assert_eq!(
@@ -686,7 +895,7 @@ mod test_environment {
         assert_eq!(env.get_help("u1").unwrap(), "First U64");
     }
     #[test]
-    fn test_i64() {
+    fn i64() {
         let mut env = prep_env();
         let mut data = None;
         assert_eq!(
@@ -735,7 +944,7 @@ mod test_environment {
         assert_eq!(env.get_help("i1").unwrap(), "First I64");
     }
     #[test]
-    fn test_bool() {
+    fn bool() {
         let mut env = prep_env();
         let mut data = None;
         assert_eq!(
@@ -783,7 +992,7 @@ mod test_environment {
     }
 
     #[test]
-    fn test_color() {
+    fn color() {
         let mut env = prep_env();
         let mut data = None;
         assert_eq!(

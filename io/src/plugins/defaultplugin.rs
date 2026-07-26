@@ -7,18 +7,19 @@ use memmap::{Mmap, MmapMut, MmapOptions};
 use std::fs::OpenOptions;
 use std::io;
 use std::path::Path;
+const METADATA: RIOPluginMetadata = RIOPluginMetadata {
+    author: "Oddcoder",
+    desc: "This IO plugin is used to open normal files.",
+    license: "LGPL",
+    name: "FilePlugin",
+    version: "0.0.1",
+};
 enum FileInternals {
     Map(Mmap),
     MutMap(MmapMut),
 }
 
 impl FileInternals {
-    fn len(&self) -> usize {
-        match self {
-            FileInternals::Map(m) => m.len(),
-            FileInternals::MutMap(m) => m.len(),
-        }
-    }
     fn as_mut(&mut self) -> Option<&mut MmapMut> {
         if let FileInternals::MutMap(mutmap) = self {
             Some(mutmap)
@@ -26,14 +27,13 @@ impl FileInternals {
             None
         }
     }
+    fn len(&self) -> usize {
+        match self {
+            FileInternals::Map(m) => m.len(),
+            FileInternals::MutMap(m) => m.len(),
+        }
+    }
 }
-const METADATA: RIOPluginMetadata = RIOPluginMetadata {
-    name: "FilePlugin",
-    desc: "This IO plugin is used to open normal files.",
-    author: "Oddcoder",
-    license: "LGPL",
-    version: "0.0.1",
-};
 impl Deref for FileInternals {
     type Target = [u8];
     fn deref(&self) -> &[u8] {
@@ -84,6 +84,15 @@ impl FilePlugin {
 }
 
 impl RIOPlugin for FilePlugin {
+    // either file:// or just no "://" to start with
+    fn accept_uri(&self, uri: &str) -> bool {
+        let split: Vec<&str> = uri.split("://").collect();
+        if split.len() == 1 {
+            return true;
+        }
+        split[0] == "file"
+    }
+
     fn get_metadata(&self) -> &'static RIOPluginMetadata {
         &METADATA
     }
@@ -107,36 +116,46 @@ impl RIOPlugin for FilePlugin {
             let f = OpenOptions::new()
                 .read(true)
                 .open(FilePlugin::uri_to_path(uri))?;
+            // SAFETY: `f` was just opened read-only, which is sufficient for a
+            // copy-on-write mapping (writes only touch our private pages). The
+            // mapping is owned by the returned `FileInternals`, so it lives as
+            // long as any access through it. The mapping remains unsound if the
+            // underlying file is truncated or modified externally while mapped;
+            // this is the documented, accepted risk of memmap.
             file = FileInternals::MutMap(unsafe { MmapOptions::new().map_copy(&f)? });
         } else if flags.contains(IoMode::WRITE) {
             let f = OpenOptions::new()
                 .read(true)
                 .write(true)
                 .open(FilePlugin::uri_to_path(uri))?;
+            // SAFETY: `f` was just opened read+write, matching the permissions
+            // required for a shared mutable mapping. The mapping is owned by the
+            // returned `FileInternals`, so it lives as long as any access through
+            // it. The mapping remains unsound if the underlying file is truncated
+            // or modified externally while mapped; this is the documented,
+            // accepted risk of memmap.
             file = FileInternals::MutMap(unsafe { MmapOptions::new().map_mut(&f)? });
         } else {
             let f = OpenOptions::new()
                 .read(true)
                 .open(FilePlugin::uri_to_path(uri))?;
+            // SAFETY: `f` was just opened read-only, matching the permissions
+            // required for a read-only mapping. The mapping is owned by the
+            // returned `FileInternals`, so it lives as long as any access through
+            // it. The mapping remains unsound if the underlying file is truncated
+            // or modified externally while mapped; this is the documented,
+            // accepted risk of memmap.
             file = FileInternals::Map(unsafe { MmapOptions::new().map(&f)? });
         }
+        let size = file.len() as u64;
         let desc = RIOPluginDesc {
             name: uri.to_owned(),
             perm: flags,
-            raddr: 0,
-            size: (file.len() as u64),
             plugin_operations: Box::new(file),
+            raddr: 0,
+            size,
         };
         Ok(desc)
-    }
-
-    // either file:// or just no "://" to start with
-    fn accept_uri(&self, uri: &str) -> bool {
-        let split: Vec<&str> = uri.split("://").collect();
-        if split.len() == 1 {
-            return true;
-        }
-        split[0] == "file"
     }
 }
 
@@ -149,7 +168,7 @@ mod default_plugin_tests {
     use super::*;
     use test_file::*;
     #[test]
-    fn test_plugin() {
+    fn plugin_works() {
         let plugin = plugin();
         let meta = plugin.get_metadata();
         assert!(plugin.accept_uri("/bin/ls"));
@@ -179,7 +198,7 @@ mod default_plugin_tests {
                 assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied);
             }
             _ => panic!("Permission Denied Error should have been generated"),
-        };
+        }
 
         e = plugin.open(&paths[3].to_string_lossy(), IoMode::READ | IoMode::COW);
         match e {
@@ -187,7 +206,7 @@ mod default_plugin_tests {
                 assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied);
             }
             _ => panic!("Permission Denied Error should have been generated"),
-        };
+        }
 
         e = plugin.open(
             &paths[3].to_string_lossy(),
@@ -198,10 +217,10 @@ mod default_plugin_tests {
                 assert_eq!(io_err.kind(), io::ErrorKind::PermissionDenied);
             }
             _ => panic!("Permission Denied Error should have been generated"),
-        };
+        }
     }
     #[test]
-    fn test_open_errors() {
+    fn open_errors() {
         operate_on_files(&test_open_errors_cb, &[DATA, DATA, DATA, DATA]);
     }
     fn test_read_cb(path: &Path) {
@@ -225,7 +244,7 @@ mod default_plugin_tests {
         assert_eq!(buffer, [0x41, 0xc1, 0x02, 0xc3, 0xc5, 0x88, 0x4d, 0xd5]);
     }
     #[test]
-    fn test_read() {
+    fn read() {
         operate_on_file(&test_read_cb, DATA);
     }
 
@@ -240,7 +259,7 @@ mod default_plugin_tests {
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => panic!("UnexpectedEof Error should have been generated"),
-        };
+        }
         // read at the middle past the the end
         e = desc
             .plugin_operations
@@ -248,7 +267,7 @@ mod default_plugin_tests {
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => panic!("UnexpectedEof Error should have been generated"),
-        };
+        }
 
         // read at the start past the end
         let mut v: Vec<u8> = vec![0; (desc.size + 8) as usize];
@@ -257,10 +276,10 @@ mod default_plugin_tests {
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => panic!("UnexpectedEof Error should have been generated"),
-        };
+        }
     }
     #[test]
-    fn test_read_errors() {
+    fn read_errors() {
         operate_on_file(&test_read_errors_cb, DATA);
     }
 
@@ -297,7 +316,7 @@ mod default_plugin_tests {
     }
 
     #[test]
-    fn test_write() {
+    fn write() {
         operate_on_file(&test_write_cb, DATA);
     }
 
@@ -314,7 +333,7 @@ mod default_plugin_tests {
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => panic!("UnexpectedEof Error should have been generated"),
-        };
+        }
         // middle at the middle past the the end
         e = desc
             .plugin_operations
@@ -322,7 +341,7 @@ mod default_plugin_tests {
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => panic!("UnexpectedEof Error should have been generated"),
-        };
+        }
         // read at the start past the end
         let v: Vec<u8> = vec![0; (desc.size + 8) as usize];
         buffer = &v;
@@ -330,10 +349,10 @@ mod default_plugin_tests {
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => panic!("UnexpectedEof Error should have been generated"),
-        };
+        }
     }
     #[test]
-    fn test_write_errors() {
+    fn write_errors() {
         operate_on_file(&test_write_errors_cb, DATA);
     }
 }

@@ -7,12 +7,13 @@ use crate::{
 use pest::iterators::{Pair, Pairs};
 
 #[derive(Debug, PartialEq, Default)]
+#[expect(clippy::exhaustive_enums, reason = "parser AST node; closed set")]
 pub enum RedPipe {
     #[default]
     None,
+    Pipe(Vec<Argument>),
     Redirect(Box<Argument>),
     RedirectCat(Box<Argument>),
-    Pipe(Vec<Argument>),
 }
 
 impl RedPipe {
@@ -65,21 +66,13 @@ impl RedPipe {
 }
 
 #[derive(Debug, PartialEq)]
-#[non_exhaustive]
+#[expect(clippy::exhaustive_enums, reason = "parser AST node; closed set")]
 pub enum Argument {
-    NonLiteral(Cmd),
-    Literal(String),
     Err(Box<ParserError>),
+    Literal(String),
+    NonLiteral(Cmd),
 }
 impl Argument {
-    fn parse_arguments(root: Pair<Rule>) -> Vec<Self> {
-        assert_eq!(root.as_rule(), Rule::Arguments);
-        let mut args = Vec::new();
-        for pair in root.into_inner() {
-            args.push(Self::parse_argument(pair));
-        }
-        args
-    }
     fn parse_argument(root: Pair<Rule>) -> Self {
         let arg = root.as_str();
         if arg.starts_with('`') && arg.ends_with('`') {
@@ -89,56 +82,44 @@ impl Argument {
                 Err(e) => Self::Err(Box::new(e)),
             }
         } else if arg.starts_with('"') && arg.ends_with('"') {
-            return Self::Literal(arg[1..arg.len() - 1].to_owned());
+            let unquoted = arg
+                .strip_prefix('"')
+                .and_then(|s| s.strip_suffix('"'))
+                .unwrap_or(arg);
+            Self::Literal(unquoted.to_owned())
         } else {
-            return Self::Literal(arg.to_owned());
+            Self::Literal(arg.to_owned())
         }
+    }
+    fn parse_arguments(root: Pair<Rule>) -> Vec<Self> {
+        debug_assert_eq!(
+            root.as_rule(),
+            Rule::Arguments,
+            "parse_arguments must be called with an Arguments pair"
+        );
+        let mut args = Vec::new();
+        for pair in root.into_inner() {
+            args.push(Self::parse_argument(pair));
+        }
+        args
     }
 }
 #[derive(Default, Debug, PartialEq)]
+#[expect(clippy::exhaustive_structs, reason = "parser AST node; closed set")]
 pub struct Cmd {
-    pub command: String,
     pub args: Vec<Argument>,
+    pub command: String,
     pub loc: Option<u64>,
     pub red_pipe: Box<RedPipe>,
 }
 
-fn pair_to_num(root: &Pair<Rule>) -> Result<u64, ParserError> {
-    let result = match root.as_rule() {
-        Rule::BIN => u64::from_str_radix(&root.as_str()[2..], 2),
-        Rule::HEX => u64::from_str_radix(&root.as_str()[2..], 16),
-        Rule::OCT => u64::from_str_radix(&root.as_str()[1..], 8),
-        Rule::DEC => root.as_str().parse::<u64>(),
-        Rule::EOI
-        | Rule::WHITESPACE
-        | Rule::CustomAlpha
-        | Rule::CustomAlphaNum
-        | Rule::ANS
-        | Rule::ANWS
-        | Rule::Command
-        | Rule::ArgumentLiteral
-        | Rule::Argument
-        | Rule::Arguments
-        | Rule::Loc
-        | Rule::Pipe
-        | Rule::Red
-        | Rule::RedCat
-        | Rule::RedPipe
-        | Rule::Comment
-        | Rule::EmptyLine
-        | Rule::HelpLine
-        | Rule::CommandLine
-        | Rule::Input
-        | Rule::HelpAll => unimplemented_pair(root),
-    };
-    match result {
-        Ok(x) => Ok(x),
-        Err(e) => Err(ParserError::Num(e)),
-    }
-}
 impl Cmd {
     pub(crate) fn parse_cmd(root: Pair<Rule>) -> Result<Self, ParserError> {
-        assert_eq!(root.as_rule(), Rule::CommandLine);
+        debug_assert_eq!(
+            root.as_rule(),
+            Rule::CommandLine,
+            "parse_cmd must be called with a CommandLine pair"
+        );
         let mut cmd = Cmd::default();
         for pair in root.into_inner() {
             match pair.as_rule() {
@@ -173,13 +154,47 @@ impl Cmd {
     }
 }
 
+fn pair_to_num(root: &Pair<Rule>) -> Result<u64, ParserError> {
+    let result = match root.as_rule() {
+        Rule::BIN => u64::from_str_radix(root.as_str().get(2..).unwrap_or_default(), 2),
+        Rule::HEX => u64::from_str_radix(root.as_str().get(2..).unwrap_or_default(), 16),
+        Rule::OCT => u64::from_str_radix(root.as_str().get(1..).unwrap_or_default(), 8),
+        Rule::DEC => root.as_str().parse::<u64>(),
+        Rule::EOI
+        | Rule::WHITESPACE
+        | Rule::CustomAlpha
+        | Rule::CustomAlphaNum
+        | Rule::ANS
+        | Rule::ANWS
+        | Rule::Command
+        | Rule::ArgumentLiteral
+        | Rule::Argument
+        | Rule::Arguments
+        | Rule::Loc
+        | Rule::Pipe
+        | Rule::Red
+        | Rule::RedCat
+        | Rule::RedPipe
+        | Rule::Comment
+        | Rule::EmptyLine
+        | Rule::HelpLine
+        | Rule::CommandLine
+        | Rule::Input
+        | Rule::HelpAll => unimplemented_pair(root),
+    };
+    match result {
+        Ok(x) => Ok(x),
+        Err(e) => Err(ParserError::Num(e)),
+    }
+}
+
 #[cfg(test)]
 mod test_normal_cmd {
     use super::*;
     use crate::grammar::CliParser;
-    use pest::Parser;
+    use pest::Parser as _;
     #[test]
-    fn test_cmd() {
+    fn cmd() {
         let root = CliParser::parse(Rule::CommandLine, "aa")
             .unwrap()
             .next()
@@ -192,48 +207,48 @@ mod test_normal_cmd {
         assert_eq!(cmd, target);
     }
     #[test]
-    fn test_cmd_argument() {
+    fn cmd_argument() {
         let root = CliParser::parse(Rule::CommandLine, "aa bb \"cc dd\" `ee ff`")
             .unwrap()
             .next()
             .unwrap();
         let cmd = Cmd::parse_cmd(root).unwrap();
         let target = Cmd {
-            command: "aa".to_owned(),
             args: vec![
                 Argument::Literal("bb".to_owned()),
                 Argument::Literal("cc dd".to_owned()),
                 Argument::NonLiteral(Cmd {
-                    command: "ee".to_owned(),
                     args: vec![Argument::Literal("ff".to_owned())],
+                    command: "ee".to_owned(),
                     loc: None,
                     red_pipe: Box::new(RedPipe::None),
                 }),
             ],
+            command: "aa".to_owned(),
             ..Default::default()
         };
         assert_eq!(cmd, target);
     }
     #[test]
-    fn test_cmd_argument_bug() {
+    fn cmd_argument_bug() {
         let root = CliParser::parse(Rule::CommandLine, "aa bb cc")
             .unwrap()
             .next()
             .unwrap();
         let cmd = Cmd::parse_cmd(root).unwrap();
         let target = Cmd {
-            command: "aa".to_owned(),
             args: vec![
                 Argument::Literal("bb".to_owned()),
                 Argument::Literal("cc".to_owned()),
             ],
+            command: "aa".to_owned(),
             ..Default::default()
         };
         assert_eq!(cmd, target);
     }
 
     #[test]
-    fn test_cmd_loc() {
+    fn cmd_loc() {
         let mut root = CliParser::parse(Rule::CommandLine, "aa @ 0x500")
             .unwrap()
             .next()
@@ -280,7 +295,7 @@ mod test_normal_cmd {
     }
 
     #[test]
-    fn test_cmd_red_pipe() {
+    fn cmd_red_pipe() {
         let mut root = CliParser::parse(Rule::CommandLine, "aa | \"/bin/ls\"")
             .unwrap()
             .next()
@@ -298,9 +313,7 @@ mod test_normal_cmd {
             .next()
             .unwrap();
         cmd = Cmd::parse_cmd(root).unwrap();
-        target.red_pipe = Box::new(RedPipe::Redirect(Box::new(Argument::Literal(
-            "outfile".to_owned(),
-        ))));
+        *target.red_pipe = RedPipe::Redirect(Box::new(Argument::Literal("outfile".to_owned())));
         assert_eq!(cmd, target);
 
         root = CliParser::parse(Rule::CommandLine, "aa >>outfile")
@@ -308,9 +321,7 @@ mod test_normal_cmd {
             .next()
             .unwrap();
         cmd = Cmd::parse_cmd(root).unwrap();
-        target.red_pipe = Box::new(RedPipe::RedirectCat(Box::new(Argument::Literal(
-            "outfile".to_owned(),
-        ))));
+        *target.red_pipe = RedPipe::RedirectCat(Box::new(Argument::Literal("outfile".to_owned())));
         assert_eq!(cmd, target);
 
         root = CliParser::parse(Rule::CommandLine, "aa | ls -lah")
@@ -318,10 +329,10 @@ mod test_normal_cmd {
             .next()
             .unwrap();
         cmd = Cmd::parse_cmd(root).unwrap();
-        target.red_pipe = Box::new(RedPipe::Pipe(vec![
+        *target.red_pipe = RedPipe::Pipe(vec![
             Argument::Literal("ls".to_owned()),
             Argument::Literal("-lah".to_owned()),
-        ]));
+        ]);
         assert_eq!(cmd, target);
     }
 }

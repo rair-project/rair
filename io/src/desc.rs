@@ -4,26 +4,38 @@ use crate::plugin::{RIOPlugin, RIOPluginOperations};
 use crate::utils::{IoError, IoMode};
 use serde::{Deserialize, Serialize};
 
-/// This struct represents a file that is opened in [RIO]
+/// This struct represents a file that is opened in [RIO].
 #[derive(Serialize, Deserialize)]
 pub struct RIODesc {
-    pub(crate) name: String,
-    pub(crate) perm: IoMode,
     pub(crate) hndl: u64,
+    pub(crate) name: String,
     pub(crate) paddr: u64, //padd is simulated physical address
-    pub(crate) size: u64,
-    raddr: u64, // raddr is the IO descriptor address, general rule of interaction paddr is high level lie, while raddr is the real thing.
+    pub(crate) perm: IoMode,
     // Since we are skiping files operation structures .. after deserializing RIO .. we must
     // reopen the files again and make sure that they are in the right place
     // for sake of serde skip Box<dyn RIOPluginOperations + Sync + Send> must implement Default and
     // the implementation is found in plugins.rs
     #[serde(skip)]
     plugin_operations: Box<dyn RIOPluginOperations + Sync + Send>,
+    raddr: u64, // raddr is the IO descriptor address, general rule of interaction paddr is high level lie, while raddr is the real thing.
+    pub(crate) size: u64,
 }
 
 impl RIODesc {
-    pub(crate) fn raddr(&self) -> u64 {
-        self.raddr
+    /// Returns *true* if paddr exists in this file descriptor and *false* otherwise.
+    #[must_use]
+    pub fn has_paddr(&self, paddr: u64) -> bool {
+        paddr >= self.paddr && paddr < self.paddr + self.size
+    }
+    /// Returns the Handle of given file descriptor.
+    #[must_use]
+    pub fn hndl(&self) -> u64 {
+        self.hndl
+    }
+    /// Returns URI of current file descriptor.
+    #[must_use]
+    pub fn name(&self) -> &str {
+        &self.name
     }
     pub(crate) fn open(
         plugin: &mut dyn RIOPlugin,
@@ -34,13 +46,30 @@ impl RIODesc {
         let desc = RIODesc {
             hndl: 0,
             name: plugin_desc.name,
-            perm: plugin_desc.perm,
             paddr: 0,
-            size: plugin_desc.size,
+            perm: plugin_desc.perm,
             plugin_operations: plugin_desc.plugin_operations,
             raddr: plugin_desc.raddr,
+            size: plugin_desc.size,
         };
         Ok(desc)
+    }
+    /// Returns the base physical address of this file.
+    #[must_use]
+    pub fn paddr_base(&self) -> u64 {
+        self.paddr
+    }
+    /// Returns the permissions which the file was opened with.
+    #[must_use]
+    pub fn perm(&self) -> IoMode {
+        self.perm
+    }
+    pub(crate) fn raddr(&self) -> u64 {
+        self.raddr
+    }
+    pub(crate) fn read(&mut self, paddr: usize, buffer: &mut [u8]) -> Result<(), IoError> {
+        self.plugin_operations
+            .read(paddr - self.paddr as usize + self.raddr as usize, buffer)
     }
     pub(crate) fn reopen(&mut self, plugin: &mut dyn RIOPlugin) -> Result<(), IoError> {
         let plugin_desc = plugin.open(&self.name, self.perm)?;
@@ -48,43 +77,14 @@ impl RIODesc {
         self.raddr = plugin_desc.raddr;
         Ok(())
     }
-    pub(crate) fn read(&mut self, paddr: usize, buffer: &mut [u8]) -> Result<(), IoError> {
-        self.plugin_operations
-            .read(paddr - self.paddr as usize + self.raddr as usize, buffer)
-    }
-    pub(crate) fn write(&mut self, paddr: usize, buffer: &[u8]) -> Result<(), IoError> {
-        self.plugin_operations
-            .write(paddr - self.paddr as usize + self.raddr as usize, buffer)
-    }
-    /// Returns URI of current file descriptor.
-    #[must_use]
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-    /// Returns *true* if paddr exists in this file descriptor and *false* otherwise.
-    #[must_use]
-    pub fn has_paddr(&self, paddr: u64) -> bool {
-        paddr >= self.paddr && paddr < self.paddr + self.size
-    }
-    /// Returns the base physical address of this file.
-    #[must_use]
-    pub fn paddr_base(&self) -> u64 {
-        self.paddr
-    }
     /// Returns size of file on disk.
     #[must_use]
     pub fn size(&self) -> u64 {
         self.size
     }
-    /// Returns the permissions which the file was opened with.
-    #[must_use]
-    pub fn perm(&self) -> IoMode {
-        self.perm
-    }
-    /// Returns the Handle of given file descriptor.
-    #[must_use]
-    pub fn hndl(&self) -> u64 {
-        self.hndl
+    pub(crate) fn write(&mut self, paddr: usize, buffer: &[u8]) -> Result<(), IoError> {
+        self.plugin_operations
+            .write(paddr - self.paddr as usize + self.raddr as usize, buffer)
     }
 }
 
@@ -111,7 +111,7 @@ mod default_plugin_tests {
         assert_eq!(buffer, [0x41, 0xc1, 0x02, 0xc3, 0xc5, 0x88, 0x4d, 0xd5]);
     }
     #[test]
-    fn test_desc_read() {
+    fn desc_read() {
         operate_on_file(&test_desc_read_cb, DATA);
     }
     fn test_desc_has_paddr_cb(path: &Path) {
@@ -124,7 +124,7 @@ mod default_plugin_tests {
         assert!(desc.has_paddr(0x40000 + DATA.len() as u64 - 1));
     }
     #[test]
-    fn test_desc_has_paddr() {
+    fn desc_has_paddr() {
         operate_on_file(&test_desc_has_paddr_cb, DATA);
     }
     fn test_desc_read_errors_cb(path: &Path) {
@@ -137,13 +137,13 @@ mod default_plugin_tests {
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => panic!("UnexpectedEof Error should have been generated"),
-        };
+        }
         // read at the middle past the the end
         e = desc.read((desc.paddr + desc.size - 5) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => panic!("UnexpectedEof Error should have been generated"),
-        };
+        }
 
         // read at the start past the end
         let mut v: Vec<u8> = vec![0; (desc.size + 8) as usize];
@@ -152,10 +152,10 @@ mod default_plugin_tests {
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => panic!("UnexpectedEof Error should have been generated"),
-        };
+        }
     }
     #[test]
-    fn test_desc_read_errors() {
+    fn desc_read_errors() {
         operate_on_file(&test_desc_read_errors_cb, DATA);
     }
 
@@ -184,7 +184,7 @@ mod default_plugin_tests {
     }
 
     #[test]
-    fn test_desc_write() {
+    fn desc_write() {
         operate_on_file(&test_desc_write_cb, DATA);
     }
 
@@ -203,13 +203,13 @@ mod default_plugin_tests {
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => panic!("UnexpectedEof Error should have been generated"),
-        };
+        }
         // middle at the middle past the the end
         e = desc.write((desc.paddr + desc.size - 5) as usize, buffer);
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => panic!("UnexpectedEof Error should have been generated"),
-        };
+        }
         // read at the start past the end
         let v: Vec<u8> = vec![0; (desc.size + 8) as usize];
         buffer = &v;
@@ -217,10 +217,10 @@ mod default_plugin_tests {
         match e {
             Err(IoError::Parse(io_err)) => assert_eq!(io_err.kind(), io::ErrorKind::UnexpectedEof),
             _ => panic!("UnexpectedEof Error should have been generated"),
-        };
+        }
     }
     #[test]
-    fn test_write_errors() {
+    fn write_errors() {
         operate_on_file(&test_write_errors_cb, DATA);
     }
 }

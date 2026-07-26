@@ -7,9 +7,6 @@ use std::process;
 pub struct Quit;
 
 impl Cmd for Quit {
-    fn run(&mut self, _core: &mut Core, _args: &[String]) {
-        process::exit(0);
-    }
     fn commands(&self) -> &'static [&'static str] {
         &["quit", "q"]
     }
@@ -17,14 +14,17 @@ impl Cmd for Quit {
     fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
         &[("", "Quit Current session.")]
     }
+    fn run(&mut self, _core: &mut Core, _args: &[String]) {
+        process::exit(0);
+    }
 }
 
 #[cfg(test)]
 mod test_quit {
     use super::*;
-    use crate::{writer::Writer, CmdOps};
+    use crate::{writer::Writer, CmdOps as _};
     #[test]
-    fn test_quit_docs() {
+    fn quit_docs() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();

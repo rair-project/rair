@@ -6,7 +6,7 @@ use crate::Cmd;
 use core::mem;
 use flate2::write::{ZlibDecoder, ZlibEncoder};
 use flate2::Compression;
-use serde::Deserialize;
+use serde::Deserialize as _;
 use std::fs::{self, File};
 use std::io::prelude::*;
 
@@ -14,6 +14,12 @@ use std::io::prelude::*;
 pub struct Save;
 
 impl Cmd for Save {
+    fn commands(&self) -> &'static [&'static str] {
+        &["save"]
+    }
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[("[file_path]", "Save project into given path.")]
+    }
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if args.len() != 1 {
             expect(core, args.len() as u64, 1);
@@ -34,18 +40,19 @@ impl Cmd for Save {
             error_msg(core, "Failed to save project", &e.to_string());
         }
     }
-    fn commands(&self) -> &'static [&'static str] {
-        &["save"]
-    }
-    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
-        &[("[file_path]", "Save project into given path.")]
-    }
 }
 
 #[derive(Default)]
 pub struct Load;
 
 impl Cmd for Load {
+    fn commands(&self) -> &'static [&'static str] {
+        &["load"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[("[file_path]", "load project from given path.")]
+    }
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if args.len() != 1 {
             expect(core, args.len() as u64, 1);
@@ -76,24 +83,16 @@ impl Cmd for Load {
         core2.set_commands(core.commands());
         *core = core2;
     }
-    fn commands(&self) -> &'static [&'static str] {
-        &["load"]
-    }
-
-    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
-        &[("[file_path]", "load project from given path.")]
-    }
 }
 
 #[cfg(test)]
-
 mod test_project {
     use super::*;
-    use crate::{writer::*, CmdOps};
+    use crate::{writer::*, CmdOps as _};
     use rair_io::*;
     use std::fs;
     #[test]
-    fn test_project_help() {
+    fn project_help() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -113,7 +112,7 @@ mod test_project {
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
     #[test]
-    fn test_project() {
+    fn project() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -125,7 +124,7 @@ mod test_project {
         core.io
             .open_at("malloc://0x1337", IoMode::READ | IoMode::WRITE, 0x31000)
             .unwrap();
-        core.io.map(0x31000, 0xfff31000, 0x337).unwrap();
+        core.io.map(0x31000, 0xfff3_1000, 0x337).unwrap();
         save.run(&mut core, &["rair_project".to_owned()]);
         core.io.close_all();
         load.run(&mut core, &["rair_project".to_owned()]);

@@ -1,4 +1,4 @@
-//!various trees impelementation for rair project
+//!various trees impelementation for rair project.
 
 extern crate alloc;
 #[cfg(feature = "serialize")]

@@ -2,7 +2,7 @@
 
 use alloc::fmt;
 use bitflags::bitflags;
-use itertools::Itertools;
+use itertools::Itertools as _;
 use serde::{Deserialize, Serialize};
 use std::io;
 
@@ -26,24 +26,24 @@ impl fmt::Display for IoMode {
     }
 }
 
-/// Errors resultion from operations on [RIO]
+/// Errors resultion from operations on [RIO].
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum IoError {
     /// Reading or writing to an invalid address.
     AddressNotFound,
-    /// Memory addresses gets mapped in way that makes them overlap
+    /// Memory addresses gets mapped in way that makes them overlap.
     AddressesOverlapError,
-    /// There is no sutiable IO plugin for loading the given file encoding
-    IoPluginNotFoundError,
-    /// Doing operationg on file handles that doesn't exist
-    HndlNotFoundError,
-    /// Too many files are opened.
-    TooManyFilesError,
     /// Custom error message.
     Custom(String),
-    /// Error that is originating from [`std::io`]
+    /// Doing operationg on file handles that doesn't exist.
+    HndlNotFoundError,
+    /// There is no sutiable IO plugin for loading the given file encoding.
+    IoPluginNotFoundError,
+    /// Error that is originating from [`std::io`].
     Parse(io::Error),
+    /// Too many files are opened.
+    TooManyFilesError,
 }
 impl PartialEq for IoError {
     fn eq(&self, other: &IoError) -> bool {

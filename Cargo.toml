@@ -12,24 +12,24 @@ members = [
 ]
 
 [workspace.dependencies]
-base64 = "0.22.1"
+base64 = "0.23.0"
 bitflags = "2.6.0"
 clap = "4.5.17"
-directories = "5.0.1"
-err-derive = "0.3.1"
+directories = "6.0.0"
 flate2 = "1.0.33"
-itertools = "0.13.0"
+itertools = "0.15.0"
 memmap = "0.7.0"
 nom = "7.1.3"
 parking_lot="0.12.3"
 pest = "2.7.12"
 pest_derive = "2.7.12"
-rustyline = "14.0.0"
-rustyline-derive = "0.10.0"
+rustyline = "18.0.1"
+rustyline-derive = "0.12.0"
 serde = "1.0"
 serde_cbor = "0.11.2"
 serde_json = "1.0"
 tempfile = "3.12.0"
+thiserror = "2.0.19"
 yansi = "1.0.1"
 
 rair-cmd = {path = "./cmd"}
@@ -48,68 +48,37 @@ strip = "symbols"
 [workspace.lints.clippy]
 pedantic = { level = "warn", priority = -1 }
 restriction = { level = "warn", priority = -1 }
-#nursery = {level = "warn", priority = -1}
 
-missing_errors_doc = "allow"
-missing_docs_in_private_items="allow"
-blanket_clippy_restriction_lints="allow"
-pub_with_shorthand="allow"
-too_many_lines="allow"
-unreadable_literal="allow"
-mod_module_files="allow"
-single_char_lifetime_names="allow"
-pub_use="allow"
-non_ascii_literal="allow"
-pattern_type_mismatch="allow"
-unreachable="allow"
-multiple_inherent_impl="allow"
-map_err_ignore="allow"
-unseparated_literal_suffix="allow"
-panic="allow"
-unimplemented="allow"
-iter_over_hash_type="allow"
-single_call_fn="allow"
-use_debug="allow"
-print_stdout="allow"
-cast_precision_loss="allow"
-float_arithmetic="allow"
-big_endian_bytes="allow"
-shadow_unrelated="allow"
-partial_pub_fields="allow"
-integer_division_remainder_used="allow"
-integer_division="allow"
-shadow_reuse="allow"
-min_ident_chars = "allow"
-implicit_return="allow"
-question_mark_used="allow"
-cast_lossless="allow"
+# --- required for the blanket `restriction` group above ---
+blanket_clippy_restriction_lints = "allow"
+
+# --- style choices: the opposite style is enforced instead ---
+implicit_return = "allow"          # we use expression returns (needless_return enforced)
+mod_module_files = "allow"         # we use mod.rs files (self_named_module_files enforced)
+pub_with_shorthand = "allow"       # we use pub(crate) (pub_without_shorthand enforced)
+unseparated_literal_suffix = "allow" # we use 8i32 (separated_literal_suffix enforced)
+question_mark_used = "allow"       # `?` is idiomatic error propagation
+pattern_type_mismatch = "allow"    # match ergonomics are idiomatic
+shadow_reuse = "allow"             # idiomatic rebinding
+shadow_unrelated = "allow"
+single_char_lifetime_names = "allow" # 'a is idiomatic
+min_ident_chars = "allow"          # i, x, .. are fine in local scopes
+pub_use = "allow"                  # facade re-exports in lib.rs
+single_call_fn = "allow"           # decomposition is good even for one caller
+missing_inline_in_public_items = "allow" # rely on LTO instead of #[inline] noise
+missing_trait_methods = "allow"    # overriding all default methods loses upstream impls
+missing_docs_in_private_items = "allow"
+
+# --- numeric code (binary parsing / hex dumping) ---
 as_conversions = "allow"
 arithmetic_side_effects = "allow"
-unwrap_used="allow"
-expect_used = "allow"
-indexing_slicing="allow"
 cast_possible_truncation = "allow"
-significant_drop_in_scrutinee="allow"
-exhaustive_structs="allow"
-unwrap_in_result="allow"
-module_name_repetitions = "allow"
-missing_inline_in_public_items="allow"
-field_scoped_visibility_modifiers="allow"
-tests_outside_test_module="allow"
-cast_possible_wrap="allow"
-missing_panics_doc="allow"
-similar_names="allow"
-clone_on_ref_ptr="allow"
-exit="allow"
-string_slice="allow"
-missing_trait_methods="allow"
-missing_asserts_for_indexing="allow"
-missing_assert_message="allow"
-else_if_without_else="allow"
-self_named_module_files="allow"
-same_name_method="allow"
-undocumented_unsafe_blocks="allow"
-exhaustive_enums="allow"
-panic_in_result_fn="allow"
-naive_bytecount="allow"
-allow_attributes="allow"
+integer_division = "allow"
+integer_division_remainder_used = "allow"
+indexing_slicing = "allow"
+missing_asserts_for_indexing = "allow" # indexes are pre-validated; asserts would be redundant
+unwrap_used = "allow"              # pervasive in tests; audited in src
+unwrap_in_result = "allow"
+
+# --- API shape ---
+field_scoped_visibility_modifiers = "allow"

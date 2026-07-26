@@ -7,41 +7,34 @@ use rair_trees::ist::IST;
 use serde::{Deserialize, Serialize};
 
 /// This struct describes a mapping between physical
-/// address space and virtual address space
+/// address space and virtual address space.
+#[expect(
+    clippy::exhaustive_structs,
+    reason = "part of the stable plugin API; literal construction by plugins is intended"
+)]
 #[derive(Copy, Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct RIOMap {
-    /// physical address space
+    /// physical address space.
     pub paddr: u64,
-    /// virtual address space
-    pub vaddr: u64,
-    /// size of the mapping
+    /// size of the mapping.
     pub size: u64,
+    /// virtual address space.
+    pub vaddr: u64,
 }
 
 impl RIOMap {
-    fn has_paddr(&self, paddr: u64) -> bool {
-        paddr >= self.paddr && paddr < self.paddr + self.size
-    }
-
-    fn has_vaddr(&self, vaddr: u64) -> bool {
-        vaddr >= self.vaddr && vaddr < self.vaddr + self.size
-    }
-
     fn envelop(&self, map: &RIOMap) -> bool {
         self.has_paddr(map.paddr)
             && self.has_paddr(map.paddr + map.size - 1)
             && self.has_vaddr(map.vaddr)
             && self.has_vaddr(map.vaddr + map.size - 1)
     }
-    fn split(mut self, vaddr: u64) -> (RIOMap, RIOMap) {
-        let delta = vaddr - self.vaddr;
-        let new_map = RIOMap {
-            vaddr,
-            paddr: self.paddr + delta,
-            size: self.size - delta,
-        };
-        self.size = delta;
-        (self, new_map)
+    fn has_paddr(&self, paddr: u64) -> bool {
+        paddr >= self.paddr && paddr < self.paddr + self.size
+    }
+
+    fn has_vaddr(&self, vaddr: u64) -> bool {
+        vaddr >= self.vaddr && vaddr < self.vaddr + self.size
     }
     // This will only work IFF self.envelop(map) == true
     fn remove_projection(mut self, map: &RIOMap) -> Vec<RIOMap> {
@@ -56,6 +49,16 @@ impl RIOMap {
             maps.push(clean);
         }
         maps
+    }
+    fn split(mut self, vaddr: u64) -> (RIOMap, RIOMap) {
+        let delta = vaddr - self.vaddr;
+        let new_map = RIOMap {
+            paddr: self.paddr + delta,
+            size: self.size - delta,
+            vaddr,
+        };
+        self.size = delta;
+        (self, new_map)
     }
 }
 
@@ -78,28 +81,43 @@ pub(super) struct RIOMapQuery {
 }
 
 impl RIOMapQuery {
+    pub fn map(&mut self, paddr: u64, vaddr: u64, size: u64) -> Result<(), IoError> {
+        // check if vaddr is previosly used or not
+        if !self.maps.overlap(vaddr, vaddr + size - 1).is_empty() {
+            return Err(IoError::AddressesOverlapError);
+        }
+        let mapping = Arc::new(RIOMap { paddr, size, vaddr });
+        self.maps
+            .insert(vaddr, vaddr + size - 1, Arc::clone(&mapping));
+        self.rev_maps.insert(paddr, paddr + size - 1, mapping);
+        Ok(())
+    }
     pub fn new() -> RIOMapQuery {
         RIOMapQuery {
             maps: IST::new(),
             rev_maps: IST::new(),
         }
     }
-    pub fn map(&mut self, paddr: u64, vaddr: u64, size: u64) -> Result<(), IoError> {
-        // check if vaddr is previosly used or not
-        if !self.maps.overlap(vaddr, vaddr + size - 1).is_empty() {
-            return Err(IoError::AddressesOverlapError);
+    pub fn rev_query(&self, paddr: u64) -> Vec<u64> {
+        let maps: Vec<Arc<RIOMap>> = self
+            .rev_maps
+            .at(paddr)
+            .iter()
+            .map(|&x| Arc::clone(x))
+            .collect();
+        if maps.is_empty() {
+            return Vec::new();
         }
-        let mapping = Arc::new(RIOMap { paddr, vaddr, size });
-        self.maps.insert(vaddr, vaddr + size - 1, mapping.clone());
-        self.rev_maps.insert(paddr, paddr + size - 1, mapping);
-        Ok(())
+        maps.iter()
+            .map(|map| paddr - map.paddr + map.vaddr)
+            .collect()
     }
     pub fn split_vaddr_range(&self, vaddr: u64, size: u64) -> Option<Vec<RIOMap>> {
         let maps: Vec<Arc<RIOMap>> = self
             .maps
             .overlap(vaddr, vaddr + size - 1)
             .iter()
-            .map(|&x| x.clone())
+            .map(|&x| Arc::clone(x))
             .collect();
         if maps.is_empty() {
             return None;
@@ -114,8 +132,8 @@ impl RIOMapQuery {
             let delta = min(remaining, map.size - (start - map.vaddr));
             let frag = RIOMap {
                 paddr: map.paddr + (start - map.vaddr),
-                vaddr: start,
                 size: delta,
+                vaddr: start,
             };
             ranges.push(frag);
             start += delta;
@@ -126,21 +144,12 @@ impl RIOMapQuery {
         }
         Some(ranges)
     }
-    pub fn rev_query(&self, paddr: u64) -> Vec<u64> {
-        let maps: Vec<Arc<RIOMap>> = self.rev_maps.at(paddr).iter().map(|&x| x.clone()).collect();
-        if maps.is_empty() {
-            return Vec::new();
-        }
-        maps.iter()
-            .map(|map| paddr - map.paddr + map.vaddr)
-            .collect()
-    }
     pub fn split_vaddr_sparce_range(&self, vaddr: u64, size: u64) -> Vec<RIOMap> {
         let maps: Vec<Arc<RIOMap>> = self
             .maps
             .overlap(vaddr, vaddr + size - 1)
             .iter()
-            .map(|&x| x.clone())
+            .map(|&x| Arc::clone(x))
             .collect();
         if maps.is_empty() {
             return Vec::new();
@@ -156,8 +165,8 @@ impl RIOMapQuery {
             let delta = min(remaining, map.size - (start - map.vaddr));
             let frag = RIOMap {
                 paddr: map.paddr + (start - map.vaddr),
-                vaddr: start,
                 size: delta,
+                vaddr: start,
             };
             ranged_hndl.push(frag);
             start += delta;
@@ -171,10 +180,11 @@ impl RIOMapQuery {
             return Err(IoError::AddressNotFound);
         }
         for frag in fragments.unwrap() {
-            let old_map = self
-                .maps
-                .delete_envelop(frag.vaddr, frag.vaddr + frag.size - 1)[0]
-                .clone();
+            let old_map = Arc::clone(
+                &self
+                    .maps
+                    .delete_envelop(frag.vaddr, frag.vaddr + frag.size - 1)[0],
+            );
             let old_rev_maps = self
                 .rev_maps
                 .delete_envelop(frag.paddr, frag.paddr + frag.size - 1);
@@ -202,8 +212,8 @@ impl RIOMapQuery {
 }
 
 impl<'a> IntoIterator for &'a RIOMapQuery {
-    type Item = Arc<RIOMap>;
     type IntoIter = Box<dyn Iterator<Item = Arc<RIOMap>> + 'a>;
+    type Item = Arc<RIOMap>;
     fn into_iter(self) -> Box<dyn Iterator<Item = Arc<RIOMap>> + 'a> {
         Box::new((&self.maps).into_iter().map(|(_, _, map)| map).cloned())
     }
@@ -213,7 +223,7 @@ impl<'a> IntoIterator for &'a RIOMapQuery {
 mod maps_query_test {
     use super::*;
     #[test]
-    fn test_map_unmap() {
+    fn map_unmap() {
         let mut map_query = RIOMapQuery::new();
 
         // simple file open, map and unmap
@@ -248,24 +258,24 @@ mod maps_query_test {
         assert_eq!(
             map_query.split_vaddr_range(0x1000, 0x100).unwrap(),
             vec![RIOMap {
-                vaddr: 0x1000,
                 paddr: 0,
-                size: 0x100
+                size: 0x100,
+                vaddr: 0x1000
             }]
         );
         assert_eq!(
             map_query.split_vaddr_range(0x1200, 0x100).unwrap(),
             vec![RIOMap {
-                vaddr: 0x1200,
                 paddr: 0x200,
-                size: 0x100
+                size: 0x100,
+                vaddr: 0x1200
             }]
         );
         assert_eq!(map_query.split_vaddr_range(0x1100, 0x100), None);
     }
 
     #[test]
-    fn test_map_errors() {
+    fn map_errors() {
         let mut map_query = RIOMapQuery::new();
         map_query.map(0x1000, 0x4000, 0x1000).unwrap();
         let mut e = map_query.map(0x3000, 0x4100, 0x1000).err();
@@ -277,7 +287,7 @@ mod maps_query_test {
     }
 
     #[test]
-    fn test_map_iter() {
+    fn map_iter() {
         let mut map_query = RIOMapQuery::new();
         map_query.map(0, 0x4000, 0x100).unwrap();
         map_query.map(0x100, 0x5000, 0x100).unwrap();
@@ -287,32 +297,32 @@ mod maps_query_test {
         assert_eq!(
             RIOMap {
                 paddr: 0x200,
-                vaddr: 0x2000,
-                size: 0x100
+                size: 0x100,
+                vaddr: 0x2000
             },
             iter.next().unwrap()
         );
         assert_eq!(
             RIOMap {
                 paddr: 0x300,
-                vaddr: 0x3000,
-                size: 0x100
+                size: 0x100,
+                vaddr: 0x3000
             },
             iter.next().unwrap()
         );
         assert_eq!(
             RIOMap {
                 paddr: 0,
-                vaddr: 0x4000,
-                size: 0x100
+                size: 0x100,
+                vaddr: 0x4000
             },
             iter.next().unwrap()
         );
         assert_eq!(
             RIOMap {
                 paddr: 0x100,
-                vaddr: 0x5000,
-                size: 0x100
+                size: 0x100,
+                vaddr: 0x5000
             },
             iter.next().unwrap()
         );
@@ -320,7 +330,7 @@ mod maps_query_test {
     }
 
     #[test]
-    fn test_split_vaddr_sparce_range() {
+    fn split_vaddr_sparce_range() {
         let mut map_query = RIOMapQuery::new();
         map_query.map(0, 0x4000, 0x90).unwrap();
         map_query.map(0x100, 0x5000, 0x90).unwrap();
@@ -331,29 +341,29 @@ mod maps_query_test {
             vec![
                 RIOMap {
                     paddr: 0x200,
-                    vaddr: 0x2000,
-                    size: 0x90
+                    size: 0x90,
+                    vaddr: 0x2000
                 },
                 RIOMap {
                     paddr: 0x300,
-                    vaddr: 0x3000,
-                    size: 0x90
+                    size: 0x90,
+                    vaddr: 0x3000
                 },
                 RIOMap {
                     paddr: 0x0,
-                    vaddr: 0x4000,
-                    size: 0x90
+                    size: 0x90,
+                    vaddr: 0x4000
                 },
                 RIOMap {
                     paddr: 0x100,
-                    vaddr: 0x5000,
-                    size: 0x90
+                    size: 0x90,
+                    vaddr: 0x5000
                 }
             ]
         );
     }
     #[test]
-    fn test_rev_query() {
+    fn rev_query() {
         let mut map_query = RIOMapQuery::new();
         map_query.map(0, 0x4000, 0x90).unwrap();
         map_query.map(0x100, 0x5000, 0x90).unwrap();

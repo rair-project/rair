@@ -6,10 +6,11 @@ use rair_eval::rair_eval;
 use rustyline::error::ReadlineError;
 use rustyline::history::FileHistory;
 use rustyline::Editor;
-use std::io::Write;
+use std::io::Write as _;
 use std::process::exit;
-use yansi::Paint;
+use yansi::Paint as _;
 
+#[expect(clippy::exit, reason = "Ctrl-D cleanly exits the REPL")]
 pub fn prompt_read_parse_evaluate_loop(
     mut core: Core,
     mut editor: Editor<LineFormatter, FileHistory>,
@@ -26,7 +27,7 @@ pub fn prompt_read_parse_evaluate_loop(
             }
             Err(ReadlineError::Interrupted) => writeln!(core.stdout, "CTRL-C").unwrap(),
             Err(ReadlineError::Eof) => exit(0),
-            Err(err) => writeln!(core.stdout, "Error: {err:?}").unwrap(),
+            Err(err) => writeln!(core.stdout, "Error: {err}").unwrap(),
         }
     }
 }

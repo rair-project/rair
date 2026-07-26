@@ -12,6 +12,6 @@ use parking_lot::Mutex;
 
 pub fn register_loc(core: &mut Core) {
     let history = Arc::new(Mutex::new(History::default()));
-    core.add_command(Mode::with_history(history.clone()));
+    core.add_command(Mode::with_history(Arc::clone(&history)));
     core.add_command(Seek::with_history(history));
 }

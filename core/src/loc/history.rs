@@ -9,6 +9,10 @@ pub struct History {
 }
 
 impl History {
+    pub fn add(&mut self, core: &Core) {
+        self.front.clear();
+        self.back.push((core.mode, core.get_loc()));
+    }
     pub fn backward(&mut self, core: &Core) -> Option<(AddrMode, u64)> {
         let (mode, addr) = self.back.pop()?;
         self.front.push((core.mode, core.get_loc()));
@@ -19,17 +23,13 @@ impl History {
         self.back.push((core.mode, core.get_loc()));
         Some((mode, addr))
     }
-    pub fn add(&mut self, core: &Core) {
-        self.front.clear();
-        self.back.push((core.mode, core.get_loc()));
-    }
 }
 
 #[cfg(test)]
 mod test_history {
     use super::*;
     #[test]
-    fn test_history() {
+    fn history() {
         let mut history = History::default();
         let mut core = Core::new_no_colors();
         assert_eq!(history.backward(&core), None);

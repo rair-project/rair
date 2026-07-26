@@ -3,7 +3,7 @@
 extern crate tempfile;
 
 use std::fs;
-use std::io::Write;
+use std::io::Write as _;
 use std::path::Path;
 use tempfile::NamedTempFile;
 
@@ -17,12 +17,24 @@ pub const DATA: &[u8] = &[
     0x80, 0x41, 0xc1, 0x02, 0xc3, 0xc5, 0x88, 0x4d, 0xd5,
 ];
 
+/// Creates a temporary file filled with `data` and runs `test_function` on
+/// its path.
+///
+/// # Panics
+///
+/// Panics if creating or writing the temporary file fails.
 pub fn operate_on_file(test_function: &dyn Fn(&Path), data: &[u8]) {
     let mut file = NamedTempFile::new().unwrap();
     file.write_all(data).unwrap();
     test_function(file.path());
 }
 
+/// Copies the file at `path` into a temporary file and runs `test_function`
+/// on the copy's path.
+///
+/// # Panics
+///
+/// Panics if creating the temporary file or copying `path` into it fails.
 pub fn operate_on_copy(test_function: &dyn Fn(&Path), path: &str) {
     let mut file = NamedTempFile::new().unwrap();
     //file.write_all(data).unwrap();
@@ -30,6 +42,12 @@ pub fn operate_on_copy(test_function: &dyn Fn(&Path), path: &str) {
     test_function(file.path());
 }
 
+/// Creates one temporary file per entry in `files_data` (each filled with the
+/// corresponding bytes) and runs `test_function` on all of their paths.
+///
+/// # Panics
+///
+/// Panics if creating or writing any of the temporary files fails.
 pub fn operate_on_files(test_function: &dyn Fn(&[&Path]), files_data: &[&[u8]]) {
     let mut files: Vec<NamedTempFile> = Vec::with_capacity(files_data.len());
     let mut paths: Vec<&Path> = Vec::with_capacity(files_data.len());

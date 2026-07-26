@@ -1,19 +1,20 @@
 use super::helper::one_byte;
 use crate::{is_color, Core, Writer};
-use std::io::Write;
-use yansi::Paint;
+use alloc::sync::Arc;
+use std::io::Write as _;
+use yansi::Paint as _;
 
 #[derive(Clone)]
 pub struct HexEnv {
     // color for banner and offsets
     pub banner: (u8, u8, u8),
+    // character to print in case of gap
+    pub gap: char,
+    // color for highlighting
+    pub highlight: (u8, u8, u8),
     // color for the ascii part that
     // is not printable
     pub na: (u8, u8, u8),
-    // color for highlighting
-    pub highlight: (u8, u8, u8),
-    // character to print in case of gap
-    pub gap: char,
     // character to print (with na color)
     pub noprint: char,
     // separator between side by side views
@@ -21,8 +22,37 @@ pub struct HexEnv {
 }
 
 impl HexEnv {
+    pub(super) fn get_env(&mut self, core: &mut Core) -> &Self {
+        let env = core.env.read();
+        let color = env.get_str("hex.headerColor").unwrap();
+        self.banner = env.get_color(color).unwrap();
+        let color = env.get_str("hex.nonPrintColor").unwrap();
+        self.na = core.env.read().get_color(color).unwrap();
+        let color = env.get_str("hex.highlight").unwrap();
+        self.highlight = core.env.read().get_color(color).unwrap();
+        self.gap = env
+            .get_str("hex.gapReplace")
+            .unwrap()
+            .chars()
+            .next()
+            .unwrap();
+        self.noprint = env
+            .get_str("hex.nonPrintReplace")
+            .unwrap()
+            .chars()
+            .next()
+            .unwrap();
+        env.get_str("hex.separator")
+            .unwrap()
+            .clone_into(&mut self.separator);
+        self
+    }
+    #[expect(
+        clippy::non_ascii_literal,
+        reason = "box-drawing separator for hex view banner"
+    )]
     pub(super) fn new(core: &mut Core) -> Self {
-        let env_lock = core.env.clone();
+        let env_lock = Arc::clone(&core.env);
         let mut env = env_lock.write();
         if !env.contains("hex.headerColor") {
             env.add_str_with_cb(
@@ -82,58 +112,12 @@ impl HexEnv {
         }
         Self {
             banner: (0, 0, 0),
-            na: (0, 0, 0),
-            highlight: (0, 0, 0),
             gap: char::default(),
+            highlight: (0, 0, 0),
+            na: (0, 0, 0),
             noprint: char::default(),
             separator: String::new(),
         }
-    }
-    pub(super) fn get_env(&mut self, core: &mut Core) -> &Self {
-        let env = core.env.read();
-        let color = env.get_str("hex.headerColor").unwrap();
-        self.banner = env.get_color(color).unwrap();
-        let color = env.get_str("hex.nonPrintColor").unwrap();
-        self.na = core.env.read().get_color(color).unwrap();
-        let color = env.get_str("hex.highlight").unwrap();
-        self.highlight = core.env.read().get_color(color).unwrap();
-        self.gap = env
-            .get_str("hex.gapReplace")
-            .unwrap()
-            .chars()
-            .next()
-            .unwrap();
-        self.noprint = env
-            .get_str("hex.nonPrintReplace")
-            .unwrap()
-            .chars()
-            .next()
-            .unwrap();
-        env.get_str("hex.separator")
-            .unwrap()
-            .clone_into(&mut self.separator);
-        self
-    }
-    pub fn print_banner_with_newline(&self, writer: &mut Writer, newline: bool) {
-        let nl = if newline { "\n" } else { "" };
-        write!(
-            writer,
-            "{}{nl}",
-            "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF".rgb(
-                self.banner.0,
-                self.banner.1,
-                self.banner.2,
-            )
-        )
-        .unwrap();
-    }
-    pub fn print_banner(&self, writer: &mut Writer) {
-        self.print_banner_with_newline(writer, true);
-    }
-    pub fn print_double_banner(&self, writer: &mut Writer) {
-        self.print_banner_with_newline(writer, false);
-        self.print_separator(writer);
-        self.print_banner_with_newline(writer, true);
     }
     pub fn print_addr(&self, writer: &mut Writer, loc: u64) {
         let loc = format!("0x{loc:08x}");
@@ -141,30 +125,10 @@ impl HexEnv {
         let loc_colored = loc.rgb(r, g, b);
         write!(writer, "{loc_colored} ").unwrap();
     }
-    pub fn print_hex_with_highlight(
-        &self,
-        data: Option<u8>,
-        writer: &mut Writer,
-        space_after: bool,
-        highlight: bool,
-    ) {
-        let space = if space_after { " " } else { "" };
-        let hex: String = if let Some(c) = data {
-            format!("{c:02x}")
-        } else {
-            format!("{}{}", self.gap, self.gap)
-        };
-        if highlight {
-            let (r, g, b) = self.highlight;
-            write!(writer, "{}{space}", hex.on_rgb(r, g, b)).unwrap();
-        } else {
-            write!(writer, "{hex}{space}").unwrap();
-        }
-    }
 
-    // print hex data all while taking care of extra white space
-    pub fn print_hex(&self, data: Option<u8>, writer: &mut Writer, space_after: bool) {
-        self.print_hex_with_highlight(data, writer, space_after, false);
+    // print ascii data while taking care of non printable characters and coloring
+    pub fn print_ascii(&self, data: Option<u8>, writer: &mut Writer) {
+        self.print_ascii_with_highlight(data, writer, false);
     }
     pub fn print_ascii_with_highlight(
         &self,
@@ -189,10 +153,51 @@ impl HexEnv {
             write!(writer, "{ascii}").unwrap();
         }
     }
+    pub fn print_banner(&self, writer: &mut Writer) {
+        self.print_banner_with_newline(writer, true);
+    }
+    pub fn print_banner_with_newline(&self, writer: &mut Writer, newline: bool) {
+        let nl = if newline { "\n" } else { "" };
+        write!(
+            writer,
+            "{}{nl}",
+            "- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF".rgb(
+                self.banner.0,
+                self.banner.1,
+                self.banner.2,
+            )
+        )
+        .unwrap();
+    }
+    pub fn print_double_banner(&self, writer: &mut Writer) {
+        self.print_banner_with_newline(writer, false);
+        self.print_separator(writer);
+        self.print_banner_with_newline(writer, true);
+    }
 
-    // print ascii data while taking care of non printable characters and coloring
-    pub fn print_ascii(&self, data: Option<u8>, writer: &mut Writer) {
-        self.print_ascii_with_highlight(data, writer, false);
+    // print hex data all while taking care of extra white space
+    pub fn print_hex(&self, data: Option<u8>, writer: &mut Writer, space_after: bool) {
+        self.print_hex_with_highlight(data, writer, space_after, false);
+    }
+    pub fn print_hex_with_highlight(
+        &self,
+        data: Option<u8>,
+        writer: &mut Writer,
+        space_after: bool,
+        highlight: bool,
+    ) {
+        let space = if space_after { " " } else { "" };
+        let hex: String = if let Some(c) = data {
+            format!("{c:02x}")
+        } else {
+            format!("{}{}", self.gap, self.gap)
+        };
+        if highlight {
+            let (r, g, b) = self.highlight;
+            write!(writer, "{}{space}", hex.on_rgb(r, g, b)).unwrap();
+        } else {
+            write!(writer, "{hex}{space}").unwrap();
+        }
     }
     pub fn print_separator(&self, writer: &mut Writer) {
         let (r, g, b) = self.banner;
