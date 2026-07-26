@@ -2,8 +2,8 @@
 
 #[derive(PartialEq)]
 pub enum Color {
-    Red,
     Black,
+    Red,
 }
 
 impl Color {

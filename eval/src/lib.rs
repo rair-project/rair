@@ -3,7 +3,7 @@ use rair_cmd::{Argument, Cmd, ParseTree, RedPipe};
 use rair_core::{Core, Writer};
 use std::{
     fs::{File, OpenOptions},
-    io::{prelude::*, Write},
+    io::prelude::*,
     process::{Child, Command, Stdio},
 };
 
@@ -115,7 +115,6 @@ fn eval_arg(core: &mut Core, arg: Argument) -> Result<String, String> {
         Argument::Literal(s) => Ok(s),
         Argument::Err(e) => Err(e.to_string()),
         Argument::NonLiteral(c) => eval_non_literal_arg(core, c),
-        _ => unreachable!(),
     }
 }
 

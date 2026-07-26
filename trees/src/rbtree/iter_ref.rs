@@ -6,30 +6,22 @@ use super::rbtree_wrapper::{Augment, RBTree};
 // longer exist but here we need to mark if a node is ever traversed or not and that
 // is precisely what this enum is for.
 enum Hint<'a, K: Ord + Copy, A: Copy, V> {
-    // means check only this node.
-    NA(&'a RBTree<K, A, V>),
     // means check left, right and data of this node.
     LR(&'a RBTree<K, A, V>),
+    // means check only this node.
+    NA(&'a RBTree<K, A, V>),
 }
 
-/// Iterator for [`RBTree`] reference
+/// Iterator for [`RBTree`] reference.
 pub struct TreeRefIterator<'a, K: Ord + Copy, A: Copy, V> {
-    right: Vec<Hint<'a, K, A, V>>,
     current: Option<&'a RBTree<K, A, V>>,
+    right: Vec<Hint<'a, K, A, V>>,
 }
 
 impl<'a, K: Ord + Copy, A: Copy, V> TreeRefIterator<'a, K, A, V>
 where
     RBTree<K, A, V>: Augment<A>,
 {
-    pub(crate) fn new(root: &'a RBTree<K, A, V>) -> TreeRefIterator<'a, K, A, V> {
-        let mut iter = TreeRefIterator {
-            right: vec![],
-            current: None,
-        };
-        iter.add_subtree(root);
-        iter
-    }
     fn add_subtree(&mut self, root: &'a RBTree<K, A, V>) {
         let mut node = root;
         while node.is_node() {
@@ -45,6 +37,14 @@ where
             }
         }
         self.current = node.is_node().then_some(node);
+    }
+    pub(crate) fn new(root: &'a RBTree<K, A, V>) -> TreeRefIterator<'a, K, A, V> {
+        let mut iter = TreeRefIterator {
+            current: None,
+            right: vec![],
+        };
+        iter.add_subtree(root);
+        iter
     }
 }
 impl<'a, K: Ord + Copy, A: Copy, V> Iterator for TreeRefIterator<'a, K, A, V>

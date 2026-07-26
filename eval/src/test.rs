@@ -3,7 +3,7 @@ use rair_core::{Core, Writer};
 use super::rair_eval;
 
 #[test]
-fn test_newline() {
+fn newline() {
     let mut core = Core::new_no_colors();
     core.stdout = Writer::new_buf();
     core.stderr = Writer::new_buf();
@@ -13,7 +13,7 @@ fn test_newline() {
 }
 
 #[test]
-fn test_comment() {
+fn comment() {
     let mut core = Core::new_no_colors();
     core.stdout = Writer::new_buf();
     core.stderr = Writer::new_buf();
@@ -23,7 +23,7 @@ fn test_comment() {
 }
 
 #[test]
-fn test_bad_syntax() {
+fn bad_syntax() {
     let mut core = Core::new_no_colors();
     core.stdout = Writer::new_buf();
     core.stderr = Writer::new_buf();
@@ -33,7 +33,7 @@ fn test_bad_syntax() {
 }
 
 #[test]
-fn test_bad_help() {
+fn bad_help() {
     let mut core = Core::new_no_colors();
     core.stdout = Writer::new_buf();
     core.stderr = Writer::new_buf();
@@ -42,7 +42,7 @@ fn test_bad_help() {
     assert!(!core.stderr.bytes().unwrap().is_empty());
 }
 #[test]
-fn test_good_help() {
+fn good_help() {
     let mut core = Core::new_no_colors();
     core.stdout = Writer::new_buf();
     core.stderr = Writer::new_buf();
@@ -52,7 +52,7 @@ fn test_good_help() {
 }
 
 #[test]
-fn test_bad_command() {
+fn bad_command() {
     let mut core = Core::new_no_colors();
     core.stdout = Writer::new_buf();
     core.stderr = Writer::new_buf();
@@ -62,7 +62,7 @@ fn test_bad_command() {
 }
 
 #[test]
-fn test_good_command_good_arg() {
+fn good_command_good_arg() {
     let mut core = Core::new_no_colors();
     core.stdout = Writer::new_buf();
     core.stderr = Writer::new_buf();

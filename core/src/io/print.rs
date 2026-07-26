@@ -6,8 +6,8 @@ use crate::hex::HexWithoutEnv;
 use crate::writer::Writer;
 use crate::Cmd;
 use core::{cmp, fmt::Write as _};
-use std::io::Write;
-use yansi::Paint;
+use std::io::Write as _;
+use yansi::Paint as _;
 
 pub struct PrintHex {
     inner: HexWithoutEnv,
@@ -22,6 +22,14 @@ impl PrintHex {
 }
 
 impl Cmd for PrintHex {
+    fn commands(&self) -> &'static [&'static str] {
+        &["printHex", "px"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[("[size]", "View data at current location in hex format.")]
+    }
+
     fn run(&mut self, core: &mut Core, args: &[String]) {
         // we can always optimize by try and using pread an vread.
         // If they fail, only then we might want to attempt the sparce version.
@@ -70,34 +78,22 @@ impl Cmd for PrintHex {
             .unwrap();
         }
     }
-
-    fn commands(&self) -> &'static [&'static str] {
-        &["printHex", "px"]
-    }
-
-    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
-        &[("[size]", "View data at current location in hex format.")]
-    }
 }
 
 #[derive(Default)]
 pub struct PrintBase;
 
-fn encode_bin(data: &[u8]) -> String {
-    let mut out = String::with_capacity(data.len() * 8);
-    for byte in data {
-        write!(out, "{byte:08b}").unwrap();
-    }
-    out
-}
-fn encode_hex(data: &[u8]) -> String {
-    let mut out = String::with_capacity(data.len() * 2);
-    for byte in data {
-        write!(out, "{byte:02x}").unwrap();
-    }
-    out
-}
 impl Cmd for PrintBase {
+    fn commands(&self) -> &'static [&'static str] {
+        &["printBase", "pb"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[(
+            "[base] [size]",
+            "Print data stream at current location in [base] format.  Supported bases: 2, 16.",
+        )]
+    }
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if args.len() != 2 {
             expect(core, args.len() as u64, 2);
@@ -127,20 +123,153 @@ impl Cmd for PrintBase {
         };
         writeln!(core.stdout, "{data_str}").unwrap();
     }
-    fn commands(&self) -> &'static [&'static str] {
-        &["printBase", "pb"]
-    }
-
-    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
-        &[(
-            "[base] [size]",
-            "Print data stream at current location in [base] format.  Supported bases: 2, 16.",
-        )]
-    }
 }
 
 #[derive(Default)]
 pub struct PrintCSV;
+
+impl Cmd for PrintCSV {
+    fn commands(&self) -> &'static [&'static str] {
+        &["printCSV", "pcsv"]
+    }
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[(
+            "[size] [count]",
+            concat!(
+                "Print data at current location as unsigned ",
+                "comma seperated values, each value of size [size] bits.  ",
+                "Supported size: 8, 16, 32, 64, 128, 256, 512."
+            ),
+        )]
+    }
+    fn run(&mut self, core: &mut Core, args: &[String]) {
+        if args.len() != 2 {
+            expect(core, args.len() as u64, 2);
+            return;
+        }
+        let count = match str_to_num(&args[1]) {
+            Ok(count) => count as usize,
+            Err(e) => {
+                let err_str = format!("{e}");
+                error_msg(core, "Failed to parse count", &err_str);
+                return;
+            }
+        };
+        let bsize = match str_to_num(&args[0]) {
+            Ok(size) => size as usize,
+            Err(e) => {
+                let err_str = format!("{e}");
+                error_msg(core, "Failed to parse size", &err_str);
+                return;
+            }
+        };
+        let size = bsize / 8 * count;
+        if count == 0 {
+            return;
+        }
+        if size == 0 {
+            return error_msg(core, "Failed to print data", "Invalid size");
+        }
+        let mut data = vec![0; size];
+
+        let loc = core.get_loc();
+        if let Err(e) = core.read(loc, &mut data) {
+            error_msg(core, "Read Failed", &e.to_string());
+            return;
+        }
+        let data_str = match bsize {
+            8 => csv8(&data),
+            16 => csv16(&data),
+            32 => csv32(&data),
+            64 => csv64(&data),
+            128 => csv128(&data),
+            256 => csv256(&data),
+            512 => csv512(&data),
+            _ => return error_msg(core, "Failed to print data", "Invalid size"),
+        };
+        writeln!(core.stdout, "{data_str}").unwrap();
+    }
+}
+
+#[derive(Default)]
+pub struct PrintSignedCSV;
+
+impl Cmd for PrintSignedCSV {
+    fn commands(&self) -> &'static [&'static str] {
+        &["printSCSV", "pscsv"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[(
+            "[size] [count]",
+            concat!(
+                "Print data at current location as signed comma ",
+                "seperated values, each value of size [size] bits.  ",
+                "Supported size: 8, 16, 32, 64, 128."
+            ),
+        )]
+    }
+    fn run(&mut self, core: &mut Core, args: &[String]) {
+        if args.len() != 2 {
+            expect(core, args.len() as u64, 2);
+            return;
+        }
+        let count = match str_to_num(&args[1]) {
+            Ok(count) => count as usize,
+            Err(e) => {
+                let err_str = format!("{e}");
+                error_msg(core, "Failed to parse count", &err_str);
+                return;
+            }
+        };
+        let bsize = match str_to_num(&args[0]) {
+            Ok(size) => size as usize,
+            Err(e) => {
+                let err_str = format!("{e}");
+                error_msg(core, "Failed to parse size", &err_str);
+                return;
+            }
+        };
+        let size = bsize / 8 * count;
+        if count == 0 {
+            return;
+        }
+        if size == 0 {
+            return error_msg(core, "Failed to print data", "Invalid size");
+        }
+        let mut data = vec![0; size];
+
+        let loc = core.get_loc();
+        if let Err(e) = core.read(loc, &mut data) {
+            error_msg(core, "Read Failed", &e.to_string());
+            return;
+        }
+        let data_str = match bsize {
+            8 => scsv8(&data),
+            16 => scsv16(&data),
+            32 => scsv32(&data),
+            64 => scsv64(&data),
+            128 => scsv128(&data),
+            _ => return error_msg(core, "Failed to print data", "Invalid size"),
+        };
+        writeln!(core.stdout, "{data_str}").unwrap();
+    }
+}
+
+fn encode_bin(data: &[u8]) -> String {
+    let mut out = String::with_capacity(data.len() * 8);
+    for byte in data {
+        write!(out, "{byte:08b}").unwrap();
+    }
+    out
+}
+fn encode_hex(data: &[u8]) -> String {
+    let mut out = String::with_capacity(data.len() * 2);
+    for byte in data {
+        write!(out, "{byte:02x}").unwrap();
+    }
+    out
+}
 
 fn csv8(data: &[u8]) -> String {
     let mut out = String::with_capacity(data.len() * 6);
@@ -278,72 +407,6 @@ fn csv512(data: &[u8]) -> String {
     out
 }
 
-impl Cmd for PrintCSV {
-    fn run(&mut self, core: &mut Core, args: &[String]) {
-        if args.len() != 2 {
-            expect(core, args.len() as u64, 2);
-            return;
-        }
-        let count = match str_to_num(&args[1]) {
-            Ok(count) => count as usize,
-            Err(e) => {
-                let err_str = format!("{e}");
-                error_msg(core, "Failed to parse count", &err_str);
-                return;
-            }
-        };
-        let bsize = match str_to_num(&args[0]) {
-            Ok(size) => size as usize,
-            Err(e) => {
-                let err_str = format!("{e}");
-                error_msg(core, "Failed to parse size", &err_str);
-                return;
-            }
-        };
-        let size = bsize / 8 * count;
-        if count == 0 {
-            return;
-        }
-        if size == 0 {
-            return error_msg(core, "Failed to print data", "Invalid size");
-        }
-        let mut data = vec![0; size];
-
-        let loc = core.get_loc();
-        if let Err(e) = core.read(loc, &mut data) {
-            error_msg(core, "Read Failed", &e.to_string());
-            return;
-        }
-        let data_str = match bsize {
-            8 => csv8(&data),
-            16 => csv16(&data),
-            32 => csv32(&data),
-            64 => csv64(&data),
-            128 => csv128(&data),
-            256 => csv256(&data),
-            512 => csv512(&data),
-            _ => return error_msg(core, "Failed to print data", "Invalid size"),
-        };
-        writeln!(core.stdout, "{data_str}").unwrap();
-    }
-    fn commands(&self) -> &'static [&'static str] {
-        &["printCSV", "pcsv"]
-    }
-    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
-        &[(
-            "[size] [count]",
-            concat!(
-                "Print data at current location as unsigned ",
-                "comma seperated values, each value of size [size] bits.  ",
-                "Supported size: 8, 16, 32, 64, 128, 256, 512."
-            ),
-        )]
-    }
-}
-
-#[derive(Default)]
-pub struct PrintSignedCSV;
-
 fn scsv8(data: &[u8]) -> String {
     let mut out = String::with_capacity(data.len() * 6);
     let mut terminal;
@@ -355,7 +418,7 @@ fn scsv8(data: &[u8]) -> String {
         } else {
             terminal = ",\n";
         }
-        write!(out, "{}{}", *byte as i8, terminal).unwrap();
+        write!(out, "{}{}", (*byte).cast_signed(), terminal).unwrap();
     }
     out
 }
@@ -372,8 +435,8 @@ fn scsv16(data: &[u8]) -> String {
         } else {
             terminal = ",\n";
         }
-        let x = ((data[i + 1] as u16) << 8i32) + data[i] as u16;
-        write!(out, "{}{}", x as i16, terminal).unwrap();
+        let x = (u16::from(data[i + 1]) << 8i32) + u16::from(data[i]);
+        write!(out, "{}{}", x.cast_signed(), terminal).unwrap();
     }
     out
 }
@@ -392,9 +455,9 @@ fn scsv32(data: &[u8]) -> String {
         }
         let mut x = 0u32;
         for j in (0..4).rev() {
-            x = (x << 8i32) + data[i + j] as u32;
+            x = (x << 8i32) + u32::from(data[i + j]);
         }
-        write!(out, "{}{}", x as i32, terminal).unwrap();
+        write!(out, "{}{}", x.cast_signed(), terminal).unwrap();
     }
     out
 }
@@ -413,9 +476,9 @@ fn scsv64(data: &[u8]) -> String {
         }
         let mut x = 0u64;
         for j in (0..8).rev() {
-            x = (x << 8i32) + data[i + j] as u64;
+            x = (x << 8i32) + u64::from(data[i + j]);
         }
-        write!(out, "{}{}", x as i64, terminal).unwrap();
+        write!(out, "{}{}", x.cast_signed(), terminal).unwrap();
     }
     out
 }
@@ -434,95 +497,33 @@ fn scsv128(data: &[u8]) -> String {
         }
         let mut x = 0u128;
         for j in (0..16).rev() {
-            x = (x << 8i32) + data[i + j] as u128;
+            x = (x << 8i32) + u128::from(data[i + j]);
         }
-        write!(out, "{}{}", x as i128, terminal).unwrap();
+        write!(out, "{}{}", x.cast_signed(), terminal).unwrap();
     }
     out
-}
-
-impl Cmd for PrintSignedCSV {
-    fn run(&mut self, core: &mut Core, args: &[String]) {
-        if args.len() != 2 {
-            expect(core, args.len() as u64, 2);
-            return;
-        }
-        let count = match str_to_num(&args[1]) {
-            Ok(count) => count as usize,
-            Err(e) => {
-                let err_str = format!("{e}");
-                error_msg(core, "Failed to parse count", &err_str);
-                return;
-            }
-        };
-        let bsize = match str_to_num(&args[0]) {
-            Ok(size) => size as usize,
-            Err(e) => {
-                let err_str = format!("{e}");
-                error_msg(core, "Failed to parse size", &err_str);
-                return;
-            }
-        };
-        let size = bsize / 8 * count;
-        if count == 0 {
-            return;
-        }
-        if size == 0 {
-            return error_msg(core, "Failed to print data", "Invalid size");
-        }
-        let mut data = vec![0; size];
-
-        let loc = core.get_loc();
-        if let Err(e) = core.read(loc, &mut data) {
-            error_msg(core, "Read Failed", &e.to_string());
-            return;
-        }
-        let data_str = match bsize {
-            8 => scsv8(&data),
-            16 => scsv16(&data),
-            32 => scsv32(&data),
-            64 => scsv64(&data),
-            128 => scsv128(&data),
-            _ => return error_msg(core, "Failed to print data", "Invalid size"),
-        };
-        writeln!(core.stdout, "{data_str}").unwrap();
-    }
-    fn commands(&self) -> &'static [&'static str] {
-        &["printSCSV", "pscsv"]
-    }
-
-    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
-        &[(
-            "[size] [count]",
-            concat!(
-                "Print data at current location as signed comma ",
-                "seperated values, each value of size [size] bits.  ",
-                "Supported size: 8, 16, 32, 64, 128."
-            ),
-        )]
-    }
 }
 
 #[cfg(test)]
 mod test_print_hex {
     use super::*;
-    use crate::{writer::Writer, AddrMode, CmdOps};
+    use crate::{writer::Writer, AddrMode, CmdOps as _};
     use rair_io::*;
     use std::path::Path;
     use test_file::*;
 
     #[test]
-    fn test_help() {
+    fn help() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let pb = PrintBase;
         let pcsv = PrintCSV;
-        let pscsv = PrintSignedCSV;
+        let signed_csv = PrintSignedCSV;
         core.help("px");
         pb.help(&mut core);
         pcsv.help(&mut core);
-        pscsv.help(&mut core);
+        signed_csv.help(&mut core);
         assert_eq!(
             core.stdout.utf8_string().unwrap(),
             "Commands: [printHex | px]\n\
@@ -540,6 +541,11 @@ mod test_print_hex {
         );
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
+    #[expect(
+        clippy::cognitive_complexity,
+        clippy::too_many_lines,
+        reason = "long test function"
+    )]
     fn test_px_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -923,7 +929,7 @@ mod test_print_hex {
     }
 
     #[test]
-    fn test_px() {
+    fn px() {
         operate_on_file(&test_px_cb, DATA);
     }
 
@@ -959,12 +965,12 @@ mod test_print_hex {
     }
 
     #[test]
-    fn test_px_vir() {
+    fn px_vir() {
         operate_on_file(&test_px_vir_cb, DATA);
     }
 
     #[test]
-    fn test_px_err() {
+    fn px_err() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -986,7 +992,7 @@ mod test_print_hex {
     }
 
     #[test]
-    fn test_pb_2() {
+    fn pb_2() {
         let mut core = Core::new_no_colors();
         let mut pb = PrintBase;
         core.stderr = Writer::new_buf();
@@ -1022,7 +1028,7 @@ mod test_print_hex {
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
     #[test]
-    fn test_pb_16() {
+    fn pb_16() {
         let mut core = Core::new_no_colors();
         let mut pb = PrintBase;
         core.stderr = Writer::new_buf();
@@ -1053,7 +1059,7 @@ mod test_print_hex {
     }
 
     #[test]
-    fn test_pb_error() {
+    fn pb_error() {
         let mut core = Core::new_no_colors();
         let mut pb = PrintBase;
         core.stderr = Writer::new_buf();
@@ -1099,7 +1105,7 @@ mod test_print_hex {
         );
     }
     #[test]
-    fn test_pcsv_8() {
+    fn pcsv_8() {
         let mut core = Core::new_no_colors();
         let mut pcsv = PrintCSV;
         core.stderr = Writer::new_buf();
@@ -1133,7 +1139,7 @@ mod test_print_hex {
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
     #[test]
-    fn test_pcsv_16() {
+    fn pcsv_16() {
         let mut core = Core::new_no_colors();
         let mut pcsv = PrintCSV;
         core.stderr = Writer::new_buf();
@@ -1168,7 +1174,7 @@ mod test_print_hex {
     }
 
     #[test]
-    fn test_pcsv_32() {
+    fn pcsv_32() {
         let mut core = Core::new_no_colors();
         let mut pcsv = PrintCSV;
         core.stderr = Writer::new_buf();
@@ -1201,7 +1207,7 @@ mod test_print_hex {
     }
 
     #[test]
-    fn test_pcsv_64() {
+    fn pcsv_64() {
         let mut core = Core::new_no_colors();
         let mut pcsv = PrintCSV;
         core.stderr = Writer::new_buf();
@@ -1237,7 +1243,7 @@ mod test_print_hex {
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
     #[test]
-    fn test_pcsv_128() {
+    fn pcsv_128() {
         let mut core = Core::new_no_colors();
         let mut pcsv = PrintCSV;
         core.stderr = Writer::new_buf();
@@ -1273,7 +1279,7 @@ mod test_print_hex {
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
     #[test]
-    fn test_pcsv_256() {
+    fn pcsv_256() {
         let mut core = Core::new_no_colors();
         let mut pcsv = PrintCSV;
         core.stderr = Writer::new_buf();
@@ -1308,7 +1314,7 @@ mod test_print_hex {
     }
 
     #[test]
-    fn test_pcsv_512() {
+    fn pcsv_512() {
         let mut core = Core::new_no_colors();
         let mut pcsv = PrintCSV;
         core.stderr = Writer::new_buf();
@@ -1343,7 +1349,7 @@ mod test_print_hex {
     }
 
     #[test]
-    fn test_pcsv_errors() {
+    fn pcsv_errors() {
         let mut core = Core::new_no_colors();
         let mut pcsv = PrintCSV;
         core.stderr = Writer::new_buf();
@@ -1399,7 +1405,7 @@ mod test_print_hex {
     }
 
     #[test]
-    fn test_pscsv_errors() {
+    fn pscsv_errors() {
         let mut core = Core::new_no_colors();
         let mut pscsv = PrintSignedCSV;
         core.stderr = Writer::new_buf();
@@ -1455,7 +1461,7 @@ mod test_print_hex {
     }
 
     #[test]
-    fn test_pscsv_8() {
+    fn pscsv_8() {
         let mut core = Core::new_no_colors();
         let mut pscsv = PrintSignedCSV;
         core.stderr = Writer::new_buf();
@@ -1489,7 +1495,7 @@ mod test_print_hex {
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
     #[test]
-    fn test_pscsv_16() {
+    fn pscsv_16() {
         let mut core = Core::new_no_colors();
         let mut pscsv = PrintSignedCSV;
         core.stderr = Writer::new_buf();
@@ -1524,7 +1530,7 @@ mod test_print_hex {
     }
 
     #[test]
-    fn test_pscsv_32() {
+    fn pscsv_32() {
         let mut core = Core::new_no_colors();
         let mut pscsv = PrintSignedCSV;
         core.stderr = Writer::new_buf();
@@ -1557,7 +1563,7 @@ mod test_print_hex {
     }
 
     #[test]
-    fn test_pscsv_64() {
+    fn pscsv_64() {
         let mut core = Core::new_no_colors();
         let mut pscsv = PrintSignedCSV;
         core.stderr = Writer::new_buf();
@@ -1593,7 +1599,7 @@ mod test_print_hex {
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
     #[test]
-    fn test_pscsv_128() {
+    fn pscsv_128() {
         let mut core = Core::new_no_colors();
         let mut pscsv = PrintSignedCSV;
         core.stderr = Writer::new_buf();

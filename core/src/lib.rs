@@ -1,4 +1,4 @@
-//! rair core library
+//! rair core library.
 extern crate alloc;
 
 mod cmd;

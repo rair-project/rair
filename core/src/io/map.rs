@@ -2,24 +2,24 @@
 
 use crate::helper::{error_msg, expect, is_color, str_to_num};
 use crate::{cmd::Cmd, core::Core};
-use std::io::Write;
-use yansi::Paint;
+use alloc::sync::Arc;
+use std::io::Write as _;
+use yansi::Paint as _;
 
 #[derive(Default)]
 pub struct Map;
 
-fn map_error(core: &mut Core, name: &str, err: &str) {
-    let name = name.primary().bold();
-    let msg = format!("Failed to parse {name}, {err}.");
-    error_msg(core, "Failed to map memory", &msg);
-}
-fn unmap_error(core: &mut Core, name: &str, err: &str) {
-    let name = name.primary().bold();
-    let msg = format!("Failed to parse {name}, {err}.");
-    error_msg(core, "Failed to unmap memory", &msg);
-}
-
 impl Cmd for Map {
+    fn commands(&self) -> &'static [&'static str] {
+        &["map"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[(
+            "[phy] [vir] [size]",
+            "Map region from physical address space to virtual address space.",
+        )]
+    }
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if args.len() != 3 {
             expect(core, args.len() as u64, 3);
@@ -44,22 +44,19 @@ impl Cmd for Map {
             error_msg(core, "Failed to map memory", &e.to_string());
         }
     }
-    fn commands(&self) -> &'static [&'static str] {
-        &["map"]
-    }
-
-    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
-        &[(
-            "[phy] [vir] [size]",
-            "Map region from physical address space to virtual address space.",
-        )]
-    }
 }
 
 #[derive(Default)]
 pub struct UnMap;
 
 impl Cmd for UnMap {
+    fn commands(&self) -> &'static [&'static str] {
+        &["unmap", "um"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[("[vir] [size]", "Unmap a previosly mapped memory region.")]
+    }
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if args.len() != 2 {
             expect(core, args.len() as u64, 2);
@@ -81,13 +78,6 @@ impl Cmd for UnMap {
             error_msg(core, "Failed to unmap memory", &e.to_string());
         }
     }
-    fn commands(&self) -> &'static [&'static str] {
-        &["unmap", "um"]
-    }
-
-    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
-        &[("[vir] [size]", "Unmap a previosly mapped memory region.")]
-    }
 }
 
 #[derive(Default)]
@@ -95,7 +85,7 @@ pub struct ListMap;
 
 impl ListMap {
     pub fn new(core: &mut Core) -> Self {
-        let env = core.env.clone();
+        let env = Arc::clone(&core.env);
         env.write()
             .add_str_with_cb(
                 "maps.headerColor",
@@ -110,6 +100,12 @@ impl ListMap {
 }
 
 impl Cmd for ListMap {
+    fn commands(&self) -> &'static [&'static str] {
+        &["maps"]
+    }
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[("", "List all memory maps.")]
+    }
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if !args.is_empty() {
             expect(core, args.len() as u64, 0);
@@ -137,22 +133,27 @@ impl Cmd for ListMap {
             .unwrap();
         }
     }
-    fn commands(&self) -> &'static [&'static str] {
-        &["maps"]
-    }
-    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
-        &[("", "List all memory maps.")]
-    }
+}
+
+fn map_error(core: &mut Core, name: &str, err: &str) {
+    let name = name.primary().bold();
+    let msg = format!("Failed to parse {name}, {err}.");
+    error_msg(core, "Failed to map memory", &msg);
+}
+fn unmap_error(core: &mut Core, name: &str, err: &str) {
+    let name = name.primary().bold();
+    let msg = format!("Failed to parse {name}, {err}.");
+    error_msg(core, "Failed to unmap memory", &msg);
 }
 #[cfg(test)]
 mod test_mapping {
     use super::*;
-    use crate::{writer::Writer, CmdOps};
+    use crate::{writer::Writer, CmdOps as _};
     use rair_io::*;
     use std::path::Path;
     use test_file::*;
     #[test]
-    fn test_map_docs() {
+    fn map_docs() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -165,7 +166,7 @@ mod test_mapping {
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
     #[test]
-    fn test_unmap_docs() {
+    fn unmap_docs() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -178,7 +179,7 @@ mod test_mapping {
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
     #[test]
-    fn test_list_map_docs() {
+    fn list_map_docs() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -245,11 +246,11 @@ mod test_mapping {
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
     #[test]
-    fn test_map() {
+    fn map() {
         operate_on_file(&test_map_cb, DATA);
     }
     #[test]
-    fn test_map_error() {
+    fn map_error() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();

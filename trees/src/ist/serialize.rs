@@ -4,7 +4,7 @@ use super::tree::IST;
 use core::fmt::{Formatter, Result as FResult};
 use serde::de;
 use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
-use serde::ser::{Serialize, SerializeSeq, Serializer};
+use serde::ser::{Serialize, SerializeSeq as _, Serializer};
 impl<K: Ord + Copy + Serialize, V: Serialize> Serialize for IST<K, V> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -76,7 +76,7 @@ where
 mod test_ist_serialize {
     use super::*;
     #[test]
-    fn test_serialize() {
+    fn serialize() {
         let mut ist: IST<u64, &'static str> = IST::new();
         ist.insert(50, 60, "[50, 60]");
         ist.insert(20, 30, "[20, 30]");

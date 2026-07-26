@@ -3,79 +3,14 @@
 use crate::core::Core;
 use crate::helper::{error_msg, expect, expect_range, is_color, str_to_num};
 use crate::Cmd;
+use alloc::sync::Arc;
 use rair_env::EnvData;
-use std::io::Write;
-use yansi::Paint;
+use std::io::Write as _;
+use yansi::Paint as _;
 #[derive(Default)]
 pub struct Environment;
 
 impl Environment {
-    fn iterate(core: &mut Core) {
-        let env = core.env.clone();
-        for (k, v) in env.read().iter() {
-            match v {
-                EnvData::Bool(b) => writeln!(core.stdout, "{k} = {b}").unwrap(),
-                EnvData::I64(i) => writeln!(core.stdout, "{k} = {i}").unwrap(),
-                EnvData::U64(u) => writeln!(core.stdout, "{k} = 0x{u:x}").unwrap(),
-                EnvData::Str(s) => writeln!(core.stdout, "{k} = {s}").unwrap(),
-                EnvData::Color(r, g, b) => {
-                    let color = format!("#{r:02x}{g:02x}{b:02x}");
-                    writeln!(core.stdout, "{} = {}", k, color.rgb(r, g, b)).unwrap();
-                }
-            }
-        }
-    }
-    fn set(core: &mut Core, key: &str, value: &str) {
-        let env = core.env.clone();
-        let mut res = Ok(());
-        if env.read().is_bool(key) {
-            let v_str = value.to_ascii_lowercase();
-            let value = match v_str.as_str() {
-                "true" => true,
-                "false" => false,
-                _ => {
-                    let message = format!("Expected `true` or `false`, found `{value}`.");
-                    return error_msg(core, "Failed to set variable.", &message);
-                }
-            };
-            res = env.write().set_bool(key, value, core);
-        } else if env.read().is_i64(key) {
-            let value = match value.parse::<i64>() {
-                Ok(value) => value,
-                Err(e) => return error_msg(core, "Failed to set variable.", &e.to_string()),
-            };
-            res = env.write().set_i64(key, value, core);
-        } else if env.read().is_u64(key) {
-            let value = match str_to_num(value) {
-                Ok(value) => value,
-                Err(e) => return error_msg(core, "Failed to set variable.", &e.to_string()),
-            };
-            res = env.write().set_u64(key, value, core);
-        } else if env.read().is_str(key) {
-            res = env.write().set_str(key, value, core);
-        } else if env.read().is_color(key) {
-            if value.len() != 7 || !value.starts_with('#') {
-                let message = format!("Expected color code, found `{value}`.");
-                return error_msg(core, "Failed to set variable.", &message);
-            }
-            let r = match u8::from_str_radix(&value[1..3], 16) {
-                Ok(c) => c,
-                Err(e) => return error_msg(core, "Failed to set variable.", &e.to_string()),
-            };
-            let g = match u8::from_str_radix(&value[3..5], 16) {
-                Ok(c) => c,
-                Err(e) => return error_msg(core, "Failed to set variable.", &e.to_string()),
-            };
-            let b = match u8::from_str_radix(&value[5..], 16) {
-                Ok(c) => c,
-                Err(e) => return error_msg(core, "Failed to set variable.", &e.to_string()),
-            };
-            res = env.write().set_color(key, (r, g, b), core);
-        }
-        if let Err(e) = res {
-            error_msg(core, "Failed to set variable.", &e.to_string());
-        }
-    }
     fn display(core: &mut Core, key: &str) {
         let env = core.env.read();
         let Some(data) = env.get(key) else {
@@ -94,9 +29,96 @@ impl Environment {
             }
         }
     }
+    fn iterate(core: &mut Core) {
+        let env = Arc::clone(&core.env);
+        for (k, v) in env.read().iter() {
+            match v {
+                EnvData::Bool(b) => writeln!(core.stdout, "{k} = {b}").unwrap(),
+                EnvData::I64(i) => writeln!(core.stdout, "{k} = {i}").unwrap(),
+                EnvData::U64(u) => writeln!(core.stdout, "{k} = 0x{u:x}").unwrap(),
+                EnvData::Str(s) => writeln!(core.stdout, "{k} = {s}").unwrap(),
+                EnvData::Color(r, g, b) => {
+                    let color = format!("#{r:02x}{g:02x}{b:02x}");
+                    writeln!(core.stdout, "{} = {}", k, color.rgb(r, g, b)).unwrap();
+                }
+            }
+        }
+    }
+    fn set(core: &mut Core, key: &str, value: &str) {
+        let env = Arc::clone(&core.env);
+        let res = if env.read().is_bool(key) {
+            let v_str = value.to_ascii_lowercase();
+            let value = match v_str.as_str() {
+                "true" => true,
+                "false" => false,
+                _ => {
+                    let message = format!("Expected `true` or `false`, found `{value}`.");
+                    return error_msg(core, "Failed to set variable.", &message);
+                }
+            };
+            env.write().set_bool(key, value, core)
+        } else if env.read().is_i64(key) {
+            let value = match value.parse::<i64>() {
+                Ok(value) => value,
+                Err(e) => return error_msg(core, "Failed to set variable.", &e.to_string()),
+            };
+            env.write().set_i64(key, value, core)
+        } else if env.read().is_u64(key) {
+            let value = match str_to_num(value) {
+                Ok(value) => value,
+                Err(e) => return error_msg(core, "Failed to set variable.", &e.to_string()),
+            };
+            env.write().set_u64(key, value, core)
+        } else if env.read().is_str(key) {
+            env.write().set_str(key, value, core)
+        } else if env.read().is_color(key) {
+            if value.len() != 7 || !value.starts_with('#') {
+                let message = format!("Expected color code, found `{value}`.");
+                return error_msg(core, "Failed to set variable.", &message);
+            }
+            // `get` returns `None` when an index falls inside a multi-byte
+            // character; such values are not valid color codes.
+            let (Some(red), Some(green), Some(blue)) =
+                (value.get(1..3), value.get(3..5), value.get(5..))
+            else {
+                let message = format!("Expected color code, found `{value}`.");
+                return error_msg(core, "Failed to set variable.", &message);
+            };
+            let r = match u8::from_str_radix(red, 16) {
+                Ok(c) => c,
+                Err(e) => return error_msg(core, "Failed to set variable.", &e.to_string()),
+            };
+            let g = match u8::from_str_radix(green, 16) {
+                Ok(c) => c,
+                Err(e) => return error_msg(core, "Failed to set variable.", &e.to_string()),
+            };
+            let b = match u8::from_str_radix(blue, 16) {
+                Ok(c) => c,
+                Err(e) => return error_msg(core, "Failed to set variable.", &e.to_string()),
+            };
+            env.write().set_color(key, (r, g, b), core)
+        } else {
+            let message = format!("Variable `{key}` doesn't exist.");
+            return error_msg(core, "Failed to set variable.", &message);
+        };
+        if let Err(e) = res {
+            error_msg(core, "Failed to set variable.", &e.to_string());
+        }
+    }
 }
 
 impl Cmd for Environment {
+    fn commands(&self) -> &'static [&'static str] {
+        &["environment", "e"]
+    }
+
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[
+            ("", "List all environment variables."),
+            ("[var]", "Display the value of [var] environment variables."),
+            ("[var]=[value]", "Set [var] to be [value]"),
+        ]
+    }
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if args.len() > 3 {
             expect_range(core, args.len() as u64, 0, 3);
@@ -113,7 +135,7 @@ impl Cmd for Environment {
             // either args[0] ends with = or args[1] starts with = but not both!
             if args[0].ends_with('=') ^ args[1].starts_with('=') {
                 let key = args[0].split('=').next().unwrap().trim();
-                let value = args[1].split('=').last().unwrap().trim();
+                let value = args[1].split('=').next_back().unwrap().trim();
                 Self::set(core, key, value);
             } else {
                 error_msg(core, "Failed to set variable.", "Expected `=`.");
@@ -125,18 +147,10 @@ impl Cmd for Environment {
                 let message = format!("Expected `=` found `{}`.", args[1]);
                 error_msg(core, "Failed to set variable.", &message);
             }
+        } else {
+            // Nothing to do: lengths greater than 3 are rejected by the
+            // first branch and lengths 0 through 3 are all handled above.
         }
-    }
-    fn commands(&self) -> &'static [&'static str] {
-        &["environment", "e"]
-    }
-
-    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
-        &[
-            ("", "List all environment variables."),
-            ("[var]", "Display the value of [var] environment variables."),
-            ("[var]=[value]", "Set [var] to be [value]"),
-        ]
     }
 }
 
@@ -144,22 +158,22 @@ impl Cmd for Environment {
 pub struct EnvironmentReset;
 
 impl Cmd for EnvironmentReset {
-    fn run(&mut self, core: &mut Core, args: &[String]) {
-        if args.len() != 1 {
-            expect(core, args.len() as u64, 1);
-            return;
-        }
-        let env = core.env.clone();
-        let res = env.write().reset(&args[0], core);
-        if let Err(e) = res {
-            error_msg(core, "Failed to reset variable.", &e.to_string());
-        }
-    }
     fn commands(&self) -> &'static [&'static str] {
         &["environmentReset", "er"]
     }
     fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
         &[("[var]", "Reset [var] environment variable.")]
+    }
+    fn run(&mut self, core: &mut Core, args: &[String]) {
+        if args.len() != 1 {
+            expect(core, args.len() as u64, 1);
+            return;
+        }
+        let env = Arc::clone(&core.env);
+        let res = env.write().reset(&args[0], core);
+        if let Err(e) = res {
+            error_msg(core, "Failed to reset variable.", &e.to_string());
+        }
     }
 }
 
@@ -168,7 +182,7 @@ pub struct EnvironmentHelp;
 
 impl EnvironmentHelp {
     pub fn new(core: &mut Core) -> Self {
-        let env = core.env.clone();
+        let env = Arc::clone(&core.env);
         env.write()
             .add_str_with_cb(
                 "environmentHelp.envColor",
@@ -183,6 +197,12 @@ impl EnvironmentHelp {
 }
 
 impl Cmd for EnvironmentHelp {
+    fn commands(&self) -> &'static [&'static str] {
+        &["environmentHelp", "eh"]
+    }
+    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
+        &[("[var]", "Print help for [var] environment variable.")]
+    }
     fn run(&mut self, core: &mut Core, args: &[String]) {
         if args.len() != 1 {
             expect(core, args.len() as u64, 1);
@@ -199,12 +219,6 @@ impl Cmd for EnvironmentHelp {
             error_msg(core, "Failed to display help.", "Variable Not found");
         }
     }
-    fn commands(&self) -> &'static [&'static str] {
-        &["environmentHelp", "eh"]
-    }
-    fn help_messages(&self) -> &'static [(&'static str, &'static str)] {
-        &[("[var]", "Print help for [var] environment variable.")]
-    }
 }
 
 #[cfg(test)]
@@ -212,11 +226,11 @@ mod test_env {
     extern crate alloc;
 
     use super::*;
-    use crate::{writer::*, CmdOps};
+    use crate::{writer::*, CmdOps as _};
     use alloc::sync::Arc;
     use rair_env::Environment as Env;
     #[test]
-    fn test_help() {
+    fn help() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -243,7 +257,7 @@ mod test_env {
     }
 
     #[test]
-    fn test_env_help() {
+    fn env_help() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -264,12 +278,12 @@ mod test_env {
         );
     }
     #[test]
-    fn test_env_reset() {
+    fn env_reset() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
         let mut er = EnvironmentReset;
-        let env = core.env.clone();
+        let env = Arc::clone(&core.env);
         let (r, g, b) = env.read().get_color("color.1").unwrap();
         env.write()
             .set_color("color.1", (r + 1, g + 1, b + 1), &mut core)
@@ -281,7 +295,7 @@ mod test_env {
         assert_eq!(b, b2);
     }
     #[test]
-    fn test_env_reset_err() {
+    fn env_reset_err() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -316,7 +330,7 @@ mod test_env {
         core
     }
     #[test]
-    fn test_env_0() {
+    fn env_0() {
         let mut core = get_good_core();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -333,7 +347,7 @@ mod test_env {
         assert!(s.contains("c = #ffeedd\n"));
     }
     #[test]
-    fn test_env_1() {
+    fn env_1() {
         let mut core = get_good_core();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -371,7 +385,7 @@ mod test_env {
     }
 
     #[test]
-    fn test_env_2() {
+    fn env_2() {
         let mut core = get_good_core();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -385,7 +399,7 @@ mod test_env {
     }
 
     #[test]
-    fn test_env_3() {
+    fn env_3() {
         let mut core = get_good_core();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -400,7 +414,7 @@ mod test_env {
     }
 
     #[test]
-    fn test_env_error() {
+    fn env_error() {
         let mut core = Core::new_no_colors();
         core.env.write().add_bool("b", false, "").unwrap();
         core.stderr = Writer::new_buf();
@@ -441,7 +455,7 @@ mod test_env {
         );
     }
     #[test]
-    fn test_display_error() {
+    fn display_error() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -459,9 +473,9 @@ mod test_env {
     }
 
     #[test]
-    fn test_set_error() {
+    fn set_error() {
         let mut core = Core::new_no_colors();
-        let env = core.env.clone();
+        let env = Arc::clone(&core.env);
         env.write()
             .add_bool_with_cb("b", false, "", &mut core, always_false)
             .unwrap();

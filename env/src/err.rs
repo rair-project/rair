@@ -5,10 +5,10 @@ use alloc::fmt;
 #[derive(Debug, PartialEq)]
 #[non_exhaustive]
 pub enum EnvErr {
-    NotFound,
-    DifferentType,
-    CbFailed,
     AlreadyExist,
+    CbFailed,
+    DifferentType,
+    NotFound,
 }
 
 impl fmt::Display for EnvErr {

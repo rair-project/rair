@@ -1,4 +1,4 @@
-//! rair RPEL impelementation
+//! rair RPEL impelementation.
 
 mod cmd;
 mod error;

@@ -11,9 +11,9 @@ categories = ["CLI"]
 readme = "readme.md"
 
 [dependencies]
-err-derive = {workspace = true}
 pest = {workspace = true}
 pest_derive = {workspace = true}
+thiserror = {workspace = true}
 
 [lints]
 workspace = true

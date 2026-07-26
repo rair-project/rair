@@ -6,18 +6,29 @@ use crate::{
     grammar::{CliParser, Rule},
     help::HelpCmd,
 };
-use pest::Parser;
+use pest::Parser as _;
 
 #[derive(Debug, PartialEq)]
+#[expect(clippy::exhaustive_enums, reason = "parser AST node; closed set")]
 pub enum ParseTree {
-    Help(HelpCmd),
     Cmd(Cmd),
     Comment,
-    NewLine,
+    Help(HelpCmd),
     HelpAll,
+    NewLine,
 }
 
 impl ParseTree {
+    /// Constructs a [`ParseTree`] from one line of rair command input.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ParserError`] when `line` fails to parse as a rair command line.
+    ///
+    /// # Panics
+    ///
+    /// Diverges via `unimplemented_pair` on grammar rules that cannot occur at
+    /// the top level of the input — a parser invariant.
     pub fn construct(line: &str) -> Result<Self, ParserError> {
         let pairs = CliParser::parse(Rule::Input, line);
         if pairs.is_err() {
@@ -58,7 +69,7 @@ impl ParseTree {
 mod test_parser {
     use super::*;
     #[test]
-    fn test_parser() {
+    fn parser() {
         let mut tree = ParseTree::construct("aa? #and a little comment").unwrap();
         assert_eq!(
             tree,

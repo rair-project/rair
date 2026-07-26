@@ -11,11 +11,18 @@ pub struct Seek {
 }
 
 impl Seek {
-    pub(super) fn with_history(history: MRc<History>) -> Self {
-        Seek { history }
+    fn add_loc(&mut self, core: &mut Core, offset: u64) {
+        if let Some(loc) = core.get_loc().checked_add(offset) {
+            self.set_loc(core, loc);
+        } else {
+            error_msg(core, "Seek Error", "Attempt to add with overflow.");
+        }
     }
     fn backward(&mut self, core: &mut Core) {
-        if let Some((mode, addr)) = self.history.lock().backward(core) {
+        // Hoisted out of the `if let` scrutinee so the history lock is
+        // released before either branch runs (significant_drop_in_scrutinee).
+        let entry = self.history.lock().backward(core);
+        if let Some((mode, addr)) = entry {
             core.mode = mode;
             core.set_loc(addr);
         } else {
@@ -23,19 +30,20 @@ impl Seek {
         }
     }
     fn forward(&mut self, core: &mut Core) {
-        if let Some((mode, addr)) = self.history.lock().forward(core) {
+        // Hoisted out of the `if let` scrutinee so the history lock is
+        // released before either branch runs (significant_drop_in_scrutinee).
+        let entry = self.history.lock().forward(core);
+        if let Some((mode, addr)) = entry {
             core.mode = mode;
             core.set_loc(addr);
         } else {
             error_msg(core, "Seek Error", "History is empty.");
         }
     }
-    fn add_loc(&mut self, core: &mut Core, offset: u64) {
-        if let Some(loc) = core.get_loc().checked_add(offset) {
-            self.set_loc(core, loc);
-        } else {
-            error_msg(core, "Seek Error", "Attempt to add with overflow.");
-        }
+    #[inline]
+    fn set_loc(&mut self, core: &mut Core, offset: u64) {
+        self.history.lock().add(core);
+        core.set_loc(offset);
     }
     fn sub_loc(&mut self, core: &mut Core, offset: u64) {
         if let Some(loc) = core.get_loc().checked_sub(offset) {
@@ -44,41 +52,12 @@ impl Seek {
             error_msg(core, "Seek Error", "Attempt to subtract with overflow.");
         }
     }
-    #[inline]
-    fn set_loc(&mut self, core: &mut Core, offset: u64) {
-        self.history.lock().add(core);
-        core.set_loc(offset);
+    pub(super) fn with_history(history: MRc<History>) -> Self {
+        Seek { history }
     }
 }
 
 impl Cmd for Seek {
-    fn run(&mut self, core: &mut Core, args: &[String]) {
-        if args.len() != 1 {
-            expect(core, args.len() as u64, 1);
-            return;
-        }
-        if args[0] == "-" {
-            self.backward(core);
-        } else if args[0] == "+" {
-            self.forward(core);
-        } else if args[0].starts_with('+') {
-            match str_to_num(&args[0][1..]) {
-                Ok(offset) => self.add_loc(core, offset),
-                Err(e) => error_msg(core, "Seek Error", &e.to_string()),
-            }
-        } else if args[0].starts_with('-') {
-            match str_to_num(&args[0][1..]) {
-                Ok(offset) => self.sub_loc(core, offset),
-                Err(e) => error_msg(core, "Seek Error", &e.to_string()),
-            }
-        } else {
-            match str_to_num(&args[0]) {
-                Ok(offset) => self.set_loc(core, offset),
-                Err(e) => error_msg(core, "Seek Error", &e.to_string()),
-            }
-        }
-    }
-
     fn commands(&self) -> &'static [&'static str] {
         &["seek", "s"]
     }
@@ -92,15 +71,41 @@ impl Cmd for Seek {
             ("[offset]", "Set current location to offset."),
         ]
     }
+
+    fn run(&mut self, core: &mut Core, args: &[String]) {
+        if args.len() != 1 {
+            expect(core, args.len() as u64, 1);
+            return;
+        }
+        if args[0] == "-" {
+            self.backward(core);
+        } else if args[0] == "+" {
+            self.forward(core);
+        } else if let Some(offset) = args[0].strip_prefix('+') {
+            match str_to_num(offset) {
+                Ok(offset) => self.add_loc(core, offset),
+                Err(e) => error_msg(core, "Seek Error", &e.to_string()),
+            }
+        } else if let Some(offset) = args[0].strip_prefix('-') {
+            match str_to_num(offset) {
+                Ok(offset) => self.sub_loc(core, offset),
+                Err(e) => error_msg(core, "Seek Error", &e.to_string()),
+            }
+        } else {
+            match str_to_num(&args[0]) {
+                Ok(offset) => self.set_loc(core, offset),
+                Err(e) => error_msg(core, "Seek Error", &e.to_string()),
+            }
+        }
+    }
 }
 
 #[cfg(test)]
-
 mod test_seek {
     use super::*;
-    use crate::{writer::Writer, AddrMode, CmdOps};
+    use crate::{writer::Writer, AddrMode, CmdOps as _};
     #[test]
-    fn test_docs() {
+    fn docs() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -120,7 +125,8 @@ mod test_seek {
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
     }
     #[test]
-    fn test_seek() {
+    #[expect(clippy::cognitive_complexity, reason = "long test function")]
+    fn seek() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -154,7 +160,7 @@ mod test_seek {
         core.stdout = Writer::new_buf();
         seek.run(&mut core, &["0b101011".to_owned()]);
         assert_eq!(core.mode, AddrMode::Phy);
-        assert_eq!(core.get_loc(), 0b101011);
+        assert_eq!(core.get_loc(), 0b10_1011);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
@@ -169,7 +175,7 @@ mod test_seek {
         core.stdout = Writer::new_buf();
         seek.run(&mut core, &["+".to_owned()]);
         assert_eq!(core.mode, AddrMode::Phy);
-        assert_eq!(core.get_loc(), 0b101011);
+        assert_eq!(core.get_loc(), 0b10_1011);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
@@ -177,7 +183,7 @@ mod test_seek {
 
         seek.run(&mut core, &["+".to_owned()]);
         assert_eq!(core.mode, AddrMode::Phy);
-        assert_eq!(core.get_loc(), 0b101011);
+        assert_eq!(core.get_loc(), 0b10_1011);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -202,7 +208,7 @@ mod test_seek {
         );
     }
     #[test]
-    fn test_seek_overflow() {
+    fn seek_overflow() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -222,7 +228,7 @@ mod test_seek {
 
         seek.run(&mut core, &["0xffffffffffffffff".to_owned()]);
         assert_eq!(core.mode, AddrMode::Phy);
-        assert_eq!(core.get_loc(), 0xffffffffffffffff);
+        assert_eq!(core.get_loc(), 0xffff_ffff_ffff_ffff);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(core.stderr.utf8_string().unwrap(), "");
         core.stderr = Writer::new_buf();
@@ -230,7 +236,7 @@ mod test_seek {
 
         seek.run(&mut core, &["+1".to_owned()]);
         assert_eq!(core.mode, AddrMode::Phy);
-        assert_eq!(core.get_loc(), 0xffffffffffffffff);
+        assert_eq!(core.get_loc(), 0xffff_ffff_ffff_ffff);
         assert_eq!(core.stdout.utf8_string().unwrap(), "");
         assert_eq!(
             core.stderr.utf8_string().unwrap(),
@@ -239,7 +245,7 @@ mod test_seek {
     }
 
     #[test]
-    fn test_seek_invalid_arguments() {
+    fn seek_invalid_arguments() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();

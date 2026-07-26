@@ -6,35 +6,39 @@ use rair_io::IoMode;
 #[command(version)]
 #[command(about = "reverse engineering framework")]
 struct ArgsInner {
-    /// File permision: Permission can be R, C, or RW case insensitive
-    #[arg(short = 'p', long = "perm")]
-    #[arg(value_name = "rwc")]
-    pub perm: Option<String>,
-
-    /// Physical Base address, Default
+    /// Physical Base address, Default.
     #[arg(short = 'b', long = "base")]
     #[arg(value_name = "num")]
     pub base: Option<String>,
 
-    /// Project to be opened
+    /// Binary file to be loaded.
+    pub file: Option<String>,
+
+    /// File permision: Permission can be R, C, or RW case insensitive.
+    #[arg(short = 'p', long = "perm")]
+    #[arg(value_name = "rwc")]
+    pub perm: Option<String>,
+
+    /// Project to be opened.
     #[arg(short = 'P', long = "proj")]
     #[arg(value_name = "/path/to/project")]
     pub proj: Option<String>,
-
-    /// Binary file to be loaded
-    pub file: Option<String>,
 }
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum Args {
-    Proj(String),
     File {
         uri: String,
         base: u64,
         perms: IoMode,
     },
+    Proj(String),
 }
 impl Args {
+    /// parse command line arguments.
+    pub fn parse() -> Result<Self, String> {
+        ArgsInner::parse().try_into()
+    }
     fn parse_perm(perms_str: &str) -> Result<IoMode, String> {
         let mut perm = IoMode::default();
         for c in perms_str.chars() {
@@ -46,10 +50,6 @@ impl Args {
             }
         }
         Ok(perm)
-    }
-    /// parse command line arguments
-    pub fn parse() -> Result<Self, String> {
-        ArgsInner::parse().try_into()
     }
 }
 
@@ -119,10 +119,10 @@ mod cli_tests {
     #[test]
     fn proj_test() {
         let ai = ArgsInner {
-            perm: None,
             base: None,
-            proj: Some("hello".to_owned()),
             file: None,
+            perm: None,
+            proj: Some("hello".to_owned()),
         };
         let args: Args = ai.try_into().unwrap();
         assert_eq!(args, Args::Proj("hello".to_owned()));
@@ -130,10 +130,10 @@ mod cli_tests {
     #[test]
     fn file_test() {
         let ai = ArgsInner {
-            perm: None,
             base: None,
-            proj: None,
             file: Some("hello".to_owned()),
+            perm: None,
+            proj: None,
         };
         let args: Args = ai.try_into().unwrap();
         assert_eq!(
@@ -148,10 +148,10 @@ mod cli_tests {
     #[test]
     fn file_with_attributes_test() {
         let ai = ArgsInner {
-            perm: Some("c".to_owned()),
             base: Some("0x1000".to_owned()),
-            proj: None,
             file: Some("hello".to_owned()),
+            perm: Some("c".to_owned()),
+            proj: None,
         };
         let args: Args = ai.try_into().unwrap();
         assert_eq!(
@@ -167,10 +167,10 @@ mod cli_tests {
     #[test]
     fn proj_file() {
         let ai = ArgsInner {
-            perm: None,
             base: None,
-            proj: Some("hello".to_owned()),
             file: Some("hello".to_owned()),
+            perm: None,
+            proj: Some("hello".to_owned()),
         };
         let err: Result<Args, _> = ai.try_into();
         let err = err.err().unwrap();
@@ -183,10 +183,10 @@ mod cli_tests {
     #[test]
     fn proj_base() {
         let ai = ArgsInner {
-            perm: None,
             base: Some("0x1000".to_owned()),
-            proj: Some("hello".to_owned()),
             file: None,
+            perm: None,
+            proj: Some("hello".to_owned()),
         };
         let err: Result<Args, _> = ai.try_into();
         let err = err.err().unwrap();
@@ -195,10 +195,10 @@ mod cli_tests {
     #[test]
     fn proj_perm() {
         let ai = ArgsInner {
-            perm: Some("c".to_owned()),
             base: None,
-            proj: Some("hello".to_owned()),
             file: None,
+            perm: Some("c".to_owned()),
+            proj: Some("hello".to_owned()),
         };
         let err: Result<Args, _> = ai.try_into();
         let err = err.err().unwrap();

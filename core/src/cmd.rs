@@ -1,6 +1,6 @@
 use crate::Core;
-use std::io::Write;
-use yansi::Paint;
+use std::io::Write as _;
+use yansi::Paint as _;
 
 pub trait Cmd {
     fn commands(&self) -> &'static [&'static str];
@@ -9,17 +9,11 @@ pub trait Cmd {
 }
 
 pub trait CmdOps: Cmd {
-    fn sorted_commands(&self) -> Vec<&'static str>;
     fn help(&self, core: &mut Core);
+    fn sorted_commands(&self) -> Vec<&'static str>;
 }
 
 impl<T: ?Sized + Cmd> CmdOps for T {
-    fn sorted_commands(&self) -> Vec<&'static str> {
-        let mut commands = self.commands().to_vec();
-        commands.sort_by_key(|a| a.len());
-        commands
-    }
-
     fn help(&self, core: &mut Core) {
         let (r1, g1, b1) = core.env.read().get_color("color.6").unwrap();
         let (r2, g2, b2) = core.env.read().get_color("color.7").unwrap();
@@ -40,15 +34,21 @@ impl<T: ?Sized + Cmd> CmdOps for T {
             if !args.is_empty() {
                 write!(core.stdout, " {}", args.rgb(r2, g2, b2)).unwrap();
             }
-            writeln!(core.stdout, "\t{description}",).unwrap();
+            writeln!(core.stdout, "\t{description}").unwrap();
         }
+    }
+
+    fn sorted_commands(&self) -> Vec<&'static str> {
+        let mut commands = self.commands().to_vec();
+        commands.sort_by_key(|a| a.len());
+        commands
     }
 }
 
 #[cfg(test)]
 mod cmd_tests {
     use super::Cmd;
-    use crate::{CmdOps, Core, Writer};
+    use crate::{CmdOps as _, Core, Writer};
 
     struct LongShort;
     impl Cmd for LongShort {
@@ -59,7 +59,7 @@ mod cmd_tests {
             &[("t1", "test 1"), ("t2", "test 2")]
         }
         fn run(&mut self, _: &mut crate::Core, _: &[String]) {
-            unimplemented!()
+            // never invoked in these tests
         }
     }
 
@@ -73,11 +73,11 @@ mod cmd_tests {
             &[("t1", "test 1"), ("t2", "test 2")]
         }
         fn run(&mut self, _: &mut Core, _: &[String]) {
-            unimplemented!()
+            // never invoked in these tests
         }
     }
     #[test]
-    fn test_help_short() {
+    fn help_short() {
         let mut core = Core::new_no_colors();
         core.stdout = Writer::new_buf();
         yansi::disable();
@@ -89,7 +89,7 @@ mod cmd_tests {
         );
     }
     #[test]
-    fn test_help_long() {
+    fn help_long() {
         let mut core = Core::new_no_colors();
         core.stdout = Writer::new_buf();
         yansi::disable();

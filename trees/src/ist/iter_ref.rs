@@ -5,21 +5,21 @@ use super::rb_helpers::AugData;
 use super::tree::IST;
 use crate::rbtree::TreeRefIterator;
 use core::slice::Iter;
-/// Iterator for [IST] reference
+/// Iterator for [IST] reference.
 pub struct ISTRefIterator<'a, K: Ord + Copy, V> {
-    tree_iter: TreeRefIterator<'a, Interval<K>, AugData<K>, Vec<V>>,
-    lo: Option<K>,
-    hi: Option<K>,
     current_iter: Iter<'a, V>,
+    hi: Option<K>,
+    lo: Option<K>,
+    tree_iter: TreeRefIterator<'a, Interval<K>, AugData<K>, Vec<V>>,
 }
 
 impl<'a, K: Ord + Copy, V> ISTRefIterator<'a, K, V> {
-    pub(crate) fn new(root: &'a IST<K, V>) -> ISTRefIterator<'_, K, V> {
+    pub(crate) fn new(root: &'a IST<K, V>) -> ISTRefIterator<'a, K, V> {
         ISTRefIterator {
-            tree_iter: (&root.root).into_iter(),
-            lo: None,
-            hi: None,
             current_iter: [].iter(),
+            hi: None,
+            lo: None,
+            tree_iter: (&root.root).into_iter(),
         }
     }
 }

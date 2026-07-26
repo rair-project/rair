@@ -5,25 +5,25 @@ use crate::utils::{IoError, IoMode};
 use std::io;
 
 const METADATA: RIOPluginMetadata = RIOPluginMetadata {
-    name: "Malloc",
+    author: "Oddcoder",
     desc: "This plugin is used to create memory based nameless files.\
            The only mode supported by this plugin is Read-Write ( you\
            cannot open memory file as read only).",
-    author: "Oddcoder",
     license: "LGPL",
+    name: "Malloc",
     version: "0.0.1",
 };
 struct MallocInternal {
     data: Vec<u8>,
 }
 impl MallocInternal {
+    fn len(&self) -> usize {
+        self.data.len()
+    }
     fn new(size: u64) -> Self {
         MallocInternal {
             data: vec![0; size as usize],
         }
-    }
-    fn len(&self) -> usize {
-        self.data.len()
     }
 }
 
@@ -56,21 +56,26 @@ struct MallocPlugin;
 impl MallocPlugin {
     fn uri_to_size(uri: &str) -> Option<u64> {
         let n = uri.trim_start_matches("malloc://");
-        if n.len() >= 2 {
-            match &*n[0..2].to_lowercase() {
-                "0b" => return u64::from_str_radix(&n[2..], 2).ok(),
-                "0x" => return u64::from_str_radix(&n[2..], 16).ok(),
+        if let Some(prefix) = n.get(0..2) {
+            match &*prefix.to_lowercase() {
+                "0b" => return u64::from_str_radix(n.get(2..).unwrap_or_default(), 2).ok(),
+                "0x" => return u64::from_str_radix(n.get(2..).unwrap_or_default(), 16).ok(),
                 _ => (),
             }
         }
         if n.len() > 1 && n.starts_with('0') {
-            return u64::from_str_radix(&n[1..], 8).ok();
+            return u64::from_str_radix(n.get(1..).unwrap_or_default(), 8).ok();
         }
         n.parse::<u64>().ok()
     }
 }
 
 impl RIOPlugin for MallocPlugin {
+    fn accept_uri(&self, uri: &str) -> bool {
+        let split: Vec<&str> = uri.split("://").collect();
+        split.len() == 2 && split[0] == "malloc"
+    }
+
     fn get_metadata(&self) -> &'static RIOPluginMetadata {
         &METADATA
     }
@@ -103,19 +108,15 @@ impl RIOPlugin for MallocPlugin {
                 ))
             }
         };
+        let size = file.len() as u64;
         let desc = RIOPluginDesc {
             name: uri.to_owned(),
             perm: flags,
-            raddr: 0,
-            size: (file.len() as u64),
             plugin_operations: Box::new(file),
+            raddr: 0,
+            size,
         };
         Ok(desc)
-    }
-
-    fn accept_uri(&self, uri: &str) -> bool {
-        let split: Vec<&str> = uri.split("://").collect();
-        split.len() == 2 && split[0] == "malloc"
     }
 }
 
@@ -124,11 +125,10 @@ pub fn plugin() -> Box<dyn RIOPlugin + Sync + Send> {
 }
 
 #[cfg(test)]
-
 mod test_malloc {
     use super::*;
     #[test]
-    fn test_malloc() {
+    fn malloc() {
         let mut p = plugin();
         let mut file = p
             .open("malloc://0x500", IoMode::READ | IoMode::WRITE)
@@ -149,7 +149,7 @@ mod test_malloc {
     }
 
     #[test]
-    fn test_malloc_errors() {
+    fn malloc_errors() {
         let mut p = plugin();
         let mut err = p
             .open("malloc://0x", IoMode::READ | IoMode::WRITE)
@@ -189,7 +189,7 @@ mod test_malloc {
     }
 
     #[test]
-    fn test_read_write_error() {
+    fn read_write_error() {
         let mut p = plugin();
         let mut file = p
             .open("malloc://0x50", IoMode::READ | IoMode::WRITE)

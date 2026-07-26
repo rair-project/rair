@@ -1,12 +1,17 @@
+#![expect(
+    clippy::non_ascii_literal,
+    reason = "expected hexdiff output contains box-drawing characters"
+)]
+
 use std::path::Path;
 
 use rair_io::IoMode;
 use test_file::{operate_on_file, DATA};
 
-use crate::{diff::hexdiff::HexDiff, CmdOps, Core, Writer};
+use crate::{diff::hexdiff::HexDiff, CmdOps as _, Core, Writer};
 
 #[test]
-fn test_help() {
+fn help() {
     let mut core = Core::new_no_colors();
     core.stderr = Writer::new_buf();
     core.stdout = Writer::new_buf();
@@ -23,7 +28,7 @@ fn test_help() {
 }
 
 #[test]
-fn test_hd_0_args() {
+fn hd_0_args() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -40,7 +45,7 @@ fn test_hd_0_args() {
 }
 
 #[test]
-fn test_hd_1_args() {
+fn hd_1_args() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -57,7 +62,7 @@ fn test_hd_1_args() {
 }
 
 #[test]
-fn test_hd_2_args() {
+fn hd_2_args() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -75,7 +80,7 @@ fn test_hd_2_args() {
 }
 
 #[test]
-fn test_hd_4_args() {
+fn hd_4_args() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -99,7 +104,7 @@ fn test_hd_4_args() {
     operate_on_file(&test_hd_cb, DATA);
 }
 #[test]
-fn test_hd_2_args_1_bad() {
+fn hd_2_args_1_bad() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -115,7 +120,7 @@ fn test_hd_2_args_1_bad() {
     operate_on_file(&test_hd_cb, DATA);
 }
 #[test]
-fn test_hd_2_args_2_bad() {
+fn hd_2_args_2_bad() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -132,7 +137,7 @@ fn test_hd_2_args_2_bad() {
 }
 
 #[test]
-fn test_hd_3_args_1_bad() {
+fn hd_3_args_1_bad() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -151,7 +156,7 @@ fn test_hd_3_args_1_bad() {
     operate_on_file(&test_hd_cb, DATA);
 }
 #[test]
-fn test_hd_3_args_2_bad() {
+fn hd_3_args_2_bad() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -171,7 +176,7 @@ fn test_hd_3_args_2_bad() {
 }
 
 #[test]
-fn test_hd_3_args_3_bad() {
+fn hd_3_args_3_bad() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -191,7 +196,7 @@ fn test_hd_3_args_3_bad() {
 }
 
 #[test]
-fn test_hd_0() {
+fn hd_0() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -207,7 +212,7 @@ fn test_hd_0() {
     operate_on_file(&test_hd_cb, DATA);
 }
 #[test]
-fn test_hd_1() {
+fn hd_1() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -225,7 +230,7 @@ fn test_hd_1() {
     operate_on_file(&test_hd_cb, DATA);
 }
 #[test]
-fn test_hd_2() {
+fn hd_2() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -243,7 +248,7 @@ fn test_hd_2() {
     operate_on_file(&test_hd_cb, DATA);
 }
 #[test]
-fn test_hd_3() {
+fn hd_3() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -261,7 +266,7 @@ fn test_hd_3() {
     operate_on_file(&test_hd_cb, DATA);
 }
 #[test]
-fn test_hd_4() {
+fn hd_4() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -279,7 +284,7 @@ fn test_hd_4() {
     operate_on_file(&test_hd_cb, DATA);
 }
 #[test]
-fn test_hd_5() {
+fn hd_5() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -297,7 +302,7 @@ fn test_hd_5() {
     operate_on_file(&test_hd_cb, DATA);
 }
 #[test]
-fn test_hd_6() {
+fn hd_6() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -315,7 +320,7 @@ fn test_hd_6() {
     operate_on_file(&test_hd_cb, DATA);
 }
 #[test]
-fn test_hd_7() {
+fn hd_7() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -333,7 +338,7 @@ fn test_hd_7() {
     operate_on_file(&test_hd_cb, DATA);
 }
 #[test]
-fn test_hd_8() {
+fn hd_8() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -351,7 +356,7 @@ fn test_hd_8() {
     operate_on_file(&test_hd_cb, DATA);
 }
 #[test]
-fn test_hd_9() {
+fn hd_9() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -369,7 +374,7 @@ fn test_hd_9() {
     operate_on_file(&test_hd_cb, DATA);
 }
 #[test]
-fn test_hd_a() {
+fn hd_a() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -387,7 +392,7 @@ fn test_hd_a() {
     operate_on_file(&test_hd_cb, DATA);
 }
 #[test]
-fn test_hd_b() {
+fn hd_b() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -405,7 +410,7 @@ fn test_hd_b() {
     operate_on_file(&test_hd_cb, DATA);
 }
 #[test]
-fn test_hd_c() {
+fn hd_c() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -423,7 +428,7 @@ fn test_hd_c() {
     operate_on_file(&test_hd_cb, DATA);
 }
 #[test]
-fn test_hd_d() {
+fn hd_d() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -441,7 +446,7 @@ fn test_hd_d() {
     operate_on_file(&test_hd_cb, DATA);
 }
 #[test]
-fn test_hd_e() {
+fn hd_e() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -459,7 +464,7 @@ fn test_hd_e() {
     operate_on_file(&test_hd_cb, DATA);
 }
 #[test]
-fn test_hd_f() {
+fn hd_f() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -478,7 +483,7 @@ fn test_hd_f() {
 }
 
 #[test]
-fn test_hd_10() {
+fn hd_10() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -497,7 +502,7 @@ fn test_hd_10() {
 }
 
 #[test]
-fn test_hd_11() {
+fn hd_11() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
@@ -517,7 +522,7 @@ fn test_hd_11() {
 }
 
 #[test]
-fn test_hd_100() {
+fn hd_100() {
     fn test_hd_cb(path: &Path) {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();

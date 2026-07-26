@@ -1,6 +1,6 @@
 //! Linking all rair parts together into 1 module.
 
-use crate::cmd::{Cmd, CmdOps};
+use crate::cmd::{Cmd, CmdOps as _};
 use crate::commands::Commands;
 use crate::helper::{error_msg, AddrMode};
 use crate::io::register_io;
@@ -15,121 +15,49 @@ use rair_env::Environment;
 use rair_io::{IoError, RIO};
 use serde::{Deserialize, Serialize};
 use std::io;
-use std::io::Write;
-use yansi::Paint;
+use std::io::Write as _;
+use yansi::Paint as _;
 #[derive(Serialize, Deserialize)]
+#[expect(
+    clippy::partial_pub_fields,
+    reason = "loc and commands are deliberately encapsulated behind accessors; the rest is public API"
+)]
 pub struct Core {
-    pub mode: AddrMode,
-    pub io: RIO,
-    loc: u64,
     // Every time you add some new serde(skip) variable
     // make sure that this variable is well initialized
     // in the projects commands.
     #[serde(skip)]
-    pub stdout: Writer,
-    #[serde(skip)]
-    pub stderr: Writer,
-    #[serde(skip)]
     commands: Arc<Mutex<Commands>>,
     #[serde(skip)]
     pub env: Arc<RwLock<Environment<Core>>>,
+    pub io: RIO,
+    loc: u64,
+    pub mode: AddrMode,
+    #[serde(skip)]
+    pub stderr: Writer,
+    #[serde(skip)]
+    pub stdout: Writer,
 }
 
 impl Default for Core {
     fn default() -> Self {
         Core {
-            mode: AddrMode::Phy,
-            stdout: Writer::new_write(Box::new(io::stdout())),
-            stderr: Writer::new_write(Box::new(io::stderr())),
-            io: RIO::new(),
-            loc: 0,
             commands: Arc::default(),
             env: Arc::default(),
+            io: RIO::new(),
+            loc: 0,
+            mode: AddrMode::Phy,
+            stderr: Writer::new_write(Box::new(io::stderr())),
+            stdout: Writer::new_write(Box::new(io::stdout())),
         }
     }
 }
-fn set_global_color(_: &str, value: bool, _: &Environment<Core>, _: &mut Core) -> bool {
-    if value {
-        yansi::enable();
-    } else {
-        yansi::disable();
-    }
-    true
-}
 impl Core {
-    pub(crate) fn load_commands(&mut self) {
-        register_io(self);
-        register_loc(self);
-        register_utils(self);
-        register_diff(self);
-    }
-    /// Returns list of all available commands in [Core].
-    pub fn commands(&mut self) -> Arc<Mutex<Commands>> {
-        self.commands.clone()
-    }
-    pub fn set_commands(&mut self, commands: Arc<Mutex<Commands>>) {
-        self.commands = commands;
-    }
-    fn init_core_env(&mut self) {
-        let locked_env = self.env.clone();
-        let mut env = locked_env.write();
-
-        env.add_bool(
-            "core.helpInvalidCommand",
-            true,
-            "Show help for suggestions in case of invalid Command",
-        )
-        .unwrap();
-    }
-    fn init_colors(&mut self, enable: bool) {
-        let locked_env = self.env.clone();
-        let mut env = locked_env.write();
-        env.add_bool_with_cb(
-            "color.enable",
-            enable,
-            "Enable/Disable color theme globally",
-            self,
-            set_global_color,
-        )
-        .unwrap();
-        env.add_color("color.1", (0x58, 0x68, 0x75), "").unwrap();
-        env.add_color("color.2", (0xb5, 0x89, 0x00), "").unwrap();
-        env.add_color("color.3", (0xcb, 0x4b, 0x16), "").unwrap();
-        env.add_color("color.4", (0xdc, 0x32, 0x2f), "").unwrap();
-        env.add_color("color.5", (0xd3, 0x36, 0x82), "").unwrap();
-        env.add_color("color.6", (0x6c, 0x71, 0xc4), "").unwrap();
-        env.add_color("color.7", (0x26, 0x8b, 0xd2), "").unwrap();
-        env.add_color("color.8", (0x2a, 0xa1, 0x98), "").unwrap();
-        env.add_color("color.9", (0x85, 0x99, 0x00), "").unwrap();
-    }
-    fn new_settings(color: bool) -> Self {
-        let mut core = Core::default();
-        core.init_colors(color);
-        core.init_core_env();
-        core.load_commands();
-        core
-    }
-    #[must_use]
-    pub fn new() -> Self {
-        Core::new_settings(true)
-    }
-    #[must_use]
-    pub fn new_no_colors() -> Self {
-        Core::new_settings(false)
-    }
-    pub fn set_loc(&mut self, loc: u64) {
-        self.loc = loc;
-    }
-
-    #[must_use]
-    pub fn get_loc(&self) -> u64 {
-        self.loc
-    }
     pub fn add_command<T: Cmd + Sync + Send + 'static>(&mut self, funcs: T) {
         let cmds = funcs.commands();
-        let funcs = Arc::new(Mutex::new(funcs));
+        let funcs: Arc<Mutex<dyn Cmd + Sync + Send>> = Arc::new(Mutex::new(funcs));
         for cmd in cmds {
-            if !self.commands.lock().add_command(cmd, funcs.clone()) {
+            if !self.commands.lock().add_command(cmd, Arc::clone(&funcs)) {
                 let msg = format!("Command {} already existed.", cmd.bold().primary());
                 error_msg(self, "Cannot add this command.", &msg);
             }
@@ -159,9 +87,118 @@ impl Core {
             }
         }
     }
+    /// Returns list of all available commands in [Core].
+    pub fn commands(&mut self) -> Arc<Mutex<Commands>> {
+        Arc::clone(&self.commands)
+    }
+
+    #[must_use]
+    pub fn get_loc(&self) -> u64 {
+        self.loc
+    }
+    pub fn help(&mut self, command: &str) {
+        let cmds = Arc::clone(&self.commands);
+        let cmds_ref = cmds.lock();
+        let cmd = cmds_ref.find(command);
+        if let Some(cmd) = cmd {
+            let cmd = cmd.as_ref().lock();
+            cmd.help(self);
+        } else {
+            drop(cmds_ref);
+            self.command_not_found(command);
+        }
+    }
+    pub fn help_all(&mut self) {
+        let cmds = Arc::clone(&self.commands);
+        let cmds_ref = cmds.lock();
+        for cmd in cmds_ref.iter() {
+            cmd.as_ref().lock().help(self);
+        }
+    }
+    fn init_colors(&mut self, enable: bool) {
+        let locked_env = Arc::clone(&self.env);
+        let mut env = locked_env.write();
+        env.add_bool_with_cb(
+            "color.enable",
+            enable,
+            "Enable/Disable color theme globally",
+            self,
+            set_global_color,
+        )
+        .unwrap();
+        env.add_color("color.1", (0x58, 0x68, 0x75), "").unwrap();
+        env.add_color("color.2", (0xb5, 0x89, 0x00), "").unwrap();
+        env.add_color("color.3", (0xcb, 0x4b, 0x16), "").unwrap();
+        env.add_color("color.4", (0xdc, 0x32, 0x2f), "").unwrap();
+        env.add_color("color.5", (0xd3, 0x36, 0x82), "").unwrap();
+        env.add_color("color.6", (0x6c, 0x71, 0xc4), "").unwrap();
+        env.add_color("color.7", (0x26, 0x8b, 0xd2), "").unwrap();
+        env.add_color("color.8", (0x2a, 0xa1, 0x98), "").unwrap();
+        env.add_color("color.9", (0x85, 0x99, 0x00), "").unwrap();
+    }
+    fn init_core_env(&mut self) {
+        let locked_env = Arc::clone(&self.env);
+        let mut env = locked_env.write();
+
+        env.add_bool(
+            "core.helpInvalidCommand",
+            true,
+            "Show help for suggestions in case of invalid Command",
+        )
+        .unwrap();
+    }
+    pub(crate) fn load_commands(&mut self) {
+        register_io(self);
+        register_loc(self);
+        register_utils(self);
+        register_diff(self);
+    }
+    #[must_use]
+    pub fn new() -> Self {
+        Core::new_settings(true)
+    }
+    #[must_use]
+    pub fn new_no_colors() -> Self {
+        Core::new_settings(false)
+    }
+    fn new_settings(color: bool) -> Self {
+        let mut core = Core::default();
+        core.init_colors(color);
+        core.init_core_env();
+        core.load_commands();
+        core
+    }
+    /// Reads data from the current location in the current address mode.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`IoError`] if the range starting at `loc` with the length of
+    /// `buf` is not fully backed by open files (physical mode) or mapped
+    /// memory (virtual mode), or if the underlying read operation fails.
+    pub fn read(&mut self, loc: u64, buf: &mut [u8]) -> Result<(), IoError> {
+        match self.mode {
+            AddrMode::Phy => self.io.pread(loc, buf),
+            AddrMode::Vir => self.io.vread(loc, buf),
+        }
+    }
+    /// Reads up to `size` bytes starting from `loc` in the current address
+    /// mode, skipping unbacked gaps. The result maps each readable address
+    /// to its byte value.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`IoError`] only when the underlying read operation on one of
+    /// the backing files fails; unbacked parts of the requested range are
+    /// silently left out of the result.
+    pub fn read_sparce(&mut self, loc: u64, size: u64) -> Result<BTreeMap<u64, u8>, IoError> {
+        match self.mode {
+            AddrMode::Phy => self.io.pread_sparce(loc, size),
+            AddrMode::Vir => self.io.vread_sparce(loc, size),
+        }
+    }
 
     pub fn run(&mut self, command: &str, args: &[String]) {
-        let cmds = self.commands.clone();
+        let cmds = Arc::clone(&self.commands);
         let cmds_ref = cmds.lock();
         let cmd = cmds_ref.find(command);
         drop(cmds_ref);
@@ -177,37 +214,19 @@ impl Core {
         self.run(command, args);
         self.loc = old_loc;
     }
-    pub fn help_all(&mut self) {
-        let cmds = self.commands.clone();
-        let cmds_ref = cmds.lock();
-        for cmd in cmds_ref.iter() {
-            cmd.as_ref().lock().help(self);
-        }
+    pub fn set_commands(&mut self, commands: Arc<Mutex<Commands>>) {
+        self.commands = commands;
     }
-    pub fn help(&mut self, command: &str) {
-        let cmds = self.commands.clone();
-        let cmds_ref = cmds.lock();
-        let cmd = cmds_ref.find(command);
-        if let Some(cmd) = cmd {
-            let cmd = cmd.as_ref().lock();
-            cmd.help(self);
-        } else {
-            drop(cmds_ref);
-            self.command_not_found(command);
-        }
+    pub fn set_loc(&mut self, loc: u64) {
+        self.loc = loc;
     }
-    pub fn read_sparce(&mut self, loc: u64, size: u64) -> Result<BTreeMap<u64, u8>, IoError> {
-        match self.mode {
-            AddrMode::Phy => self.io.pread_sparce(loc, size),
-            AddrMode::Vir => self.io.vread_sparce(loc, size),
-        }
-    }
-    pub fn read(&mut self, loc: u64, buf: &mut [u8]) -> Result<(), IoError> {
-        match self.mode {
-            AddrMode::Phy => self.io.pread(loc, buf),
-            AddrMode::Vir => self.io.vread(loc, buf),
-        }
-    }
+    /// Writes the content of `buf` at `loc` in the current address mode.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`IoError`] if the range starting at `loc` with the length of
+    /// `buf` is not fully backed by open files (physical mode) or mapped
+    /// memory (virtual mode), or if the underlying write operation fails.
     pub fn write(&mut self, loc: u64, buf: &[u8]) -> Result<(), IoError> {
         match self.mode {
             AddrMode::Phy => self.io.pwrite(loc, buf),
@@ -216,24 +235,33 @@ impl Core {
     }
 }
 
+fn set_global_color(_: &str, value: bool, _: &Environment<Core>, _: &mut Core) -> bool {
+    if value {
+        yansi::enable();
+    } else {
+        yansi::disable();
+    }
+    true
+}
+
 #[cfg(test)]
 mod test_core {
     use super::*;
     use crate::utils::Quit;
     fn testings_env(core: &mut Core) {
-        let locked_env = core.env.clone();
+        let locked_env = Arc::clone(&core.env);
         let mut env = locked_env.write();
         env.set_bool("core.helpInvalidCommand", false, core)
             .unwrap();
     }
     #[test]
-    fn test_loc() {
+    fn loc() {
         let mut core = Core::new_no_colors();
         core.set_loc(0x500);
         assert_eq!(core.get_loc(), 0x500);
     }
     #[test]
-    fn test_add_command() {
+    fn add_command() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();
@@ -244,7 +272,7 @@ mod test_core {
         );
     }
     #[test]
-    fn test_help_failure() {
+    fn help_failure() {
         let mut core = Core::new_no_colors();
         testings_env(&mut core);
         core.stderr = Writer::new_buf();
@@ -257,7 +285,7 @@ mod test_core {
         );
     }
     #[test]
-    fn test_run_at() {
+    fn run_at() {
         let mut core = Core::new_no_colors();
         testings_env(&mut core);
         core.stderr = Writer::new_buf();
@@ -270,7 +298,7 @@ mod test_core {
         );
     }
     #[test]
-    fn test_help_failure_with_extras() {
+    fn help_failure_with_extras() {
         let mut core = Core::new_no_colors();
         core.stderr = Writer::new_buf();
         core.stdout = Writer::new_buf();

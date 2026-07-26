@@ -4,7 +4,7 @@ use super::rbtree_wrapper::{Augment, RBTree};
 use core::fmt::{Formatter, Result as FResult};
 use serde::de;
 use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
-use serde::ser::{Serialize, SerializeSeq, Serializer};
+use serde::ser::{Serialize, SerializeSeq as _, Serializer};
 
 impl<K: Ord + Copy + Serialize, A: Copy + Serialize, V: Serialize> Serialize for RBTree<K, A, V>
 where
@@ -85,7 +85,7 @@ mod test_rb_tree_serializing {
     struct PlaceHolder;
     impl Augment<PlaceHolder> for RBTree<u64, PlaceHolder, u64> {}
     #[test]
-    fn test_serde() {
+    fn serde() {
         let mut rbtree = RBTree::new();
         for i in 0..100 {
             rbtree.insert(i, PlaceHolder, i);

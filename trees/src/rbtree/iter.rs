@@ -4,24 +4,16 @@
 // https://codereview.stackexchange.com/questions/110161/binary-trees-in-rust-iterators
 use super::rbtree_wrapper::{Augment, RBTree};
 
-/// Iterator for [`RBtree`]
+/// Iterator for [`RBtree`].
 pub struct TreeIterator<K: Ord + Copy, A: Copy, V> {
-    right: Vec<RBTree<K, A, V>>,
     current: Option<RBTree<K, A, V>>,
+    right: Vec<RBTree<K, A, V>>,
 }
 
 impl<K: Ord + Copy, A: Copy, V> TreeIterator<K, A, V>
 where
     RBTree<K, A, V>: Augment<A>,
 {
-    pub(crate) fn new(root: RBTree<K, A, V>) -> TreeIterator<K, A, V> {
-        let mut iter = TreeIterator {
-            right: vec![],
-            current: None,
-        };
-        iter.add_subtree(root);
-        iter
-    }
     fn add_subtree(&mut self, root: RBTree<K, A, V>) {
         let mut node: RBTree<K, A, V> = root;
         while node.is_node() {
@@ -37,6 +29,14 @@ where
             }
         }
         self.current = node.is_node().then_some(node);
+    }
+    pub(crate) fn new(root: RBTree<K, A, V>) -> TreeIterator<K, A, V> {
+        let mut iter = TreeIterator {
+            current: None,
+            right: vec![],
+        };
+        iter.add_subtree(root);
+        iter
     }
 }
 impl<K: Ord + Copy, A: Copy, V> Iterator for TreeIterator<K, A, V>

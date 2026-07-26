@@ -4,12 +4,13 @@ use std::collections::HashSet;
 
 use crate::{cmd::Cmd, helper::MRc};
 use alloc::collections::BTreeMap;
+use alloc::sync::Arc;
 use rair_trees::bktree::SpellTree; // for suffex search
 
 #[derive(Default)]
 pub struct Commands {
-    suggestions: SpellTree<()>,
     search: BTreeMap<&'static str, MRc<dyn Cmd + Sync + Send>>,
+    suggestions: SpellTree<()>,
 }
 
 impl Commands {
@@ -33,19 +34,7 @@ impl Commands {
     pub fn find(&self, command: &str) -> Option<MRc<dyn Cmd + Sync + Send>> {
         self.search.get(command).cloned()
     }
-    #[must_use]
-    pub fn suggest(&self, command: &str, tolerance: u64) -> Vec<&String> {
-        self.suggestions.find(&command.to_owned(), tolerance).1
-    }
-    #[must_use]
-    pub fn prefix<'a>(&'a self, command: &'a str) -> Vec<&&str> {
-        self.search
-            .range(command..)
-            .take_while(|(k, _)| k.starts_with(command))
-            .map(|(k, _)| k)
-            .collect()
-    }
-    /// iterate over commands with no duplication
+    /// iterate over commands with no duplication.
     pub fn iter(&self) -> impl Iterator<Item = MRc<dyn Cmd + Sync + Send>> + '_ {
         let mut dups = HashSet::new();
         let mut cmds = Vec::new();
@@ -55,9 +44,21 @@ impl Commands {
                 continue;
             }
             dups.insert(names);
-            cmds.push(cmd.clone());
+            cmds.push(Arc::clone(cmd));
         }
         cmds.into_iter()
+    }
+    #[must_use]
+    pub fn prefix<'a>(&self, command: &'a str) -> Vec<&'a str> {
+        self.search
+            .range(command..)
+            .take_while(|(k, _)| k.starts_with(command))
+            .map(|(k, _)| *k)
+            .collect()
+    }
+    #[must_use]
+    pub fn suggest(&self, command: &str, tolerance: u64) -> Vec<&String> {
+        self.suggestions.find(&command.to_owned(), tolerance).1
     }
 }
 
@@ -69,7 +70,7 @@ mod commands_test {
     use parking_lot::Mutex;
 
     #[test]
-    fn test_iter() {
+    fn iter() {
         let mut cmds = Commands::default();
         cmds.add_command("q", Arc::new(Mutex::new(Quit)));
         cmds.add_command("quit", Arc::new(Mutex::new(Quit)));
